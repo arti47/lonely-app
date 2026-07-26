@@ -45,6 +45,10 @@ Recorded from user Q&A. These are settled; do not re-litigate.
 | D6 | Add-on UI | **Surfaces automatically** when an add-on's tags first appear in the log; never a settings toggle |
 | D7 | Theme | Light + dark, default follows `prefers-color-scheme`, in-app override |
 | D8 | Table device | Phone-first; must work at 360px with zero horizontal overflow |
+| D9 | Composer | **Stays symbol-first** (§1). Symbols carry a visible word; a four-symbol beginner set (`@ ? d: =>`) expands to all eight on demand |
+| D10 | Navigation | Four tabs — **Campaigns · Play · Sheet · Help**. Rolling is a drawer on Play, not a tab. Settings lives under Campaigns |
+| D11 | First run | Four layers, all shipping: guide-first landing · in-context checklist on Play · openable sample campaign · self-explaining empty states |
+| D12 | Play furniture | Pinned: a one-line status strip (expands to the full chip set) and the composer. Scene/session controls live in the strip |
 
 ## 2. Architecture — LOCKED
 
@@ -224,7 +228,9 @@ templates/{id}: { id, shape, label, mode, inputs[], modifiers[], target?,
                                                   // learned from repeated `d:`
                                                   // shapes; tables live in the log
 tables/{id}:    { name, die?, entries[] | options[] }   // core §4.3.1–2
-settings:       { theme, referenceLinks, lintLevel }
+settings:       { theme, referenceLinks, lintLevel, notationView, lastCampaign }
+                                                  // lastCampaign: which campaign
+                                                  // the gated tabs point at (D10)
 ```
 
 `log` is the only authoritative field. `checkpoints` are a cache. `view` is
@@ -313,6 +319,13 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
       spec-conformance audit (§11) with every finding closed.
       *Done: 6 findings, all fixed and closed by regression checks; the
       verified-clean list is recorded in `docs/audit.md`.*
+- [ ] **Phase 9 — Onboarding & flow.** The notation is complete and the app is
+      correct; what is missing is a legible path through it. Four tabs, symbols
+      that say what they mean, a safe default on every destructive menu, and a
+      first run that teaches itself. Full spec in §8.2, built in three slices.
+      - [ ] Slice 1 — nav, composer labels, safe row default, empty states (F1–F4)
+      - [ ] Slice 2 — status strip, roll drawer (F5–F6)
+      - [ ] Slice 3 — checklist, sample campaign, guide-first landing (F7–F9)
 
 ### 8.1 Spec Conformance Ledger — mandatory
 
@@ -399,6 +412,113 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 **Lint** (`docs/spec-review.md`)
 
 - [x] T58 Rules for all 10 catalogued defects, each linking to its review entry
+
+### 8.2 Phase 9 — Onboarding & flow
+
+Nine features, each in the §8 mandatory format. Nothing here changes the
+notation, the fold, or what lands in the log — this phase is entirely about the
+path a person takes through the app. D9–D12 settle the open questions; do not
+re-litigate them.
+
+**F1 · Four-tab navigation** *(slice 1)*
+- **Contract:** D10; §7 "gated nav tabs are hidden by the router when off" —
+  which `setNavVisible` was written for and no caller ever used.
+- **Target:** `index.html` nav · `src/router.js` · `render`, `markNav`,
+  `rememberCampaign`, `currentCampaign` · `src/main.js` boot.
+- **Behavior/UI:** tabs are Campaigns · Play · Sheet · Help. Play and Sheet are
+  hidden until a campaign is open, and stay visible once one has been, so
+  stepping back to the list does not strand you. Routes with no tab of their own
+  mark their parent: `resolve` → Play, `settings` → Campaigns, keeping exactly
+  one `aria-current` on every route.
+- **Schema:** `settings.lastCampaign` · `string|null` · default `null` · §6.
+  Cleared when that campaign is deleted.
+- **Acceptance:** with no campaign the nav shows two tabs; after opening one it
+  shows four; `#/resolve/<id>` marks Play current; deleting the open campaign
+  drops back to two.
+
+**F2 · Symbols that say what they mean** *(slice 1)*
+- **Contract:** D9. §1 keeps the composer symbol-first, so the symbol stays the
+  control — it just stops being the only thing on the button.
+- **Target:** `src/composer.js` · `SYMBOLS`, `mountComposer`,
+  `usesAdvancedSymbols` · `styles.css` `.sym`.
+- **Behavior/UI:** each button shows its glyph over one word — `@ Did`,
+  `? Asked`, `d: Rolled`, `=> So`. Those four show by default; `⋯ More` reveals
+  `-> Result`, `tbl: Table`, `gen: Generate`, `( ) Note`. A log that already uses
+  an advanced kind opens expanded, because the user has plainly met them.
+- **Schema:** none. Disclosure is view state held in the module for the life of
+  the page — not a preference, so §7 does not apply.
+- **Acceptance:** four buttons on a fresh campaign, eight after `⋯ More`; a log
+  containing a `tbl:` line starts with eight; every button still emits the line
+  its own lexer round-trips (existing test).
+
+**F3 · No destructive default** *(slice 1)*
+- **Contract:** §2 themed primitives; a menu opened to *read* a line must not
+  offer deletion as its highlighted action.
+- **Target:** `src/logview.js` · `openRowMenu`.
+- **Behavior/UI:** the row menu's primary action is Close, which is where focus
+  lands. Truncation is last, quiet, plainly worded — "Delete from here…" — and
+  keeps its confirmation.
+- **Schema:** none.
+- **Acceptance:** opening a row and pressing Enter changes nothing; the
+  confirmation still appears before any truncation.
+
+**F4 · Empty states that name the next action** *(slice 1)*
+- **Contract:** §1 "no configuration gates usage" is only true if the first
+  screen says what to do.
+- **Target:** `src/screens.js` · `logScreen`, `campaignsScreen` ·
+  `src/logview.js` · `renderLog` · `src/state.js` · `renderState`.
+- **Behavior/UI:** every empty state names one concrete next action and the
+  control that performs it. Campaigns grows a Settings entry, since Settings no
+  longer has a tab.
+- **Schema:** none.
+- **Acceptance:** each empty screen names a control that exists on it.
+
+**F5 · One-line status strip** *(slice 2)* — D12.
+- **Target:** `src/state.js` · `renderStateHeader` (compact + expanded forms).
+- **Behavior/UI:** one tappable line — `Session 2 · S5 · HP 8 · Suspicion 3/6` —
+  expanding to today's full chip set. Scene and Session controls move into it,
+  which is what makes the lifecycle visible instead of buried in a tools row.
+- **Schema:** none — expansion is view state.
+- **Acceptance:** the strip is one line high at 360px and every value still
+  traces to the line that set it (§5.7).
+
+**F6 · Roll drawer on Play** *(slice 2)* — D10.
+- **Target:** `src/screens.js` · `logScreen` · `src/resolve.js` ·
+  `renderResolve` (unchanged, hosted in a drawer).
+- **Behavior/UI:** a 🎲 Roll control on Play opens the existing Resolve pane as a
+  sheet over the log; committing a roll closes it and the new line is already
+  there. `#/resolve/<id>` stays a real route for the guide's deep links.
+- **Schema:** none.
+- **Acceptance:** rolling never leaves the Play screen; the drawer traps focus
+  and restores it (§2).
+
+**F7 · Getting-started checklist** *(slice 3)* — D11.
+- **Target:** new `src/onboarding.js` (§3.1 table + SW app shell + cache bump).
+- **Behavior/UI:** a dismissible checklist above the composer — start a session ·
+  write a line · name someone · roll — each item ticking itself off by reading
+  the folded state, the whole thing gone once complete or dismissed.
+- **Schema:** `campaigns/{id}.view.checklist` · `'auto'|'hidden'|'done'` ·
+  default `'auto'` · §6. View state: it must never affect a fold (D6).
+- **Acceptance:** items tick from log content alone; dismissing survives a
+  reload and leaves the log byte-identical.
+
+**F8 · Openable sample campaign** *(slice 3)* — D11.
+- **Target:** `src/onboarding.js` · `SAMPLE_LOG`, `createSample`.
+- **Behavior/UI:** "Look at an example" on the empty Campaigns screen creates a
+  real, deletable campaign whose short log already surfaces a sheet, a clock and
+  a combat panel — the fastest way to see D6 auto-surfacing. System-agnostic and
+  free of any publisher's content (§9.8, D3).
+- **Schema:** none beyond a normal campaign record.
+- **Acceptance:** the sample folds without lint errors, surfaces at least two
+  add-on panels, and deletes like any other campaign.
+
+**F9 · Guide-first landing** *(slice 3)* — D11.
+- **Target:** `src/main.js` boot · `src/guide.js`.
+- **Behavior/UI:** a first-ever launch opens Help with a "Start my first
+  campaign" action at the top, instead of an empty list. Once any campaign has
+  existed, boot returns to Campaigns.
+- **Schema:** `settings.seenGuide` · `boolean` · default `false` · §6.
+- **Acceptance:** first launch lands on Help; second launch does not.
 
 ## 9. Process rules — LOCKED
 
