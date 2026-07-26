@@ -42,6 +42,10 @@ dice, so there is **no RNG in the codebase**. The PC sheet is derived by folding
 accelerators (saved roll templates, tables, outcome labels) that accrete from
 repeated `d:` shapes during play — never a prerequisite, never a launch blocker.
 
+Add-on UI surfaces automatically when an add-on's tags first appear in the log,
+never via a settings toggle. Panels can be hidden, but that is view state stored
+against the campaign — it must never mutate or drop log content.
+
 ## Core design invariant
 
 **The log is the source of truth.** There is no separate state database.

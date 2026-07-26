@@ -208,7 +208,23 @@ be fought more than used.
 
 Nothing before step 6 requires knowing which game is being played.
 
-## Open questions
+## Add-ons surface themselves
 
-- Whether add-ons are opt-in per campaign or auto-surfaced when their tags first
-  appear in the log.
+Add-on UI is **not** switched on in settings. The fold already knows which add-on
+tags a campaign contains; the first time an `[F:]`, `[R:]`, `[Inv:]`, or
+`[Unit:]` tag appears, the corresponding panel appears with it. Same invariant as
+everything else: the log decides, not a configuration screen. A campaign that
+never fights never shows a combat tracker.
+
+Two guardrails, since inference can be wrong:
+
+- **Hiding is possible and is UI state only.** A panel can be dismissed; that
+  preference is stored against the campaign as view state, never as campaign
+  state, and never edits or removes a byte of the log. Dismissing the combat
+  panel does not un-fight the fight.
+- **Surfacing is sticky per campaign.** Once an add-on has appeared it stays
+  available even in scenes with none of its tags, so the panel doesn't flicker in
+  and out as you scroll or as combat starts and ends.
+
+An add-on panel is a *view onto folded state*, so there is nothing to migrate
+when one appears — the data was already in the log.
