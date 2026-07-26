@@ -411,6 +411,8 @@ reading and add a lint rule; do not edit the vendored spec (§10).
    in the UI.
 9. **Module discipline.** Respect §3.1 responsibilities; import/export
    explicitly; `src/lonelog/` stays dependency-free.
+10. **Single branch.** All work lands on `main` (see Git, below). No feature
+    branches, no branch left behind.
 
 ## 10. Content, spec fidelity & license
 
@@ -451,10 +453,17 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 | 2026-07-26 | **Phase 3 — state pane.** `state.js`: character sheet folded from `[PC:]` tags (D5), clock/track fill meters, countdown timers, thread states, NPC/location index, and the persistent state header now shared by Log, State and Resolve. Every value links back to the line that set it (§5.7). Editing appends a tag line and never mutates state (§5.1). Thread state changes emit the transition form `[Thread:X\|Open -> Closed]` rather than a restatement, because flags accumulate — restating `Closed` would leave `Open` set too | 98 unit tests, each edit asserted by folding the emitted line back; 36 browser checks including stepping a clock from the State pane and tracing a value into the log | `lonely-v3` |
 | 2026-07-26 | **Phase 4 — resolve pane.** `compare.js` (six comparison shapes: target incl. roll-under, success pools, paired challenge dice, keep high/low, `dF` ladders, degree bands; match detection; a generic d100 oracle ladder labelled a house aid; table lookup) and `resolve.js` (roll entry, oracle, tables). Every number is entered by the player — `src/` still contains no RNG, enforced by test. Engine gained inline table definitions, filtered option sets and multi-line generator axes, so a table defined in a log is immediately usable and the log stays self-contained. **Ledger complete: 58/58** | 129 unit tests; 46 browser checks including entering a roll, an oracle answer and a table lookup through the real UI | `lonely-v4` |
 | 2026-07-26 | Fixed: an omitted numeric field parsed as `0`, so a roll with no target compared against 0 and always succeeded. Root cause: `Number('')` is `0`, and the guard only rejected `NaN`. Empty now reads as "not given" | Regression test per mode; `MODES` all evaluate safely on empty input | `lonely-v4` |
+| 2026-07-26 | Consolidated to a single branch: all work now commits directly to `main`. The old feature branch held no unmerged commits | `git log main..<branch>` empty before removal; local branch deleted | — |
 | 2026-07-26 | Repo prepared for GitHub Pages: `.nojekyll`, and a test asserting every asset reference is relative so the app works from a project subpath | `npm test` | `lonely-v4` |
 | 2026-07-26 | Router now carries an optional line index (`#/log/<id>/<line>`) so a folded value can open the exact line that set it | Browser check: clicking a stat focuses its row in the log | `lonely-v3` |
 | 2026-07-26 | Fixed four parser defects found during the ledger pass: `exits DIR:ID` took its key as `exits S`; space-separated stat keys (`Armor CT30/RT25`) lost their key; `[Inv:Torch\|4]` quantity and `[Inv:Torch-1]` delta landed on different slots; a block opened in a scene header (`S9 *Ambush* [COMBAT]`, combat §1.1) never opened. Root cause in each: a parse rule written for one spec's shape that another spec's shape also matched | Regression test added per fix; full suite green | `lonely-v1` |
 
-## Git
+## Git — LOCKED
 
-- Develop on `claude/code-review-docs-yg61y7`, merge to `main`, push both.
+- **One branch: `main`.** Commit directly to it and push. Do not open feature
+  branches, and do not leave a second branch behind after a piece of work.
+- Every change updates this file in the same commit (§9.1) and lands with the
+  suite green (§9.4–9.5).
+- The stale `claude/code-review-docs-yg61y7` ref on the remote is identical to
+  `main` and carries no unmerged commits; the git proxy refuses branch
+  deletions, so it has to be removed from the GitHub branches page by hand.
