@@ -15,6 +15,7 @@ import { parse } from './lonelog/index.js';
 import { renderLog } from './logview.js';
 import { mountComposer } from './composer.js';
 import { renderState, renderStateHeader } from './state.js';
+import { renderResolve } from './resolve.js';
 
 const PHASE_NOTE = 'Not built yet — this pane arrives in a later phase. The notation engine underneath it is complete and tested.';
 
@@ -235,14 +236,32 @@ export async function stateScreen(mount, params) {
 }
 
 export async function resolveScreen(mount, params) {
-  const c = await openCampaign(mount, params);
-  if (!c) return;
-  const { state } = parse(c.log.join('\n'));
-  mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, ['Resolve'])]));
-  mount.append(renderStateHeader(state, (line) => go('log', { id: c.id, line })));
-  mount.append(el('p', { class: 'note' }, [
-    'You roll the dice; this pane will capture the numbers and label the outcome. It never rolls for you. ' + PHASE_NOTE,
-  ]));
+  let campaign = await openCampaign(mount, params);
+  if (!campaign) return;
+
+  const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['Resolve'])]);
+  const header = el('div', { class: 'state-header-slot' });
+  const body = el('div', {});
+  mount.append(head, header, body);
+
+  function refresh() {
+    const { state } = parse(campaign.log.join('\n'));
+    clear(header);
+    header.append(renderStateHeader(state, (line) => go('log', { id: campaign.id, line })));
+    renderResolve(body, state, {
+      commit: async (lines) => {
+        campaign.log.push(...lines);
+        campaign = await campaigns.put(campaign);
+        if (campaign.bindings?.handle) {
+          try { await fileBinding.write(campaign); } catch { /* reported on the log screen */ }
+        }
+        showToast(`Added ${lines.length} line${lines.length === 1 ? '' : 's'} to the log.`);
+        refresh();
+      },
+    });
+  }
+
+  refresh();
 }
 
 export async function settingsScreen(mount) {

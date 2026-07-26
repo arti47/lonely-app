@@ -56,13 +56,27 @@ CLAUDE.md       the canonical project spec — read this first
 `src/lonelog/` imports nothing outside itself, so it is reusable as-is by a CLI
 or an editor plugin.
 
+## Publish it on GitHub Pages
+
+The app is plain static files with no build step, so Pages needs no workflow:
+
+1. **Settings → Pages**
+2. **Source:** Deploy from a branch
+3. **Branch:** `main`, folder `/ (root)` → **Save**
+
+It will be served at `https://<user>.github.io/lonely-app/`. Every asset
+reference is relative and a test enforces that, so the project subpath works.
+`.nojekyll` stops Jekyll from touching the files.
+
+Everything still runs locally — Pages just gives you a URL to install the PWA
+from on a phone.
+
 ## Status
 
-Phases 0 and 1 are complete: the notation engine is finished and tested, and the
-app shell boots, stores campaigns, and exports/imports both Lonelog markdown and
-JSON backups. The Log, State and Resolve panes currently render real folded state
-but are not yet interactive; they are built out in Phases 2–4. See `CLAUDE.md`
-§8.
+Phases 0–4 are complete, and the 58-item spec-conformance ledger is fully
+implemented. You can log a session end to end, watch state fold out of it, and
+resolve rolls, oracles and tables. Remaining: add-on surfaces, the lifecycle
+engine, learned roll templates, and the notation reference. See `CLAUDE.md` §8.
 
 ## Licensing
 

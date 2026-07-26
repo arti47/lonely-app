@@ -17,7 +17,8 @@ export const KINDS = /** @type {const} */ ([
   'blank', 'frontmatter', 'fence', 'heading',
   'narrativeOpen', 'narrativeClose', 'narrative',
   'block', 'marker', 'action', 'question', 'dice', 'resolution',
-  'consequence', 'tbl', 'gen', 'note', 'dialogue', 'sessionMeta', 'tag', 'prose',
+  'consequence', 'tbl', 'gen', 'note', 'dialogue', 'sessionMeta',
+  'tableEntry', 'genAxis', 'tag', 'prose',
 ]);
 
 const RE_SCENE = /^(T(\d+)-)?S(\d+)([a-z])?(?:\.(\d+))?\b/;
@@ -31,6 +32,12 @@ const RE_DIALOGUE = /^(N|PC)\s*(\(([^)]*)\))?\s*:\s*(.*)$/;
 // (core §5.2.1). Requires a `Key: value` opener so ordinary italic prose is not
 // swallowed.
 const RE_SESSION_META = /^\*\s*([A-Z][A-Za-z ]*:[^*]*)\*$/;
+// Inline table definitions and multi-axis generators (core §4.3.1–3) put their
+// bodies on the lines that follow the header, so the lexer carries a small
+// amount of context.
+const RE_TABLE_ENTRY = /^(\d+)\s*(?:[-–]\s*(\d+))?\s*:\s*(.+)$/;
+const RE_GEN_AXIS = /^([A-Za-z][\w '-]*?)\s*:\s*(.+)$/;
+const RE_ARROW = /\s*(?:->|→)\s*/;
 
 /**
  * @param {string} text
@@ -44,6 +51,8 @@ export function lex(text) {
   let inFence = false;
   let inFrontmatter = false;
   let inNarrative = false;
+  /** @type {null|'table'|'gen'} */
+  let body = null;
   let i = 0;
 
   while (i < lines.length) {
@@ -69,7 +78,7 @@ export function lex(text) {
       i++; continue;
     }
 
-    if (s === '') { entries.push({ ...base, kind: 'blank' }); i++; continue; }
+    if (s === '') { body = null; entries.push({ ...base, kind: 'blank' }); i++; continue; }
 
     // Long in-fiction block, asymmetric delimiters (core §4.4).
     if (/^\\-{3,}/.test(s)) {
@@ -128,7 +137,13 @@ export function lex(text) {
       i++; continue;
     }
 
-    entries.push({ ...base, ...classify(s) });
+    const classified = /** @type {Record<string, any>} */ (classify(s, body));
+    body = classified.kind === 'tbl' && classified.table?.kind === 'definition' ? 'table'
+      : classified.kind === 'gen' && classified.generator ? 'gen'
+        : classified.kind === 'tableEntry' ? 'table'
+          : classified.kind === 'genAxis' ? 'gen'
+            : null;
+    entries.push(/** @type {Entry} */ ({ ...base, ...classified }));
     i++;
   }
 
@@ -150,8 +165,13 @@ function splitLines(text) {
   return out;
 }
 
-/** Classify a non-structural line and attach its tags. */
-function classify(s) {
+/**
+ * Classify a non-structural line and attach its tags.
+ * @param {string} s
+ * @param {null|'table'|'gen'} [body] whether we are inside a table or generator
+ * @returns {Record<string, any>}
+ */
+function classify(s, body = null) {
   // Scene / round / turn markers may prefix a line of notation (core §5.3,
   // combat §2, wargaming §1).
   const marker = readMarker(s);
@@ -174,10 +194,44 @@ function classify(s) {
   }
   if (/^\?/.test(s)) return { kind: 'question', text: s.slice(1).trim(), ...tagPayload(s) };
   if (/^d\s*:/.test(s)) return { kind: 'dice', text: s.replace(/^d\s*:\s*/, ''), ...tagPayload(s, true) };
-  if (/^tbl\s*:/.test(s)) return { kind: 'tbl', text: s.replace(/^tbl\s*:\s*/, ''), ...tagPayload(s) };
-  if (/^gen\s*:/.test(s)) return { kind: 'gen', text: s.replace(/^gen\s*:\s*/, ''), ...tagPayload(s) };
+  if (/^tbl\s*:/.test(s)) {
+    const text = s.replace(/^tbl\s*:\s*/, '');
+    return { kind: 'tbl', text, table: readTable(text), ...tagPayload(s) };
+  }
+  if (/^gen\s*:/.test(s)) {
+    const text = s.replace(/^gen\s*:\s*/, '');
+    // A header with no arrow opens a multi-line axis block (core §4.3.3);
+    // anything else is the single-line compound form (§4.3).
+    const generator = RE_ARROW.test(text) ? null : { name: stripQualifier(text) };
+    return { kind: 'gen', text, generator, ...tagPayload(s) };
+  }
   if (/^(->|→)/.test(s)) return { kind: 'resolution', text: s.replace(/^(->|→)\s*/, ''), ...tagPayload(s) };
   if (/^=>/.test(s)) return { kind: 'consequence', text: s.slice(2).trim(), ...tagPayload(s) };
+
+  // Bodies of an open table or generator block (core §4.3.1–3).
+  if (body === 'table') {
+    const m = RE_TABLE_ENTRY.exec(s);
+    if (m) {
+      return {
+        kind: 'tableEntry',
+        min: Number(m[1]),
+        max: m[2] ? Number(m[2]) : Number(m[1]),
+        result: m[3].trim(),
+      };
+    }
+  }
+  if (body === 'gen') {
+    const m = RE_GEN_AXIS.exec(s);
+    if (m && !/^(note|reflection|house rule|reminder|question)$/i.test(m[1].trim())) {
+      const [roll, result] = m[2].split(RE_ARROW);
+      return {
+        kind: 'genAxis',
+        axis: m[1].trim(),
+        roll: (result === undefined ? '' : roll).trim(),
+        result: (result === undefined ? roll : result).trim(),
+      };
+    }
+  }
 
   // Meta note: the whole line parenthesised (core §4.5).
   if (/^\(.*\)$/.test(s) && !s.slice(1, -1).includes('(')) {
@@ -268,4 +322,44 @@ function symbolKind(sym) {
   if (sym === 'gen:') return 'gen';
   if (sym === '=>') return 'consequence';
   return 'resolution';
+}
+
+/**
+ * Read the head of a `tbl:` line (core §4.3, §4.3.1–2).
+ * @param {string} text
+ */
+function readTable(text) {
+  // Filtered option set: `Mood [Tense, Melancholic, Hopeful]` (§4.3.2).
+  const options = /^(.*?)\s*\[([^\]]*)\]\s*$/.exec(text);
+  if (options) {
+    return {
+      kind: 'options',
+      name: stripQualifier(options[1]),
+      options: options[2].split(',').map((o) => o.trim()).filter(Boolean),
+    };
+  }
+
+  // Lookup: anything carrying a resolution arrow.
+  if (RE_ARROW.test(text)) {
+    const [left, result] = text.split(RE_ARROW);
+    const roll = /(\d*d\d+|\bd\d+)\s*=\s*(\d+)/i.exec(left);
+    return {
+      kind: 'lookup',
+      name: stripQualifier(left.replace(/(\d*d\d+|\bd\d+)\s*=\s*\d+.*$/i, '')),
+      die: roll ? roll[1].toLowerCase() : null,
+      roll: roll ? Number(roll[2]) : null,
+      result: result.trim(),
+    };
+  }
+
+  // Definition header: `Forest Encounter (d6)` (§4.3.1).
+  const def = /^(.*?)\s*\((d\d+)\)\s*$/i.exec(text);
+  if (def) return { kind: 'definition', name: def[1].trim(), die: def[2].toLowerCase() };
+
+  return { kind: 'reference', name: stripQualifier(text) };
+}
+
+/** Drop a parenthetical qualifier such as `(custom d6 tables)`. */
+function stripQualifier(s) {
+  return String(s).replace(/\s*\([^)]*\)\s*$/, '').trim();
 }

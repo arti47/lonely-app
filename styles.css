@@ -424,3 +424,33 @@ p { margin: 0 0 12px; }
   cursor: pointer; text-decoration: underline dotted;
 }
 .el-trace:hover { color: var(--accent); }
+
+/* --- Phase 4: resolve pane --- */
+
+.resolve-body { display: flex; flex-direction: column; gap: 10px; }
+
+.field-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.field { flex: 1 1 130px; min-width: 0; }
+.field .field-label { margin-bottom: 2px; }
+
+.dice-row { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.die-input {
+  width: 64px; flex: 0 0 auto;
+  text-align: center; font-variant-numeric: tabular-nums;
+  font-size: 1.05rem;
+}
+
+.preview {
+  display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+  min-height: 34px; padding: 8px;
+  border: 1px dashed var(--line); border-radius: var(--radius);
+  background: var(--paper);
+}
+.preview-outcome { font-weight: 700; }
+.preview-line {
+  font-family: var(--mono); font-size: 0.78rem; color: var(--ink-soft);
+  word-break: break-word; min-width: 0;
+}
+
+.table-row { align-items: center; }
+.table-row .die-input { width: 58px; }

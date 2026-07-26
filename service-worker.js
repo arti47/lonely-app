@@ -9,7 +9,7 @@
  * src/ module must be added to APP_SHELL (§3, enforced by tests/invariants).
  */
 
-const CACHE_VERSION = 'lonely-v3';
+const CACHE_VERSION = 'lonely-v4';
 
 const APP_SHELL = [
   './',
@@ -27,6 +27,8 @@ const APP_SHELL = [
   'src/logview.js',
   'src/composer.js',
   'src/state.js',
+  'src/compare.js',
+  'src/resolve.js',
   'src/lonelog/index.js',
   'src/lonelog/lexer.js',
   'src/lonelog/tags.js',

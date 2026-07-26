@@ -31,9 +31,13 @@ export function createState() {
     sessions: [],
     blockStack: [],
     blocks: [],
+    tables: new Map(),       // core §4.3.1–2 — defined inline in the log
+    generators: new Map(),   // core §4.3.3
     addons: new Set(),
     marker: { scene: null, round: null, turn: null },
-    counts: { entries: 0, tags: 0, rolls: 0, questions: 0, consequences: 0 },
+    counts: { entries: 0, tags: 0, rolls: 0, questions: 0, consequences: 0, lookups: 0 },
+    openTable: null,
+    openGenerator: null,
     lastLine: -1,
   };
 }
@@ -89,6 +93,33 @@ function applyEntry(state, e) {
       if (m) state.sessions.push({ number: Number(m[1]), title: e.title, line: e.line });
       return;
     }
+    case 'tbl': {
+      applyTable(state, e);
+      break;
+    }
+    case 'tableEntry': {
+      const table = state.openTable && state.tables.get(state.openTable);
+      if (table) table.entries.push({ min: e.min, max: e.max, result: e.result, line: e.line });
+      return;
+    }
+    case 'gen': {
+      if (e.generator?.name) {
+        state.openGenerator = e.generator.name.toLowerCase();
+        if (!state.generators.has(state.openGenerator)) {
+          state.generators.set(state.openGenerator, { name: e.generator.name, axes: [], line: e.line });
+        } else {
+          // A generator rolled again replaces its previous axis results.
+          state.generators.get(state.openGenerator).axes = [];
+        }
+      }
+      state.openTable = null;
+      break;
+    }
+    case 'genAxis': {
+      const gen = state.openGenerator && state.generators.get(state.openGenerator);
+      if (gen) gen.axes.push({ axis: e.axis, roll: e.roll, result: e.result, line: e.line });
+      return;
+    }
     case 'sessionMeta': {
       // Attaches to the session it sits under (core §5.2.1).
       const session = state.sessions[state.sessions.length - 1];
@@ -123,6 +154,40 @@ function applyEntry(state, e) {
   }
 
   for (const tag of e.tags ?? []) applyTag(state, tag, e.line);
+}
+
+/** Record inline table definitions, option sets and lookups (core §4.3). */
+function applyTable(state, e) {
+  const spec = e.table;
+  state.openGenerator = null;
+  if (!spec) { state.openTable = null; return; }
+
+  // `tbl: d100=42 -> "A broken sword"` names no table but is still a lookup.
+  if (spec.kind === 'lookup') state.counts.lookups = (state.counts.lookups ?? 0) + 1;
+
+  if (!spec.name) { state.openTable = null; return; }
+
+  const key = spec.name.toLowerCase();
+
+  if (spec.kind === 'definition') {
+    state.tables.set(key, { name: spec.name, die: spec.die, entries: [], options: [], line: e.line });
+    state.openTable = key;
+    return;
+  }
+
+  if (spec.kind === 'options') {
+    state.tables.set(key, {
+      name: spec.name, die: null, entries: [], options: [...spec.options], line: e.line,
+    });
+    state.openTable = null;
+    return;
+  }
+
+  state.openTable = null;
+  if (spec.kind === 'lookup') {
+    const table = state.tables.get(key);
+    if (table && spec.die && !table.die) table.die = spec.die;
+  }
 }
 
 function applyMarker(state, e) {
@@ -278,6 +343,19 @@ function numeric(v) {
   if (v == null) return null;
   const m = /^(-?\d+(?:\.\d+)?)/.exec(String(v).trim());
   return m ? Number(m[1]) : null;
+}
+
+/**
+ * Look a table up by name, case-insensitively (core §4.3.1).
+ * @param {object} state @param {string} name
+ */
+export function getTable(state, name) {
+  return state.tables.get(String(name).trim().toLowerCase()) ?? null;
+}
+
+/** @param {object} state */
+export function tablesOf(state) {
+  return [...state.tables.values()];
 }
 
 /**

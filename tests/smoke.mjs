@@ -338,6 +338,102 @@ try {
       && await s.evaluate('!!document.querySelector("#screen .log-row.is-focused")'),
     await s.evaluate('location.hash'));
 
+  // --- Phase 4: the Resolve pane captures rolls but never makes them ---
+  await s.evaluate(`(location.hash = '#/resolve/${created}', new Promise(r => setTimeout(r, 300)))`);
+
+  check('resolve pane offers every comparison mode',
+    await s.evaluate('document.querySelectorAll("#roll-mode option").length') === 6);
+  check('resolve pane shows the oracle odds ladder',
+    await s.evaluate('document.querySelectorAll("#oracle-odds option").length') === 5);
+  check('the add button is disabled until a number is entered',
+    await s.evaluate('document.querySelector("#roll-add").disabled') === true);
+
+  const linesBeforeRoll = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    return (await store.campaigns.get('${created}')).log.length;
+  })()`);
+
+  // Enter a die and a target, exactly as a player would after rolling.
+  await s.evaluate(`(() => {
+    const set = (elm, v) => {
+      elm.value = v;
+      elm.dispatchEvent(new Event('input', { bubbles: true }));
+    };
+    set(document.querySelector('#screen .die-input'), '5');
+    const fields = [...document.querySelectorAll('#screen .field .input')];
+    const target = fields.find(f => f.previousElementSibling?.textContent === 'Target');
+    set(target, '4');
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 200))');
+
+  check('the outcome is previewed before committing',
+    (await s.evaluate('document.querySelector("#screen .preview-outcome")?.textContent')) === 'Success');
+
+  await s.evaluate('document.querySelector("#roll-add").click()');
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+
+  const rollAdded = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return { n: c.log.length, last: c.log[c.log.length - 1] };
+  })()`);
+  check('a roll appends a d: line carrying its comparison',
+    rollAdded.n === linesBeforeRoll + 1 && /^d: .*5=5 vs TN 4 -> Success$/.test(rollAdded.last),
+    JSON.stringify(rollAdded));
+
+  // Oracle: enter the d100 the player rolled.
+  await s.evaluate(`(() => {
+    const inputs = [...document.querySelectorAll('#screen .field .input')];
+    const roll = inputs.find(f => f.previousElementSibling?.textContent === 'Your d100');
+    roll.value = '20';
+    roll.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 200))');
+  await s.evaluate('document.querySelector("#oracle-add").click()');
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+
+  const oracleAdded = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return c.log.slice(-2);
+  })()`);
+  check('the oracle appends a question and its roll',
+    /^\? /.test(oracleAdded[0]) && /^d: d100=20 vs 50 -> Yes/.test(oracleAdded[1]),
+    JSON.stringify(oracleAdded));
+
+  // A table defined in the log becomes usable in the pane (T5/T6).
+  await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    c.log.push('tbl: Mood [Tense, Melancholic, Hopeful, Uncanny]');
+    await store.campaigns.put(c);
+  })()`);
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 200)))`);
+  await s.evaluate(`(location.hash = '#/resolve/${created}', new Promise(r => setTimeout(r, 300)))`);
+
+  check('a table defined in the log appears in the Resolve pane',
+    (await s.evaluate('document.querySelector("#screen .table-row .el-name")?.textContent')) === 'Mood');
+
+  await s.evaluate(`(() => {
+    const input = document.querySelector('#screen .table-row .die-input');
+    input.value = '2';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 200))');
+  check('the table resolves the entered roll',
+    (await s.evaluate('document.querySelector("#screen .table-row .el-detail")?.textContent')) === 'Melancholic');
+
+  await s.evaluate(`([...document.querySelectorAll('#screen .table-row .btn-tiny')]
+    .find(b => b.textContent === 'Add')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+  const tableAdded = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return c.log[c.log.length - 1];
+  })()`);
+  check('a table lookup appends a tbl: line',
+    tableAdded === 'tbl: Mood d4=2 -> Melancholic', JSON.stringify(tableAdded));
+
   for (const width of [360, 390]) {
     await s.send('Emulation.setDeviceMetricsOverride', { width, height: 780, deviceScaleFactor: 1, mobile: true });
     for (const route of ['campaigns', 'log', 'state', 'resolve', 'settings']) {

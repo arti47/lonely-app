@@ -98,19 +98,19 @@ One module per responsibility; explicit `import`/`export`, nothing through
 |---|---|
 | `core.js` | ✅ Constants, DOM/util helpers. No imports. **No RNG.** |
 | `ui.js` | ✅ Themed modals/toasts/confirm/prompt; theme switching |
-| `lonelog/lexer.js` | ✅ Line → `Entry{kind, raw, indent, …}`. Kinds: `action question dice resolution consequence tbl gen note dialogue sessionMeta tag marker block prose` |
+| `lonelog/lexer.js` | ✅ Line → `Entry{kind, raw, indent, …}`. Kinds: `action question dice resolution consequence tbl gen tableEntry genAxis note dialogue sessionMeta tag marker block prose` |
 | `lonelog/tags.js` | ✅ Tag parse/serialise; tolerant of whitespace, `x`/`×`, `>=`/`≥` |
-| `lonelog/fold.js` | ✅ `Entry[]` → `CampaignState`, with per-scene checkpoints |
+| `lonelog/fold.js` | ✅ `Entry[]` → `CampaignState`, with per-scene checkpoints; inline tables and generators |
 | `lonelog/render.js` | ✅ `Entry[]` → markdown, digital or analog form |
 | `lonelog/lint.js` | ✅ Spec-conformance rules (§10, `docs/spec-review.md`) |
 | `lonelog/index.js` | ✅ Engine barrel + `parse()` (lex → fold → lint) |
-| `compare.js` | Roll comparator over **entered** numbers. No RNG |
+| `compare.js` | ✅ Roll comparator over **entered** numbers, oracle ladder, table lookup. No RNG |
 | `templates.js` | Learned roll templates + saved tables; pack import/export |
 | `store.js` | ✅ IndexedDB persistence, markdown + JSON export/import, File System Access binding |
 | `composer.js` | ✅ Symbol-first entry: line kinds, tag builder, autocomplete |
 | `logview.js` | ✅ Transcript rendering, editing, truncation-undo |
 | `state.js` | ✅ State pane: folded PC sheet, NPC/location index, threads, clocks; persistent state header |
-| `resolve.js` | Roll entry, oracle lookup, user tables |
+| `resolve.js` | ✅ Roll entry, oracle lookup, user tables |
 | `addons/combat.js` | `[COMBAT]`, `Rd#`, `[F:]` surfaces |
 | `addons/resources.js` | `[Inv:]`, `[Wealth:]`, `[RESOURCES]` surfaces |
 | `addons/dungeon.js` | `[R:]`, `[DUNGEON STATUS]` surfaces |
@@ -118,7 +118,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `lifecycle.js` | Scene/session/campaign boundary events + undo (§6) |
 | `settings.js` | ✅ Preferences, theme, panel visibility, reference links |
 | `router.js` | ✅ Bottom-nav routing + conditional tab gating |
-| `screens.js` | ◐ Screen renderers. Campaigns, Log, State and Settings functional; Resolve awaits Phase 4 |
+| `screens.js` | ✅ Screen renderers for all five screens |
 | `main.js` | ✅ Entry point / boot |
 
 `src/lonelog/` imports nothing outside itself — it is the reusable engine and
@@ -216,6 +216,8 @@ campaigns/{id}
   checkpoints/{sceneIndex}: { lineIndex, state }  // fold memoisation, derivable,
                                                   // safe to discard and rebuild
 templates/{id}: { label, inputs[], modifiers[], compare, outcomes[], packId?, seenCount }
+                                                  // Phase 7; tables defined in a
+                                                  // log fold out of it directly
 tables/{id}:    { name, die?, entries[] | options[] }   // core §4.3.1–2
 settings:       { theme, referenceLinks, lintLevel }
 ```
@@ -271,12 +273,15 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
       *Done: steppers emit `[PC:Alex|HP-2]`, `[Clock:Name 4/6]`, `[Timer:Name 2]`,
       `[N:X|+flag]` / `[N:X|-flag]` and `[Thread:X|Open -> Closed]`; every value
       links back to the line that set it.*
-- [ ] **Phase 4 — Resolve pane.** Free-form roll entry; comparator (§3.1 module)
+- [x] **Phase 4 — Resolve pane.** Free-form roll entry; comparator (§3.1 module)
       covering sum vs TN/DC/AC, `≥`/`≤`, paired challenge dice, count-successes
       pools, keep-high/low, `dF` ladders, degree bands, match detection; generic
       yes/no oracle with odds column; user tables incl. inline definitions and
       filtered option sets; emits full `d:` / `tbl:` / `gen:` lines. Ledger
       T3–T8, T17.
+      *Done: six comparison modes, all evaluating numbers the player entered —
+      there is still no RNG anywhere in `src/`. Tables defined in the log are
+      usable from the pane, keeping the log self-contained.*
 - [ ] **Phase 5 — Add-on surfaces.** Auto-surfacing per D6, in order: combat
       (T28–T34), resources (T40–T47), dungeon (T35–T39), wargaming (T48–T57).
 - [ ] **Phase 6 — Lifecycle engine.** Explicit End Scene / End Session controls
@@ -306,15 +311,12 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 
 - [x] T1 Five core symbols `@ ? d: -> =>` (§3.1–3.3)
 - [x] T2 `@(Name)` actor attribution (§3.1.1)
-- [ ] T3 Comparison shorthand `≥ ≤ >= <= vs S F` (§3.2.1) — round-trips, but is
-      not interpreted; needs the Phase 4 comparator
+- [x] T3 Comparison shorthand `≥ ≤ >= <= vs S F` (§3.2.1)
 - [x] T4 `tbl:` simple lookup (§4.3)
-- [ ] T5 `tbl:` inline table definition, named + die + entries (§4.3.1) — the
-      indented entry block is not yet parsed into a table (Phase 4)
-- [ ] T6 `tbl:` filtered option sets `[A, B, C]` (§4.3.2) — Phase 4
+- [x] T5 `tbl:` inline table definition, named + die + entries (§4.3.1)
+- [x] T6 `tbl:` filtered option sets `[A, B, C]` (§4.3.2)
 - [x] T7 `gen:` single-line compound (§4.3)
-- [ ] T8 `gen:` multi-line axis blocks (§4.3.3) — the per-axis lines are not yet
-      grouped under their generator (Phase 4)
+- [x] T8 `gen:` multi-line axis blocks (§4.3.3)
 - [x] T9 `[N:]` NPCs (§4.1.1)
 - [x] T10 `[L:]` locations (§4.1.2)
 - [x] T11 `[E:]` events/clocks (§4.1.3)
@@ -447,6 +449,9 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 | 2026-07-26 | **Phase 2 — log pane, and the First Session Logged milestone.** `composer.js` (symbol bar, tag builder with autocomplete from folded state, scene/session/block inserters), `logview.js` (per-entry rows, tag highlighting, inline lint flags, edit, truncate-from-here), file binding via the File System Access API with download fallback. Undo is truncation throughout, with one-step restore of a truncated tail | 85 unit tests; 27 browser checks — composing through the real UI appends and persists, undo pops and persists, export→reimport folds identically | `lonely-v2` |
 | 2026-07-26 | Added a `sessionMeta` line kind for `*Date: … \| Duration: …*` under a session heading (core §5.2.1), which had been falling through to prose. Found by the milestone test asserting the composer cannot emit an unrecognised line. Fold attaches the pairs to the session they sit under | Regression tests both ways: metadata parses, ordinary italic prose still lexes as prose | `lonely-v2` |
 | 2026-07-26 | **Phase 3 — state pane.** `state.js`: character sheet folded from `[PC:]` tags (D5), clock/track fill meters, countdown timers, thread states, NPC/location index, and the persistent state header now shared by Log, State and Resolve. Every value links back to the line that set it (§5.7). Editing appends a tag line and never mutates state (§5.1). Thread state changes emit the transition form `[Thread:X\|Open -> Closed]` rather than a restatement, because flags accumulate — restating `Closed` would leave `Open` set too | 98 unit tests, each edit asserted by folding the emitted line back; 36 browser checks including stepping a clock from the State pane and tracing a value into the log | `lonely-v3` |
+| 2026-07-26 | **Phase 4 — resolve pane.** `compare.js` (six comparison shapes: target incl. roll-under, success pools, paired challenge dice, keep high/low, `dF` ladders, degree bands; match detection; a generic d100 oracle ladder labelled a house aid; table lookup) and `resolve.js` (roll entry, oracle, tables). Every number is entered by the player — `src/` still contains no RNG, enforced by test. Engine gained inline table definitions, filtered option sets and multi-line generator axes, so a table defined in a log is immediately usable and the log stays self-contained. **Ledger complete: 58/58** | 129 unit tests; 46 browser checks including entering a roll, an oracle answer and a table lookup through the real UI | `lonely-v4` |
+| 2026-07-26 | Fixed: an omitted numeric field parsed as `0`, so a roll with no target compared against 0 and always succeeded. Root cause: `Number('')` is `0`, and the guard only rejected `NaN`. Empty now reads as "not given" | Regression test per mode; `MODES` all evaluate safely on empty input | `lonely-v4` |
+| 2026-07-26 | Repo prepared for GitHub Pages: `.nojekyll`, and a test asserting every asset reference is relative so the app works from a project subpath | `npm test` | `lonely-v4` |
 | 2026-07-26 | Router now carries an optional line index (`#/log/<id>/<line>`) so a folded value can open the exact line that set it | Browser check: clicking a stat focuses its row in the log | `lonely-v3` |
 | 2026-07-26 | Fixed four parser defects found during the ledger pass: `exits DIR:ID` took its key as `exits S`; space-separated stat keys (`Armor CT30/RT25`) lost their key; `[Inv:Torch\|4]` quantity and `[Inv:Torch-1]` delta landed on different slots; a block opened in a scene header (`S9 *Ambush* [COMBAT]`, combat §1.1) never opened. Root cause in each: a parse rule written for one spec's shape that another spec's shape also matched | Regression test added per fix; full suite green | `lonely-v1` |
 

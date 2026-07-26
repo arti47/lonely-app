@@ -69,3 +69,20 @@ test('§3: every shipped module is in the service-worker app shell', () => {
     .filter((rel) => !sw.includes(rel));
   assert.deepEqual(missing, [], 'add the module to APP_SHELL and bump CACHE_VERSION');
 });
+
+test('the app is servable from a subpath (GitHub Pages project site)', () => {
+  const html = readFileSync(join(root, 'index.html'), 'utf8');
+  const manifest = JSON.parse(readFileSync(join(root, 'manifest.json'), 'utf8'));
+  const sw = readFileSync(join(root, 'service-worker.js'), 'utf8');
+
+  // A root-absolute reference would 404 under https://user.github.io/<repo>/.
+  const absolute = [...html.matchAll(/(?:href|src)="(\/[^/][^"]*)"/g)].map((m) => m[1]);
+  assert.deepEqual(absolute, [], 'index.html must use relative references only');
+
+  assert.ok(!manifest.start_url.startsWith('/'), 'manifest start_url must be relative');
+  assert.ok(!manifest.scope.startsWith('/'), 'manifest scope must be relative');
+
+  const shell = /const APP_SHELL = \[([\s\S]*?)\];/.exec(sw)?.[1] ?? '';
+  const rooted = [...shell.matchAll(/'(\/[^']*)'/g)].map((m) => m[1]);
+  assert.deepEqual(rooted, [], 'every app-shell entry must be relative to the scope');
+});

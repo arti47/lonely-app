@@ -13,7 +13,7 @@ export {
 } from './tags.js';
 export {
   fold, foldWithCheckpoints, createState, snapshot,
-  getElement, elementsOfType, elementKey,
+  getElement, elementsOfType, elementKey, getTable, tablesOf,
 } from './fold.js';
 export { render, renderCanonical, renderForm, truncate } from './render.js';
 export { lint, summarise, SEVERITY } from './lint.js';
