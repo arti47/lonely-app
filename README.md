@@ -83,8 +83,11 @@ undo after. Roll the same shape a few times and the app offers to save it as a
 one-tap quick roll, which you can export as a pack — so a "system" accretes from
 play rather than being configured first. A searchable Notation tab explains every
 construct, and any line that breaks a spec rule is flagged with an explanation —
-never blocked. Remaining: the hardening pass (accessibility, full spec-conformance
-audit). See `CLAUDE.md` §8.
+never blocked.
+
+All eight phases are complete, and the §11 spec-conformance audit has been run —
+four findings, all fixed and closed with regression checks. See `docs/audit.md`
+for what was found and what was verified clean.
 
 ## Licensing
 

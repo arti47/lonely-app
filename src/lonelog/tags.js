@@ -231,10 +231,20 @@ function splitFields(s) {
   return out;
 }
 
+/** Types whose head may carry a bare trailing number: `[Timer:Dawn 3]`. */
+const HEAD_VALUE_TYPES = new Set(['Wealth', 'Timer']);
+/** Types whose head may carry a delta: `[Inv:Torch-1]`, `[Wealth:Gold+15]`. */
+const HEAD_DELTA_TYPES = new Set(['Wealth', 'Inv']);
+
 /**
  * The segment between `Type:` and the first `|` carries the name and, for some
  * types, a value: `[Clock:Ritual 5/12]`, `[Timer:Dawn 3]`, `[Wealth:Gold+15]`,
  * `[F:Skeletonx3]`, `[Inv:Torch-1]`.
+ *
+ * Which readings apply depends on the type. A trailing number is a value for a
+ * timer but part of the name for a combatant, or `[F:Pirate 1]` and
+ * `[F:Pirate 2]` would collapse into one element called `Pirate`
+ * (combat §3.2 splits groups exactly that way).
  */
 function parseHead(tag, head) {
   let s = head.trim();
@@ -264,14 +274,14 @@ function parseHead(tag, head) {
   }
 
   m = RE_NAME_DELTA.exec(s);
-  if (m) {
+  if (m && (!tag.known || HEAD_DELTA_TYPES.has(tag.type))) {
     tag.name = m[1].trim();
     tag.head = { kind: 'delta', sign: m[2], amount: Number(m[3]) };
     return;
   }
 
   m = RE_TRAILING_NUM.exec(s);
-  if (m) {
+  if (m && (!tag.known || HEAD_VALUE_TYPES.has(tag.type))) {
     tag.name = m[1].trim();
     tag.head = { kind: 'value', value: m[2] };
     return;

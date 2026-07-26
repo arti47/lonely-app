@@ -196,3 +196,100 @@ test('ordinary italic prose is not mistaken for session metadata', () => {
   const entries = lex('*The fog rolls in off the harbour*\n');
   assert.equal(entries[0].kind, 'prose');
 });
+
+/* --- §11 audit regressions ------------------------------------------------ */
+
+test('A1 numbered combatants stay separate elements (combat §3.2)', () => {
+  const s = foldText('[F:Pirate 1|Close|wounded]\n[F:Pirate 2|Medium|crossbow]\n');
+  assert.equal(elementsOfType(s, 'F').length, 2, 'splitting a group must not merge it back');
+  assert.ok(getElement(s, 'F', 'Pirate 1').flags.has('wounded'));
+  assert.ok(!getElement(s, 'F', 'Pirate 1').flags.has('crossbow'));
+});
+
+test('A1 a trailing number stays in the name for non-numeric types', () => {
+  for (const [type, name] of [['N', 'Guard 1'], ['L', 'Level 2'], ['F', 'Thug 3'], ['Unit', 'Company 2']]) {
+    const s = foldText(`[${type}:${name}|alert]\n`);
+    assert.ok(getElement(s, type, name), `${type}:${name} lost its number`);
+  }
+});
+
+test('A1 types that do mean a trailing number still read it', () => {
+  assert.equal(getElement(foldText('[Timer:Dawn 3]\n'), 'Timer', 'Dawn').value.value, '3');
+  assert.equal(getElement(foldText('[Wealth:Gold 45]\n'), 'Wealth', 'Gold').value.value, '45');
+  assert.equal(getElement(foldText('[Clock:Ritual 5/12]\n'), 'Clock', 'Ritual').progress.current, 5);
+});
+
+test('A2 a comma-separated room status becomes separate flags (dungeon §1.1)', () => {
+  const room = getElement(foldText('[R:1|cleared, looted]\n'), 'R', '1');
+  assert.ok(room.flags.has('cleared'));
+  assert.ok(room.flags.has('looted'));
+});
+
+test('A2 a room description keeps its commas', () => {
+  const room = getElement(foldText('[R:4|active|storage room, dusty shelves]\n'), 'R', '4');
+  assert.ok(room.flags.has('active'));
+  assert.ok(room.flags.has('storage room, dusty shelves'), 'only the status field splits');
+});
+
+test('A3 a numeric transition on a group is a casualty, not a separate value', () => {
+  const skeleton = getElement(foldText('[F:Skeletonx3|HP 3 each]\n[F:Skeleton 2->1]\n'), 'F', 'Skeleton');
+  assert.equal(skeleton.count.value, 1);
+  assert.equal(skeleton.value, null, 'count and value must not diverge');
+});
+
+test('A3 a non-numeric transition still sets a value', () => {
+  const pc = foldText('[PC:Kael|Supply d8]\n[PC:Kael|Supply d8->d6]\n');
+  assert.equal(getElement(pc, 'PC', 'Kael').fields.get('Supply').value, 'd6');
+});
+
+test('A4 several deltas in one tag apply in order', () => {
+  const s = foldText('[PC:Alex|HP 8]\n[PC:Alex|HP-2|HP+1]\n');
+  assert.equal(getElement(s, 'PC', 'Alex').fields.get('HP').value, '7');
+});
+
+test('A6 an unbalanced closing block does not corrupt the stack', () => {
+  assert.equal(foldText('[/COMBAT]\n').blockStack.length, 0);
+  assert.equal(foldText('[/COMBAT]\n[COMBAT]\n@ Swing\n').blockStack.length, 1);
+});
+
+test('A7 blocks nest and close innermost first', () => {
+  const s = foldText('[BATTLE]\n[COMBAT]\n[/COMBAT]\n[/BATTLE]\n');
+  assert.deepEqual(s.blocks.map((b) => b.name), ['COMBAT', 'BATTLE']);
+  assert.equal(s.blockStack.length, 0);
+});
+
+test('T26 indentation is insignificant', () => {
+  const flat = foldText('[PC:Alex|HP 8]\n@ Move\n');
+  const indented = foldText('    [PC:Alex|HP 8]\n\t@ Move\n');
+  assert.equal(getElement(indented, 'PC', 'Alex').fields.get('HP').value,
+    getElement(flat, 'PC', 'Alex').fields.get('HP').value);
+  assert.equal(lex('    [PC:Alex|HP 8]\n')[0].kind, 'tag');
+  assert.equal(lex('    [PC:Alex|HP 8]\n')[0].indent, 4);
+});
+
+test('T27 every block type is equivalent in analog and digital form', () => {
+  for (const name of ['COMBAT', 'DUNGEON STATUS', 'RESOURCES', 'BATTLE', 'CAMPAIGN']) {
+    const digital = foldText(`[${name}]\n[N:X|here]\n[/${name}]\n`);
+    const analog = foldText(`--- ${name} ---\n[N:X|here]\n--- END ${name} ---\n`);
+    assert.deepEqual(
+      digital.blocks.map((b) => [b.name, b.startLine, b.endLine]),
+      analog.blocks.map((b) => [b.name, b.startLine, b.endLine]),
+      `${name} differs between forms`,
+    );
+    assert.equal(analog.blockStack.length, 0, `${name} analog form left the stack open`);
+  }
+});
+
+test('A9 a reference to something never established asserts nothing', () => {
+  const ghost = getElement(foldText('[#N:Ghost]\n'), 'N', 'Ghost');
+  assert.equal(ghost.flags.size, 0);
+  assert.equal(ghost.fields.size, 0);
+  assert.equal(ghost.refs.length, 1);
+});
+
+test('scene markers reset round and turn scope but not elements', () => {
+  const s = foldText('Rd3\nTn2\n[F:Thug|HP 6]\nS2 *Elsewhere*\n');
+  assert.equal(s.marker.round, null);
+  assert.equal(s.marker.turn, null);
+  assert.ok(getElement(s, 'F', 'Thug'), 'a new scene does not forget the fold');
+});

@@ -19,6 +19,9 @@ const ADDON_BY_BLOCK = new Map([
   ['RESOURCES', 'resources'], ['BATTLE', 'wargaming'], ['CAMPAIGN', 'wargaming'],
 ]);
 
+/** Types whose size is a model count, so a numeric change is a casualty. */
+const COUNTABLE_TYPES = new Set(['F', 'Unit']);
+
 const RE_SESSION = /^(?:={2,}\s*)?Session\s+(\d+)/i;
 const RE_CAMPAIGN = /^={2,}\s*Campaign Log:\s*(.+?)\s*={2,}$/i;
 
@@ -261,7 +264,7 @@ function applyTag(state, tag, line) {
   if (tag.count != null) el.count = { value: tag.count, line };
 
   applyHead(el, tag.head, line);
-  for (const f of tag.fields) applyField(el, f, line);
+  tag.fields.forEach((f, index) => applyField(el, f, line, index));
 }
 
 function applyHead(el, head, line) {
@@ -274,7 +277,13 @@ function applyHead(el, head, line) {
       el.value = { value: head.value, line };
       break;
     case 'transition':
-      el.value = { value: head.to, line };
+      // `[F:Skeleton 2->1]` is the group losing one, not a separate value
+      // (combat §3.2), so keep the count and the value from diverging.
+      if (COUNTABLE_TYPES.has(el.type) && /^\d+$/.test(head.to)) {
+        el.count = { value: Number(head.to), line };
+      } else {
+        el.value = { value: head.to, line };
+      }
       break;
     case 'delta': {
       const base = numeric(el.value?.value) ?? 0;
@@ -285,7 +294,17 @@ function applyHead(el, head, line) {
   }
 }
 
-function applyField(el, f, line) {
+function applyField(el, f, line, index = 0) {
+  // Room status is one field that may list several states — `cleared, looted`
+  // (dungeon §1.1) — so it splits into flags that can be tested individually.
+  if (el.type === 'R' && index === 0 && !f.key && f.op === 'set'
+      && !f.transition && typeof f.value === 'string' && f.value.includes(',')) {
+    for (const part of f.value.split(',').map((s) => s.trim()).filter(Boolean)) {
+      el.flags.set(part, line);
+    }
+    return;
+  }
+
   if (f.op === 'add' && !f.key) { el.flags.set(f.value, line); return; }
   if (f.op === 'remove' && !f.key) { el.flags.delete(f.value); return; }
 

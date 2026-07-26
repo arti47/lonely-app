@@ -10,7 +10,7 @@
  * (D3).
  */
 
-import { el, clear } from './core.js';
+import { el, clear, nextId } from './core.js';
 import { promptModal, showToast, announce } from './ui.js';
 import {
   MODES, ODDS, evaluate, rollLine, resolveOracle, lookup, tableDie,
@@ -453,9 +453,15 @@ function tableRow(table, ctx) {
 
 /* ------------------------------- helpers --------------------------------- */
 
+/**
+ * A labelled control. The label is always associated with its input — an
+ * unassociated `<label>` leaves the field nameless to a screen reader.
+ */
 function field(labelText, control, forId) {
+  const id = forId ?? (control.id || nextId('field'));
+  if (!control.id) control.id = id;
   return el('div', { class: 'field' }, [
-    el('label', { class: 'field-label', for: forId ?? null }, [labelText]),
+    el('label', { class: 'field-label', for: id }, [labelText]),
     control,
   ]);
 }

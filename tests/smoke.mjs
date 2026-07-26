@@ -686,6 +686,79 @@ try {
     .find(b => b.textContent === 'Close')).click()`);
   await s.evaluate('new Promise(r => setTimeout(r, 200))');
 
+  // --- Hardening: accessibility sweep across every screen ---
+  const a11y = await s.evaluate(`(async () => {
+    const routes = [
+      ['campaigns', ''], ['log', '/${created}'], ['state', '/${created}'],
+      ['resolve', '/${created}'], ['reference', ''], ['settings', ''],
+    ];
+    const problems = [];
+    const name = (elm) => (
+      elm.getAttribute('aria-label')
+      || (elm.getAttribute('aria-labelledby') && document.getElementById(elm.getAttribute('aria-labelledby'))?.textContent)
+      || (elm.id && document.querySelector('label[for="' + elm.id + '"]')?.textContent)
+      || elm.closest('label')?.textContent
+      || elm.title
+      || elm.textContent
+    );
+
+    for (const [route, id] of routes) {
+      location.hash = '#/' + route + id;
+      await new Promise(r => setTimeout(r, 260));
+      const screen = document.querySelector('#screen');
+
+      const h1s = screen.querySelectorAll('h1');
+      if (h1s.length !== 1) problems.push(route + ': ' + h1s.length + ' h1');
+
+      for (const control of screen.querySelectorAll('button, a[href], input, select, textarea')) {
+        if (!String(name(control) ?? '').trim()) {
+          problems.push(route + ': unnamed ' + control.tagName.toLowerCase()
+            + ' .' + (control.className || '?'));
+        }
+      }
+
+      const current = document.querySelectorAll('[data-nav][aria-current="page"]');
+      if (current.length !== 1) problems.push(route + ': ' + current.length + ' aria-current');
+    }
+    return problems;
+  })()`);
+  check('every control on every screen has an accessible name', a11y.length === 0,
+    a11y.slice(0, 4).join(' | '));
+
+  const landmarks = await s.evaluate(`(() => ({
+    live: document.querySelectorAll('[aria-live]').length,
+    nav: !!document.querySelector('nav[aria-label]'),
+    skip: !!document.querySelector('.skip-link'),
+    lang: document.documentElement.lang,
+  }))()`);
+  check('the shell provides live regions, a labelled nav, a skip link and a language',
+    landmarks.live >= 2 && landmarks.nav && landmarks.skip && landmarks.lang === 'en',
+    JSON.stringify(landmarks));
+
+  // Modals must trap focus and restore it (CLAUDE.md §2).
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 300)))`);
+  const modalA11y = await s.evaluate(`(async () => {
+    const opener = document.querySelector('#screen .composer-explain .ref-btn');
+    opener.focus();
+    opener.click();
+    await new Promise(r => setTimeout(r, 250));
+    const dialog = document.querySelector('.modal');
+    const inside = dialog.contains(document.activeElement);
+    const labelled = !!dialog.getAttribute('aria-labelledby')
+      && dialog.getAttribute('aria-modal') === 'true'
+      && dialog.getAttribute('role') === 'dialog';
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise(r => setTimeout(r, 250));
+    return {
+      inside, labelled,
+      closed: !document.querySelector('.modal'),
+      restored: document.activeElement === opener,
+    };
+  })()`);
+  check('a modal is labelled, traps focus, closes on Escape and restores focus',
+    modalA11y.inside && modalA11y.labelled && modalA11y.closed && modalA11y.restored,
+    JSON.stringify(modalA11y));
+
   for (const width of [360, 390]) {
     await s.send('Emulation.setDeviceMetricsOverride', { width, height: 780, deviceScaleFactor: 1, mobile: true });
     for (const route of ['campaigns', 'log', 'state', 'resolve', 'reference', 'settings']) {
