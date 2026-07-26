@@ -9,7 +9,7 @@
  * src/ module must be added to APP_SHELL (§3, enforced by tests/invariants).
  */
 
-const CACHE_VERSION = 'lonely-v11';
+const CACHE_VERSION = 'lonely-v12';
 
 const APP_SHELL = [
   './',

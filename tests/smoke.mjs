@@ -239,6 +239,23 @@ try {
   const before = await rowCount();
   check('log renders one row per line', before === 11, `saw ${before}`);
 
+  // The gutter must not repeat the symbol the line already starts with.
+  const rowText = await s.evaluate(`(() => {
+    const row = [...document.querySelectorAll('#screen .log-row')]
+      .find(r => r.dataset.kind === 'action');
+    return {
+      gutter: row.querySelector('.log-num')?.textContent,
+      text: row.querySelector('.log-text').textContent,
+      full: row.textContent,
+    };
+  })()`);
+  check('a line is not prefixed with a duplicate of its own symbol',
+    rowText.text.startsWith('@ ') && !/^@\s*@/.test(rowText.text)
+      && (rowText.full.match(/@/g) || []).length === 1,
+    JSON.stringify(rowText));
+  check('the gutter shows the line number the State pane refers to',
+    /^\d+$/.test(rowText.gutter ?? ''), JSON.stringify(rowText.gutter));
+
   check('composer mounts with every symbol', await s.evaluate('document.querySelectorAll("#screen .sym").length') === 8);
 
   // Type into the composer and commit with Enter, as a player would.

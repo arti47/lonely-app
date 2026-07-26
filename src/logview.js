@@ -10,15 +10,6 @@ import { el, clear } from './core.js';
 import { LINT_REFERENCE } from './reference.js';
 import { modal, confirmModal, promptModal, showToast, referenceButton } from './ui.js';
 
-/** Symbol shown in the gutter for each entry kind. */
-const GLYPH = {
-  action: '@', question: '?', dice: 'd:', resolution: '->', consequence: '=>',
-  tbl: 'tbl:', gen: 'gen:', note: '( )', dialogue: '“”', tag: '[ ]',
-  marker: '§', block: '▭', heading: '#', frontmatter: '---', fence: '```',
-  sessionMeta: '#',
-  narrative: '\\', narrativeOpen: '\\', narrativeClose: '\\', blank: '', prose: '',
-};
-
 /**
  * @param {HTMLElement} host
  * @param {object[]} entries
@@ -54,7 +45,10 @@ export function renderLog(host, entries, ctx) {
       tabindex: '0',
       'aria-label': `Line ${entry.line + 1}, ${entry.kind}`,
     }, [
-      el('span', { class: 'log-glyph', 'aria-hidden': 'true' }, [GLYPH[entry.kind] ?? '']),
+      // The gutter carries the line number, not the symbol: the symbol is
+      // already the first thing on the line, and the State pane refers to
+      // values by line (§5.7).
+      el('span', { class: 'log-num', 'aria-hidden': 'true' }, [String(entry.line + 1)]),
       el('span', { class: 'log-text' }, highlight(entry)),
     ]);
 
