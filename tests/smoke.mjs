@@ -643,6 +643,24 @@ try {
   const allEntries = await s.evaluate('document.querySelectorAll("#screen .ref-list li").length');
   check('the reference lists every entry', allEntries > 20, String(allEntries));
 
+  check('entries start collapsed',
+    await s.evaluate('document.querySelectorAll("#screen .ref-entry[open]").length') === 0);
+
+  await s.evaluate(`document.querySelector('#screen .ref-entry > summary').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 200))');
+  check('clicking an entry expands just that one',
+    await s.evaluate('document.querySelectorAll("#screen .ref-entry[open]").length') === 1);
+
+  await s.evaluate(`document.querySelector('#ref-toggle').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+  const expanded = await s.evaluate('document.querySelectorAll("#screen .ref-entry[open]").length');
+  check('expand all opens every entry', expanded === allEntries, `${expanded}/${allEntries}`);
+
+  await s.evaluate(`document.querySelector('#ref-toggle').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+  check('collapse all closes them again',
+    await s.evaluate('document.querySelectorAll("#screen .ref-entry[open]").length') === 0);
+
   await s.evaluate(`(() => {
     const box = document.querySelector('#ref-search');
     box.value = 'clock';
@@ -652,6 +670,8 @@ try {
   const narrowed = await s.evaluate('document.querySelectorAll("#screen .ref-list li").length');
   check('searching narrows the reference', narrowed > 0 && narrowed < allEntries,
     `${allEntries} -> ${narrowed}`);
+  check('search results open so the answer is visible',
+    await s.evaluate('document.querySelectorAll("#screen .ref-entry[open]").length') === narrowed);
 
   // A composer symbol explains the notation it writes.
   await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 350)))`);

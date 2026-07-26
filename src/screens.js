@@ -359,6 +359,8 @@ export async function referenceScreen(mount) {
   mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, ['Notation'])]));
 
   const results = el('div', {});
+  let expandAll = false;
+
   const box = /** @type {HTMLInputElement} */ (el('input', {
     class: 'input', type: 'search', id: 'ref-search', autocomplete: 'off',
     placeholder: 'Search — clock, damage, inventory, flashback…',
@@ -366,30 +368,47 @@ export async function referenceScreen(mount) {
     oninput: () => draw(box.value),
   }));
 
-  function draw(query) {
+  const toggle = el('button', {
+    class: 'btn btn-small', type: 'button', id: 'ref-toggle',
+    onclick: () => { expandAll = !expandAll; draw(box.value); },
+  }, ['Expand all']);
+
+  function draw(query = '') {
     clear(results);
     const found = search(query);
+    const searching = query.trim() !== '';
+
+    toggle.textContent = expandAll ? 'Collapse all' : 'Expand all';
+    toggle.setAttribute('aria-pressed', expandAll ? 'true' : 'false');
+
     if (!found.length) {
       results.append(el('p', { class: 'empty' }, [`Nothing matches “${query}”.`]));
       return;
     }
+
     for (const [group, entries] of grouped(found)) {
       results.append(el('section', { class: 'group' }, [
         el('h2', {}, [group]),
         el('ul', { class: 'plain-list ref-list' }, entries.map((entry) => el('li', {}, [
-          el('div', { class: 'ref-head' }, [
-            el('span', { class: 'el-name' }, [entry.title]),
-            el('code', { class: 'ref-syntax' }, [entry.syntax]),
+          // A search that already narrowed to a few entries should show them;
+          // browsing the whole list should not be a wall of text.
+          el('details', { class: 'ref-entry', open: expandAll || searching }, [
+            el('summary', { class: 'ref-head' }, [
+              el('span', { class: 'el-name' }, [entry.title]),
+              el('code', { class: 'ref-syntax' }, [entry.syntax]),
+            ]),
+            el('div', { class: 'ref-body' }, [
+              el('p', { class: 'el-detail' }, [entry.summary]),
+              el('pre', { class: 'log-preview' }, [entry.examples.join('\n')]),
+              el('p', { class: 'hint' }, [`Spec: ${entry.spec}`]),
+            ]),
           ]),
-          el('p', { class: 'el-detail' }, [entry.summary]),
-          el('pre', { class: 'log-preview' }, [entry.examples.join('\n')]),
-          el('p', { class: 'hint' }, [`Spec: ${entry.spec}`]),
         ]))),
       ]));
     }
   }
 
-  mount.append(el('div', { class: 'group' }, [box]), results);
+  mount.append(el('div', { class: 'group ref-controls' }, [box, toggle]), results);
   draw('');
 }
 
