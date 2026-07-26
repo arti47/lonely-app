@@ -454,3 +454,22 @@ p { margin: 0 0 12px; }
 
 .table-row { align-items: center; }
 .table-row .die-input { width: 58px; }
+
+/* --- Phase 5: add-on surfaces --- */
+
+.addon-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.addon-head h2 { margin: 0; }
+.addon-sub {
+  font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--ink-soft); margin: var(--gap) 0 4px;
+}
+.addon-tools { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+
+.plain-list li.is-down { opacity: 0.55; }
+.plain-list li.is-down .el-name { text-decoration: line-through; }
+
+.warn-flag {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em;
+  color: var(--warn); border: 1px solid var(--warn);
+  border-radius: 999px; padding: 0 6px; white-space: nowrap;
+}

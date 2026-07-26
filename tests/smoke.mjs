@@ -228,8 +228,8 @@ try {
 
   await s.evaluate(`(location.hash = '#/state/${created}', new Promise(r => setTimeout(r, 250)))`);
   const groups = await s.evaluate('[...document.querySelectorAll("#screen .group h2")].map(h => h.textContent)');
-  check('folded state groups core types under named sections and keeps add-on types visible',
-    ['Character', 'People & places', 'F', 'Inv'].every((t) => groups.includes(t)),
+  check('core types group under named sections and add-on types get their own panel',
+    ['Character', 'People & places', 'Combat', 'Resources'].every((t) => groups.includes(t)),
     `saw ${JSON.stringify(groups)}`);
 
   // --- Phase 2: compose a session through the real UI ---
@@ -433,6 +433,93 @@ try {
   })()`);
   check('a table lookup appends a tbl: line',
     tableAdded === 'tbl: Mood d4=2 -> Melancholic', JSON.stringify(tableAdded));
+
+  // --- Phase 5: add-on panels surface from log content alone ---
+  await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    c.log.push('[R:1|active|entry cave]', '[Unit:Rifles|x12|Morale 8|Fresh]');
+    await store.campaigns.put(c);
+  })()`);
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 200)))`);
+  await s.evaluate(`(location.hash = '#/state/${created}', new Promise(r => setTimeout(r, 350)))`);
+
+  const panels = await s.evaluate('[...document.querySelectorAll("#screen .addon")].map(p => p.dataset.addon)');
+  check('every add-on with tags in the log has surfaced',
+    JSON.stringify(panels) === JSON.stringify(['combat', 'resources', 'dungeon', 'wargaming']),
+    JSON.stringify(panels));
+
+  // Combat: damage a foe from the panel.
+  const linesBeforeAddon = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    return (await store.campaigns.get('${created}')).log.length;
+  })()`);
+
+  await s.evaluate(`(() => {
+    const panel = document.querySelector('#screen .addon[data-addon="combat"]');
+    [...panel.querySelectorAll('.btn-tiny')].find(b => b.textContent === '−1').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+
+  const damaged = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return { n: c.log.length, last: c.log[c.log.length - 1] };
+  })()`);
+  check('a combat control appends a tag line',
+    damaged.n === linesBeforeAddon + 1 && /^\[F:Thug\|HP-1\]$/.test(damaged.last),
+    JSON.stringify(damaged));
+
+  // Wargaming: Tn# must not be moved by the combat panel's Rd#.
+  await s.evaluate(`(() => {
+    const panel = document.querySelector('#screen .addon[data-addon="wargaming"]');
+    [...panel.querySelectorAll('.btn-tiny')].find(b => b.textContent === 'Turn 1').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+  const turned = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return c.log[c.log.length - 1];
+  })()`);
+  check('the battle panel advances Tn# independently of Rd#', turned === 'Tn1', JSON.stringify(turned));
+
+  // Resources: a snapshot block closes itself.
+  await s.evaluate(`(() => {
+    const panel = document.querySelector('#screen .addon[data-addon="resources"]');
+    [...panel.querySelectorAll('.btn-tiny')].find(b => b.textContent === 'Snapshot').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 400))');
+  const snapshot = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const { lex } = await import('${base}/src/lonelog/lexer.js');
+    const { fold } = await import('${base}/src/lonelog/fold.js');
+    const c = await store.campaigns.get('${created}');
+    const st = fold(lex(c.log.join('\\n')));
+    return { open: st.blockStack.length, first: c.log.find(l => l === '[RESOURCES]') };
+  })()`);
+  check('a resource snapshot writes a balanced block',
+    snapshot.open === 0 && snapshot.first === '[RESOURCES]', JSON.stringify(snapshot));
+
+  // Hiding a panel is view state and must not touch the log.
+  const beforeHide = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    return (await store.campaigns.get('${created}')).log.length;
+  })()`);
+  await s.evaluate(`(() => {
+    const panel = document.querySelector('#screen .addon[data-addon="dungeon"]');
+    [...panel.querySelectorAll('.btn-tiny')].find(b => b.textContent === 'Hide').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+  const hidden = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return { n: c.log.length, view: c.view.hiddenPanels };
+  })()`);
+  check('hiding a panel is view state and leaves the log untouched',
+    hidden.n === beforeHide && JSON.stringify(hidden.view) === JSON.stringify(['dungeon']),
+    JSON.stringify(hidden));
+  check('a hidden panel still exists, collapsed',
+    (await s.evaluate(`document.querySelector('#screen .addon[data-addon="dungeon"] .btn-tiny').textContent`)) === 'Show');
 
   for (const width of [360, 390]) {
     await s.send('Emulation.setDeviceMetricsOverride', { width, height: 780, deviceScaleFactor: 1, mobile: true });

@@ -14,7 +14,7 @@ import { go } from './router.js';
 import { parse } from './lonelog/index.js';
 import { renderLog } from './logview.js';
 import { mountComposer } from './composer.js';
-import { renderState, renderStateHeader } from './state.js';
+import { renderState, renderStateHeader, traceButton } from './state.js';
 import { renderResolve } from './resolve.js';
 
 const PHASE_NOTE = 'Not built yet — this pane arrives in a later phase. The notation engine underneath it is complete and tested.';
@@ -215,6 +215,18 @@ export async function stateScreen(mount, params) {
     header.append(renderStateHeader(state, trace));
     renderState(body, state, {
       trace,
+      traceButton: (line) => traceButton(line, { trace }),
+      hidden: new Set(campaign.view?.hiddenPanels ?? []),
+      // Hiding a panel is presentation, stored in `view` — it must never touch
+      // the log (§7).
+      toggleHidden: async (addonId) => {
+        const hiddenPanels = new Set(campaign.view?.hiddenPanels ?? []);
+        if (hiddenPanels.has(addonId)) hiddenPanels.delete(addonId);
+        else hiddenPanels.add(addonId);
+        campaign.view = { ...campaign.view, hiddenPanels: [...hiddenPanels] };
+        campaign = await campaigns.put(campaign);
+        refresh();
+      },
       // Editing state appends a tag line; it never mutates state (§5.1).
       commit: async (lines) => {
         campaign.log.push(...lines);

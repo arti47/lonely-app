@@ -12,6 +12,7 @@ import { el, clear } from './core.js';
 import { modal, promptModal } from './ui.js';
 import { serializeTag } from './lonelog/tags.js';
 import { elementsOfType } from './lonelog/fold.js';
+import { surfaced } from './addons/index.js';
 
 /** Core element types the State pane renders in its own right. */
 export const CORE_TYPES = ['PC', 'N', 'L', 'Thread', 'Clock', 'Track', 'Timer', 'E'];
@@ -30,7 +31,12 @@ const SECTIONS = [
 /* Line builders — pure, exported for tests. Each returns one Lonelog line.    */
 /* -------------------------------------------------------------------------- */
 
-function field(partial) {
+/**
+ * Build one tag field. Exported so add-on surfaces emit tags the same way the
+ * State pane does (CLAUDE.md §9.2 — notation lives in one place).
+ * @param {object} partial
+ */
+export function field(partial) {
   return {
     raw: '', op: 'set', key: null, value: '',
     count: null, delta: null, progress: null, transition: null, list: null,
@@ -38,11 +44,36 @@ function field(partial) {
   };
 }
 
-function tag(element, fields, head = null) {
+/**
+ * Build a tag line for an element.
+ * @param {{type:string,name:string}} element
+ * @param {object[]} fields
+ * @param {object|null} [head]
+ * @param {number|null} [count] head-attached group count, e.g. `[F:Skeletonx2]`
+ */
+export function tag(element, fields, head = null, count = null) {
   return serializeTag({
     ref: false, type: element.type, name: element.name,
-    count: null, head, fields,
+    count, head, fields,
   });
+}
+
+/**
+ * Set a group's size. Combat writes the count onto the name (`[F:Skeletonx2]`,
+ * combat §3.2) while wargaming uses a size field (`[Unit:Rifles|x11]`,
+ * wargaming §2); both are the form each spec's own examples use.
+ * @param {object} element @param {number} n
+ */
+export function countLine(element, n) {
+  const size = Math.max(0, Math.round(n));
+  return element.type === 'Unit'
+    ? tag(element, [field({ count: size })])
+    : tag(element, [], null, size);
+}
+
+/** Replace an element's head value: `[Wealth:Gold 52]`, `[Unit:Atlas|Heat 5]`. */
+export function headValueLine(element, value) {
+  return tag(element, [], { kind: 'value', value: String(value) });
 }
 
 /** Clamp helper so a meter never leaves its own track. */
@@ -151,7 +182,9 @@ export function renderStateHeader(state, onTrace) {
 /**
  * @param {HTMLElement} host
  * @param {object} state
- * @param {{commit:(lines:string[])=>Promise<any>, trace:(line:number)=>any}} ctx
+ * @param {{commit:(lines:string[])=>Promise<any>, trace:(line:number)=>any,
+ *          traceButton?:(line:number)=>Node|null, hidden?:Set<string>,
+ *          toggleHidden?:(addonId:string)=>any}} ctx
  */
 export function renderState(host, state, ctx) {
   clear(host);
@@ -176,7 +209,31 @@ export function renderState(host, state, ctx) {
     ]));
   }
 
-  // Anything an add-on owns, or a homebrew type, still has to be visible.
+  // Add-on panels appear because the log contains their tags, never because a
+  // setting was flipped (D6). Hiding one is view state and never edits the log.
+  for (const addon of surfaced(state)) {
+    any = true;
+    for (const type of addon.types) rendered.add(type);
+    const hidden = ctx.hidden?.has(addon.id);
+
+    const panel = el('section', { class: 'group addon', dataset: { addon: addon.id } }, [
+      el('div', { class: 'addon-head' }, [
+        el('h2', {}, [addon.title]),
+        el('button', {
+          class: 'btn btn-tiny', type: 'button',
+          'aria-expanded': hidden ? 'false' : 'true',
+          onclick: () => ctx.toggleHidden?.(addon.id),
+        }, [hidden ? 'Show' : 'Hide']),
+      ]),
+    ]);
+
+    if (!hidden) addon.render(panel, state, ctx);
+    else panel.append(el('p', { class: 'hint' }, ['Hidden here. Your log still has every line.']));
+
+    host.append(panel);
+  }
+
+  // Anything not owned by a surface — a homebrew type — still has to be visible.
   const rest = [...state.elements.values()].filter((e) => !rendered.has(e.type));
   if (rest.length) {
     any = true;
@@ -189,9 +246,7 @@ export function renderState(host, state, ctx) {
       host.append(el('section', { class: 'group' }, [
         el('h2', {}, [type]),
         el('ul', { class: 'plain-list' }, items.map((item) => castRow(item, ctx))),
-        ADDON_TYPES.includes(type)
-          ? el('p', { class: 'hint' }, ['A dedicated panel for these arrives in Phase 5.'])
-          : null,
+        null,
       ]));
     }
   }
@@ -340,6 +395,11 @@ function traceValue(text, line, ctx) {
     title: `Set on line ${line + 1} — open it in the log`,
     onclick: () => ctx.trace(line),
   }, [String(text)]);
+}
+
+/** Exposed to add-on surfaces so every panel traces back the same way (§5.7). */
+export function traceButton(line, ctx) {
+  return traceLink(line, ctx);
 }
 
 function traceLink(line, ctx) {

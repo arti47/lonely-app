@@ -73,10 +73,12 @@ from on a phone.
 
 ## Status
 
-Phases 0–4 are complete, and the 58-item spec-conformance ledger is fully
-implemented. You can log a session end to end, watch state fold out of it, and
-resolve rolls, oracles and tables. Remaining: add-on surfaces, the lifecycle
-engine, learned roll templates, and the notation reference. See `CLAUDE.md` §8.
+Phases 0–5 are complete, and the 58-item spec-conformance ledger is fully
+implemented. You can log a session end to end, watch state fold out of it,
+resolve rolls, oracles and tables, and get combat, resource, dungeon and
+wargaming panels that appear on their own when your log starts using them.
+Remaining: the lifecycle engine, learned roll templates, and the searchable
+notation reference. See `CLAUDE.md` §8.
 
 ## Licensing
 
