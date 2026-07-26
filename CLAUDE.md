@@ -29,9 +29,18 @@ Planned code layout:
 
 ```
 packages/lonelog/   pure TS notation engine — lexer, tags, fold, render, lint
-packages/systems/   system packs (JSON data) + loader
+packages/systems/   roll comparator + optional saved templates (JSON data)
 apps/pwa/           React UI, Dexie/IndexedDB, service worker
 ```
+
+## System agnosticism
+
+The app must be **fully usable with no system configured**. Lonelog records what
+was rolled and what it meant, never how the rules work; the user rolls physical
+dice, so there is **no RNG in the codebase**. The PC sheet is derived by folding
+`[PC:]` tags, not configured from a schema. System packs are optional
+accelerators (saved roll templates, tables, outcome labels) that accrete from
+repeated `d:` shapes during play — never a prerequisite, never a launch blocker.
 
 ## Core design invariant
 

@@ -42,7 +42,7 @@ packages/lonelog/     pure TS, zero UI deps — the whole notation
   fold.ts             Entry[] -> CampaignState, with per-scene checkpoints
   render.ts           Entry[] -> markdown, digital or analog form
   lint.ts             spec-violation rules (see docs/spec-review.md)
-packages/systems/     system packs (data, not code) + loader/validator
+packages/systems/     roll comparator + optional saved templates/packs (data)
 apps/pwa/             React UI, IndexedDB persistence, service worker
 ```
 
@@ -59,40 +59,55 @@ inconsistencies catalogued in `docs/spec-review.md` without refusing to parse.
 Unrecognised lines are preserved verbatim as `prose` and round-trip untouched.
 The parser must never lose a byte of the user's log.
 
-## System packs
+## System-agnostic by default
 
-"Any solo game" means the system is **data**, not a code branch. A pack is JSON:
+The app requires **no system configuration to be fully usable**. You can open it,
+start a campaign, and log any game without telling it what you're playing.
 
-```jsonc
-{
-  "id": "ironsworn",
-  "name": "Ironsworn",
-  "addons": ["resources"],              // which Lonelog add-ons to surface
-  "pc": { "fields": [                   // drives the character panel + [PC:] tag
-    { "key": "Health", "type": "track", "max": 5 },
-    { "key": "Supply", "type": "track", "max": 5 },
-    { "key": "Momentum", "type": "number", "min": -6, "max": 10 }
-  ]},
-  "rolls": [                            // named roll templates -> d: lines
-    { "id": "action", "label": "Action Roll",
-      "dice": "d6 + {stat} vs d10, d10",
-      "outcomes": [
-        { "when": "both", "label": "Strong Hit" },
-        { "when": "one",  "label": "Weak Hit" },
-        { "when": "none", "label": "Miss" }
-      ]}
-  ],
-  "oracles": [                          // -> ? / d: / tbl: lines
-    { "id": "yesno", "kind": "yesno", "odds": ["Almost Certain","Likely","50/50","Unlikely","Small Chance"] },
-    { "id": "action", "kind": "table", "die": "d100", "entries": ["Scheme","Clash","Weaken", "..."] }
-  ]
-}
-```
+This falls out of two facts. Lonelog is already system-agnostic — it records
+*what you rolled and what it meant*, never *how the rules work*. And since you
+roll physical dice, the app has no need to know a system's dice mechanics in
+order to produce them. What's left for a "system" to do is only labelling and
+convenience.
 
-Ship packs for Ironsworn, Mythic GME, PbtA, FitD, OSR/d20, and a **Generic**
-pack that is nothing but a dice expression box and a yes/no oracle. Users clone
-and edit packs in-app; a pack is exportable as a file, so a homebrew system is
-shareable.
+So the whole thing works from the notation alone:
+
+| Concern | How it works with no system defined |
+| :-- | :-- |
+| Rolls | Type the roll as you'd write it: `Stealth d6=5 vs TN 4`, pick or type the outcome. The lexer parses it; the fold stores it. |
+| Character sheet | **Derived from your `[PC:]` tags.** Write `HP 12/15` once and the State pane grows an HP meter. No schema to configure. |
+| Clocks, tracks, timers, threads | Core notation. Already system-independent. |
+| Inventory, wealth, rooms, units | Add-on notation. Already system-independent. |
+| Oracles | A generic yes/no with an odds column, plus any table you define inline per core §4.3.1–2. |
+
+The character sheet being *folded rather than configured* is the important one:
+it is the same invariant as the rest of the app, applied to the one place most
+tools would have put a settings screen. Your sheet is whatever your log says it
+is.
+
+### Packs are optional accelerators, learned not configured
+
+A system pack is then a pure convenience layer — saved roll templates, saved
+tables, outcome-band labels — and it is **never required**.
+
+Better, it doesn't need authoring up front. The app watches the `d:` lines you
+type, and once it has seen the same shape a few times it offers to save it:
+
+> You've entered `Stealth d6=N vs TN 4` three times. Save as a quick roll?
+
+Accepting captures the shape, its modifiers, and its outcome labels as a template
+you can tap next time. A pack accretes from actual play instead of being
+configured before it. Templates are editable, groupable into a named pack, and
+exportable as a file — so a homebrew system becomes shareable as a by-product of
+having played it.
+
+Pre-made packs for common systems can ship later as seed data. They are a
+convenience on a convenience, not a prerequisite, and nothing blocks on them.
+
+**The trade-off, stated plainly:** with no pack, the app can't auto-label outcome
+bands — it has no way to know that 7–9 means Weak Hit. You pick or type the
+outcome, exactly as you would writing the log by hand. The moment that annoys
+you, save the template from a roll you already made and it stops.
 
 ## The app does not roll
 
@@ -100,7 +115,8 @@ Dice stay on the table. The app's job is **capture and resolution**, not
 generation. There is no RNG anywhere in the codebase, which makes every part of
 it deterministic and testable from fixtures alone.
 
-A roll template therefore describes *what to ask for* and *how to judge it*:
+A saved roll template — when you choose to make one — therefore describes *what
+to ask for* and *how to judge it*:
 
 ```jsonc
 { "id": "action", "label": "Action Roll",
@@ -180,15 +196,19 @@ be fought more than used.
 1. `packages/lonelog` — lexer, tags, fold, render, round-trip tests against every
    example in the five vendored specs. This is the correctness bar: **the spec's
    own examples must round-trip**.
-2. Roll comparator + Generic system pack.
-3. PWA shell: campaign list, log pane, composer, IndexedDB, export/import.
-4. State pane.
-5. Resolve pane: roll entry, oracle lookup, user tables.
+2. PWA shell: campaign list, log pane, symbol-first composer, IndexedDB,
+   markdown export/import. **Usable for real play at this point**, with no
+   system configuration of any kind.
+3. State pane, with the PC sheet derived from `[PC:]` tags.
+4. Free-form roll entry + generic yes/no oracle + user-defined tables.
+5. Roll comparator and saved templates, offered from repeated `d:` shapes.
 6. Add-on UI: combat, then resources, then dungeon, then wargaming.
 7. Lint rules surfaced as gentle inline warnings.
+8. Optional: seed packs for common systems.
+
+Nothing before step 6 requires knowing which game is being played.
 
 ## Open questions
 
 - Whether add-ons are opt-in per campaign or auto-surfaced when their tags first
   appear in the log.
-- Which systems to ship as packs at launch.
