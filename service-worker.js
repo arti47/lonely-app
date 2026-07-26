@@ -9,7 +9,7 @@
  * src/ module must be added to APP_SHELL (§3, enforced by tests/invariants).
  */
 
-const CACHE_VERSION = 'lonely-v8';
+const CACHE_VERSION = 'lonely-v9';
 
 const APP_SHELL = [
   './',
@@ -64,7 +64,10 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   if (request.method !== 'GET') return;
-  if (new URL(request.url).origin !== self.location.origin) return;
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+  // Never serve the worker from its own cache, or a bad version pins itself.
+  if (url.pathname.endsWith('/service-worker.js')) return;
 
   event.respondWith(
     fetch(request)

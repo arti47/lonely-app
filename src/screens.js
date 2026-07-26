@@ -76,18 +76,30 @@ export async function campaignsScreen(mount) {
   })));
 }
 
-async function openCampaign(mount, params) {
+/**
+ * Load the campaign a screen is about, or render a dead end that still says
+ * which screen you are on.
+ * @param {HTMLElement} mount @param {object} params @param {string} title
+ */
+async function openCampaign(mount, params, title) {
   const c = params.id ? await campaigns.get(params.id) : null;
   if (!c) {
-    mount.append(el('p', { class: 'empty' }, ['That campaign no longer exists.']));
-    mount.append(el('button', { class: 'btn', type: 'button', onclick: () => go('campaigns') }, ['Back to campaigns']));
+    mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, [title])]));
+    mount.append(el('p', { class: 'empty' }, [
+      params.id
+        ? 'That campaign no longer exists.'
+        : `Open a campaign and its ${title.toLowerCase()} appears here.`,
+    ]));
+    mount.append(el('button', {
+      class: 'btn btn-primary', type: 'button', onclick: () => go('campaigns'),
+    }, ['Choose a campaign']));
     return null;
   }
   return c;
 }
 
 export async function logScreen(mount, params) {
-  let campaign = await openCampaign(mount, params);
+  let campaign = await openCampaign(mount, params, 'Log');
   if (!campaign) return;
 
   /** Last removal, kept in memory only so it can be restored once (§5.1). */
@@ -233,7 +245,7 @@ export async function logScreen(mount, params) {
 }
 
 export async function stateScreen(mount, params) {
-  let campaign = await openCampaign(mount, params);
+  let campaign = await openCampaign(mount, params, 'State');
   if (!campaign) return;
 
   const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['State'])]);
@@ -280,7 +292,7 @@ export async function stateScreen(mount, params) {
 }
 
 export async function resolveScreen(mount, params) {
-  let campaign = await openCampaign(mount, params);
+  let campaign = await openCampaign(mount, params, 'Resolve');
   if (!campaign) return;
 
   const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['Resolve'])]);

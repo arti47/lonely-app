@@ -5,7 +5,7 @@
  * the screens themselves.
  */
 
-import { $, $$, clear } from './core.js';
+import { $, $$, el, clear } from './core.js';
 import { dismissModal } from './ui.js';
 
 /** @type {Map<string, {title:string, render:(mount:HTMLElement, params:object)=>any, nav?:boolean}>} */
@@ -35,24 +35,64 @@ export function go(name, params = {}) {
 export async function render() {
   dismissModal();
   const { name, params } = parseHash();
-  const route = routes.get(name) ?? routes.get('campaigns');
+  const route = routes.get(name);
   const mount = $('#screen');
-  if (!mount || !route) return;
+  if (!mount) return;
+
+  // Falling back to another screen here would make an unknown route look like a
+  // working one — which is exactly what a stale cached build did after a new tab
+  // was added. Say it plainly instead.
+  if (!route) {
+    current = name;
+    mount.dataset.screen = 'unknown';
+    clear(mount);
+    document.title = 'Not found · Lonely';
+    mount.append(unknownScreen(name));
+    mount.focus({ preventScroll: true });
+    markNav(null);
+    return;
+  }
 
   current = name;
   mount.dataset.screen = name;
   clear(mount);
   document.title = route.title ? `${route.title} · Lonely` : 'Lonely';
 
+  markNav(name);
+
+  await route.render(mount, params);
+  mount.focus({ preventScroll: true });
+}
+
+function markNav(name) {
   for (const link of $$('[data-nav]')) {
     const active = link.dataset.nav === name;
     link.classList.toggle('is-active', active);
     if (active) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }
+}
 
-  await route.render(mount, params);
-  mount.focus({ preventScroll: true });
+/** @param {string} name */
+function unknownScreen(name) {
+  const wrap = el('div', {}, [
+    el('header', { class: 'screen-head' }, [el('h1', {}, ['Screen not found'])]),
+    el('p', { class: 'empty' }, [
+      `This build has no “${name}” screen. If the app was open while it updated, `
+      + 'reloading should fix it.',
+    ]),
+    el('div', { class: 'row' }, [
+      el('button', {
+        class: 'btn btn-primary', type: 'button',
+        onclick: () => location.reload(),
+      }, ['Reload']),
+      el('button', {
+        class: 'btn', type: 'button',
+        onclick: () => go('campaigns'),
+      }, ['Back to campaigns']),
+    ]),
+  ]);
+  return wrap;
 }
 
 /** Show or hide a nav tab (CLAUDE.md §7). */

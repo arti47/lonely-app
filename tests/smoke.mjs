@@ -686,11 +686,33 @@ try {
     .find(b => b.textContent === 'Close')).click()`);
   await s.evaluate('new Promise(r => setTimeout(r, 200))');
 
+  // --- Every nav tab reaches its own screen when clicked ---
+  const tabs = await s.evaluate(`(async () => {
+    const seen = [];
+    for (const tab of ['campaigns', 'log', 'state', 'resolve', 'reference', 'settings']) {
+      document.querySelector('[data-nav="' + tab + '"]').click();
+      await new Promise(r => setTimeout(r, 300));
+      seen.push([tab, location.hash.split('/')[1], document.querySelector('#screen h1')?.textContent]);
+    }
+    return seen;
+  })()`);
+  check('each tab routes to its own screen',
+    tabs.every(([tab, route]) => route === tab)
+      && new Set(tabs.map((x) => x[2])).size === tabs.length,
+    JSON.stringify(tabs));
+
+  // An unknown route must announce itself rather than impersonating a screen.
+  await s.evaluate(`(location.hash = '#/nosuchscreen', new Promise(r => setTimeout(r, 300)))`);
+  check('an unknown route says so instead of falling back',
+    (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Screen not found'
+      && await s.evaluate('document.querySelectorAll("[data-nav][aria-current]").length') === 0);
+
   // --- Hardening: accessibility sweep across every screen ---
   const a11y = await s.evaluate(`(async () => {
     const routes = [
       ['campaigns', ''], ['log', '/${created}'], ['state', '/${created}'],
       ['resolve', '/${created}'], ['reference', ''], ['settings', ''],
+      ['log', ''], ['state', ''], ['resolve', ''],
     ];
     const problems = [];
     const name = (elm) => (

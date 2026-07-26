@@ -5,7 +5,7 @@ closed with a regression check so it cannot return. The **verified clean** list
 at the end records what was checked and found correct, so a future audit does not
 re-litigate it.
 
-Audited: 2026-07-26 · engine at 220 unit tests + 82 browser checks.
+Audited: 2026-07-26 · engine at 220 unit tests + 86 browser checks.
 
 ---
 
@@ -68,6 +68,41 @@ Audited: 2026-07-26 · engine at 220 unit tests + 82 browser checks.
   generating an id when the caller supplies none.
 - **Closed by:** browser check *every control on every screen has an accessible
   name*, which sweeps all six screens.
+
+### A5 — An unknown route silently rendered Campaigns · **fixed**
+
+- **Rule:** `CLAUDE.md` §3.1 — the router owns screen selection and tab gating.
+- **Target:** `src/router.js` · `render`.
+- **Symptom:** `routes.get(name) ?? routes.get('campaigns')` meant any
+  unregistered route rendered the Campaigns screen while the URL and the nav
+  still said otherwise. Reported in the wild as *“why do Campaigns and Notation
+  show the same content?”* — a browser holding a cached build from before the
+  Notation tab existed had no `reference` route, so the new tab fell through to
+  Campaigns and looked like a duplicate.
+- **Fix:** an unknown route renders a named “Screen not found” page with a
+  Reload button, and clears `aria-current` rather than leaving a tab marked
+  active. Two supporting changes: the page now warns when a service worker takes
+  control after load (the running modules are stale at that point), and the
+  worker no longer serves *itself* from cache, so a bad version cannot pin
+  itself.
+- **Why it mattered:** the failure was invisible. A stale cache plus a silent
+  fallback produced two tabs with identical content and no error anywhere.
+- **Closed by:** browser checks *each tab routes to its own screen* — which
+  clicks the tabs rather than setting the hash — and *an unknown route says so
+  instead of falling back*.
+
+### A6 — Screens without a campaign were unnamed dead ends · **fixed**
+
+- **Rule:** `CLAUDE.md` §2 — every screen is navigable and screen-reader usable.
+- **Target:** `src/screens.js` · `openCampaign`.
+- **Symptom:** opening Log, State or Resolve with no campaign selected rendered
+  a message with no `h1` at all, so three different screens were mutually
+  indistinguishable and had no heading to land on. The original accessibility
+  sweep missed it because it only ever visited those routes *with* a campaign.
+- **Fix:** the empty state names its own screen and points at the campaign list.
+  The sweep now visits every screen both with and without a campaign.
+- **Closed by:** the accessibility sweep's extended route list, and *each tab
+  routes to its own screen*.
 
 ---
 

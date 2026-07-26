@@ -38,6 +38,15 @@ async function boot() {
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => {
+    const hadController = !!navigator.serviceWorker.controller;
+
+    // A worker that takes over after the page loaded means the running modules
+    // are the old ones — the page must be reloaded, or a newly added screen
+    // simply will not exist in the code that is running.
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController) showToast('Updated — reload to finish.');
+    });
+
     navigator.serviceWorker.register('service-worker.js').then((reg) => {
       reg.addEventListener('updatefound', () => {
         const sw = reg.installing;
