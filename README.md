@@ -56,6 +56,13 @@ CLAUDE.md       the canonical project spec — read this first
 `src/lonelog/` imports nothing outside itself, so it is reusable as-is by a CLI
 or an editor plugin.
 
+## Learning it
+
+The **Notation** tab opens on a 13-step guide that walks through the app in the
+order you meet it — start a campaign, write a line, watch state appear, roll,
+ask the oracle, end a session. Switch the same tab to **Reference** to look up
+any symbol or tag on its own.
+
 ## Publish it on GitHub Pages
 
 The app is plain static files with no build step, so Pages needs no workflow:

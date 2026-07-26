@@ -640,6 +640,34 @@ try {
   check('reference screen renders',
     (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Notation');
 
+  // The Guide is the default view for a newcomer.
+  check('the guide is shown first and walks through the app',
+    await s.evaluate('document.querySelectorAll("#screen .guide-step").length') >= 10,
+    String(await s.evaluate('document.querySelectorAll("#screen .guide-step").length')));
+
+  const firstStep = await s.evaluate('document.querySelector("#screen .guide-title")?.textContent');
+  check('the guide starts by making a campaign', firstStep === 'Start a campaign', JSON.stringify(firstStep));
+
+  // A step deep-links to the screen it describes.
+  await s.evaluate(`([...document.querySelectorAll('#screen .guide-step .btn')]
+    .find(b => b.textContent === 'Open the Log')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 300))');
+  check('a guide step opens the screen it describes',
+    /^#\/log\//.test(await s.evaluate('location.hash')), await s.evaluate('location.hash'));
+
+  // Switch to the Reference and it is remembered.
+  await s.evaluate(`(location.hash = '#/reference', new Promise(r => setTimeout(r, 300)))`);
+  await s.evaluate(`document.querySelector('[data-view="reference"]').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 300))');
+  check('switching to the reference shows the searchable list',
+    await s.evaluate('!!document.querySelector("#ref-search")'));
+
+  await s.evaluate(`(location.hash = '#/campaigns', new Promise(r => setTimeout(r, 250)))`);
+  await s.evaluate(`(location.hash = '#/reference', new Promise(r => setTimeout(r, 350)))`);
+  check('the chosen view is remembered',
+    await s.evaluate('!!document.querySelector("#ref-search")')
+      && await s.evaluate('document.querySelectorAll("#screen .guide-step").length') === 0);
+
   const allEntries = await s.evaluate('document.querySelectorAll("#screen .ref-list li").length');
   check('the reference lists every entry', allEntries > 20, String(allEntries));
 

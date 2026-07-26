@@ -19,6 +19,7 @@ import { renderResolve } from './resolve.js';
 import { templates as templateStore } from './store.js';
 import { toPack, fromPack } from './templates.js';
 import { search, grouped } from './reference.js';
+import { renderGuide } from './guide.js';
 
 const PHASE_NOTE = 'Not built yet — this pane arrives in a later phase. The notation engine underneath it is complete and tested.';
 
@@ -356,8 +357,45 @@ export async function resolveScreen(mount, params) {
 }
 
 export async function referenceScreen(mount) {
-  mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, ['Notation'])]));
+  const list = await campaigns.all();
+  let view = settings.get('notationView') === 'reference' ? 'reference' : 'guide';
 
+  const panel = el('div', {});
+
+  const tabs = el('div', { class: 'view-switch', role: 'group', 'aria-label': 'Notation view' },
+    [['guide', 'Guide'], ['reference', 'Reference']].map(([id, label]) => el('button', {
+      class: 'btn btn-small', type: 'button', dataset: { view: id },
+      'aria-pressed': view === id ? 'true' : 'false',
+      onclick: async () => {
+        view = id;
+        await settings.set('notationView', id);
+        draw();
+      },
+    }, [label])));
+
+  function draw() {
+    for (const button of tabs.querySelectorAll('[data-view]')) {
+      button.setAttribute('aria-pressed', button.getAttribute('data-view') === view ? 'true' : 'false');
+    }
+    clear(panel);
+    if (view === 'guide') {
+      renderGuide(panel, {
+        hasCampaign: list.length > 0,
+        go: (route) => go(route, route === 'campaigns' || route === 'settings' ? {} : { id: list[0]?.id }),
+      });
+    } else {
+      renderReference(panel);
+    }
+  }
+
+  mount.append(
+    el('header', { class: 'screen-head' }, [el('h1', {}, ['Notation']), tabs]),
+    panel,
+  );
+  draw();
+}
+
+function renderReference(mount) {
   const results = el('div', {});
   let expandAll = false;
 

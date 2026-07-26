@@ -530,3 +530,32 @@ p { margin: 0 0 12px; }
 .ref-controls .input { flex: 1 1 200px; min-width: 0; }
 
 .lint-summary { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+
+/* --- Guide --- */
+
+.view-switch { display: flex; gap: 6px; }
+.view-switch .btn[aria-pressed="true"] {
+  background: var(--accent); border-color: var(--accent);
+  color: var(--accent-ink); font-weight: 600;
+}
+
+.guide-list { list-style: none; margin: 0; padding: 0; counter-reset: guide; }
+.guide-step {
+  background: var(--paper-raised);
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: var(--pad); margin-bottom: var(--gap);
+}
+.guide-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+.guide-num {
+  flex: 0 0 auto;
+  width: 26px; height: 26px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--accent); color: var(--accent-ink);
+  font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.guide-title {
+  margin: 0; font-size: 1rem; text-transform: none; letter-spacing: 0;
+  color: var(--ink); flex: 1 1 auto; min-width: 0;
+}
+.guide-step p { margin: 0 0 8px; }
+.guide-step .log-preview { margin-bottom: 10px; }

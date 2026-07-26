@@ -13,6 +13,7 @@ const DEFAULTS = {
   theme: 'system',
   lintLevel: 'warn',      // 'off' | 'warn' | 'all'
   referenceLinks: true,   // link automated surfaces to the notation reference
+  notationView: 'guide',  // 'guide' | 'reference' — remembered per device
 };
 
 const cache = new Map();
