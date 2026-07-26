@@ -618,6 +618,7 @@ re-litigate them.
   push `main` before the work is done — everything lands on `main`, always.
 - Every change updates this file in the same commit (§9.1) and lands with the
   suite green (§9.4–9.5).
-- The stale `claude/code-review-docs-yg61y7` ref on the remote is identical to
-  `main` and carries no unmerged commits; the git proxy refuses branch
-  deletions, so it has to be removed from the GitHub branches page by hand.
+- Two stale refs on the remote — `claude/code-review-docs-yg61y7` and
+  `claude/code-study-ydoia7` — are fully merged into `main` and carry no
+  unmerged commits. The git proxy answers `git push --delete` with a 403, so
+  both have to be removed from the GitHub branches page by hand.
