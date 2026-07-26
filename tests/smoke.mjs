@@ -343,6 +343,70 @@ try {
   })()`);
   check('undo persists to storage', persisted === 11, `saw ${persisted}`);
 
+  // F5: the strip is one line, and opens to the full chip set.
+  const strip = await s.evaluate(`(() => {
+    const summary = document.querySelector('#screen .state-summary');
+    const r = summary.getBoundingClientRect();
+    return {
+      lines: Math.round(r.height / parseFloat(getComputedStyle(summary).lineHeight || '20')),
+      height: Math.round(r.height),
+      text: summary.querySelector('.state-summary-text')?.textContent,
+      chips: document.querySelectorAll('#screen .state-chips .chip').length,
+      expanded: summary.getAttribute('aria-expanded'),
+      lifecycle: [...document.querySelectorAll('#screen .state-lifecycle .btn')].map(b => b.textContent),
+    };
+  })()`);
+  check('the status strip is one line and starts collapsed',
+    strip.height <= 44 && strip.chips === 0 && strip.expanded === 'false' && !!strip.text.trim(),
+    JSON.stringify(strip));
+  check('scene and session live in the strip, not the composer tools',
+    strip.lifecycle.join(',') === 'Scene,Session…', JSON.stringify(strip.lifecycle));
+
+  await s.evaluate(`(document.querySelector('#screen .state-summary').click(),
+    new Promise(r => setTimeout(r, 200)))`);
+  const expandedStrip = await s.evaluate(`(() => ({
+    chips: document.querySelectorAll('#screen .state-chips .chip').length,
+    traceable: document.querySelectorAll('#screen .state-chips button.chip').length,
+    expanded: document.querySelector('#screen .state-summary').getAttribute('aria-expanded'),
+  }))()`);
+  check('tapping the strip opens the full chip set, still traceable',
+    expandedStrip.chips > 0 && expandedStrip.traceable > 0 && expandedStrip.expanded === 'true',
+    JSON.stringify(expandedStrip));
+  await s.evaluate(`(document.querySelector('#screen .state-summary').click(),
+    new Promise(r => setTimeout(r, 200)))`);
+
+  // F6: rolling happens over the log, not on another screen.
+  const beforeRoll = await rowCount();
+  await s.evaluate(`(document.querySelector('#composer-roll').click(),
+    new Promise(r => setTimeout(r, 400)))`);
+  const drawer = await s.evaluate(`(() => ({
+    open: !!document.querySelector('.modal-sheet'),
+    labelled: !!document.querySelector('.modal-sheet[aria-modal="true"][aria-labelledby]'),
+    hasRollPanel: !!document.querySelector('.modal-sheet #roll-mode'),
+    hash: location.hash,
+  }))()`);
+  check('the roll drawer opens over the log without leaving Play',
+    drawer.open && drawer.labelled && drawer.hasRollPanel && /^#\/log\//.test(drawer.hash),
+    JSON.stringify(drawer));
+
+  await s.evaluate(`(async () => {
+    const die = document.querySelector('.modal-sheet .die-input');
+    die.value = '5';
+    die.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 200));
+    document.querySelector('.modal-sheet #roll-add').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 500))');
+  const afterRoll = await s.evaluate(`(() => ({
+    open: !!document.querySelector('.modal-sheet'),
+    rows: document.querySelectorAll('#screen .log-row').length,
+    hash: location.hash,
+  }))()`);
+  check('committing a roll closes the drawer and lands the line in the log',
+    !afterRoll.open && afterRoll.rows === beforeRoll + 1 && /^#\/log\//.test(afterRoll.hash),
+    JSON.stringify({ beforeRoll, ...afterRoll }));
+
+
   // Export and reimport must fold identically (First Session Logged).
   const identical = await s.evaluate(`(async () => {
     const store = await import('${base}/src/store.js');
@@ -601,7 +665,7 @@ try {
   })()`);
 
   // End session -> confirmation summary -> commit the whole bundle.
-  await s.evaluate(`([...document.querySelectorAll('#screen .composer-tools .btn')]
+  await s.evaluate(`([...document.querySelectorAll('#screen .state-lifecycle .btn')]
     .find(b => b.textContent === 'Session…')).click()`);
   await s.evaluate('new Promise(r => setTimeout(r, 250))');
   await s.evaluate(`([...document.querySelectorAll('.modal-actions .btn')]
@@ -927,6 +991,83 @@ try {
       check(`no horizontal overflow at ${width}px on ${route}`, overflow <= 0, `overflow ${overflow}px`);
     }
   }
+
+  // --- Phase 9 slice 3: what a first launch meets. Runs last: it empties the
+  // campaign store to get the app back to its opening state.
+  await s.send('Emulation.setDeviceMetricsOverride', { width: 360, height: 780, deviceScaleFactor: 1, mobile: true });
+  await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    for (const c of await store.campaigns.all()) await store.campaigns.remove(c.id);
+  })()`);
+
+  await s.evaluate(`(location.hash = '#/reference', new Promise(r => setTimeout(r, 400)))`);
+  // An earlier check left the remembered view on Notation; a real first launch
+  // opens on the Guide, which is this setting's default.
+  await s.evaluate(`(document.querySelector('[data-view="guide"]').click(),
+    new Promise(r => setTimeout(r, 350)))`);
+  check('F9: the guide leads with starting a first campaign',
+    await s.evaluate(`!!document.querySelector('#guide-start')`));
+  await s.evaluate(`(document.querySelector('#guide-start').click(),
+    new Promise(r => setTimeout(r, 350)))`);
+  check('F9: that button opens the campaign list',
+    (await s.evaluate('location.hash')) === '#/campaigns');
+
+  check('F8: the empty campaign list offers an example to look at',
+    await s.evaluate(`!!document.querySelector('#open-sample')`));
+  await s.evaluate(`(document.querySelector('#open-sample').click(),
+    new Promise(r => setTimeout(r, 700)))`);
+  const sample = await s.evaluate(`(() => ({
+    hash: location.hash,
+    rows: document.querySelectorAll('#screen .log-row').length,
+    checklist: !!document.querySelector('#screen .checklist'),
+    flags: document.querySelectorAll('#screen .log-row.has-error').length,
+  }))()`);
+  check('F8: the example opens as a played log with nothing flagged',
+    /^#\/log\//.test(sample.hash) && sample.rows > 25 && sample.flags === 0,
+    JSON.stringify(sample));
+  check('F7: a finished log shows no getting-started checklist',
+    sample.checklist === false, JSON.stringify(sample));
+
+  const sampleId = await s.evaluate(`location.hash.split('/')[2]`);
+  await s.evaluate(`(location.hash = '#/state/${sampleId}', new Promise(r => setTimeout(r, 500)))`);
+  const samplePanels = await s.evaluate(`[...document.querySelectorAll('#screen .addon')].map(a => a.dataset.addon)`);
+  check('F8: the example surfaces its add-on panels on the Sheet',
+    samplePanels.includes('combat') && samplePanels.includes('resources'),
+    JSON.stringify(samplePanels));
+
+  // F7: the checklist appears for a log that has not done everything yet, ticks
+  // itself off from log content, and hides without touching the log.
+  const fresh = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.create('Checklist Campaign');
+    c.log = ['@ Push open the door'];
+    await store.campaigns.put(c);
+    return c.id;
+  })()`);
+  await s.evaluate(`(location.hash = '#/log/${fresh}', new Promise(r => setTimeout(r, 600)))`);
+  const list = await s.evaluate(`(() => ({
+    shown: !!document.querySelector('#screen .checklist'),
+    items: document.querySelectorAll('#screen .checklist-items li').length,
+    done: document.querySelectorAll('#screen .checklist-items li.is-done').length,
+  }))()`);
+  check('F7: the checklist shows, with the written line already ticked',
+    list.shown && list.items === 4 && list.done === 1, JSON.stringify(list));
+
+  await s.evaluate(`([...document.querySelectorAll('#screen .checklist .btn')]
+    .find(b => b.textContent === 'Hide')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 500))');
+  const afterHide = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${fresh}');
+    return {
+      shown: !!document.querySelector('#screen .checklist'),
+      setting: c.view.checklist,
+      log: c.log.join('\\n'),
+    };
+  })()`);
+  check('F7: hiding the checklist is view state and leaves the log untouched',
+    !afterHide.shown && afterHide.setting === 'hidden' && afterHide.log === '@ Push open the door',
+    JSON.stringify(afterHide));
 
   check('zero console errors', consoleErrors.length === 0, consoleErrors.join(' | '));
 } finally {

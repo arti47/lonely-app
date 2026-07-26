@@ -15,6 +15,7 @@ const DEFAULTS = {
   referenceLinks: true,   // link automated surfaces to the notation reference
   notationView: 'guide',  // 'guide' | 'reference' — remembered per device
   lastCampaign: null,     // which campaign the gated tabs point at (D10)
+  seenGuide: false,       // a first-ever launch lands on the guide (D11, F9)
 };
 
 const cache = new Map();

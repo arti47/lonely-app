@@ -138,45 +138,122 @@ export const THREAD_STATES = ['Open', 'Closed', 'Abandoned'];
 /* -------------------------------------------------------------------------- */
 
 /**
- * The persistent state header shown on every in-play screen (CLAUDE.md §1).
+ * Whether the status strip is expanded. View state for the life of the page —
+ * a preference would be a schema field for something the user re-decides every
+ * few seconds (§7 does not apply).
+ */
+let headerExpanded = false;
+
+/**
+ * The persistent status strip shown on every in-play screen (CLAUDE.md §1, D12).
+ *
+ * One line by default: what session and scene you are in, then the values you
+ * are playing against. Tapping it opens the full chip set, where every value
+ * still traces to the line that set it (§5.7). The whole chip set pinned at all
+ * times ate a third of a 360px screen before a word had been written.
+ *
  * @param {object} state
  * @param {(line:number)=>any} [onTrace]
+ * @param {{onScene?:()=>any, onSession?:()=>any}} [lifecycle] shown only where
+ *   there is somewhere to commit to — the Play screen
  */
-export function renderStateHeader(state, onTrace) {
+export function renderStateHeader(state, onTrace, lifecycle = {}) {
   const chips = [];
+  /** Short `key value` pairs for the collapsed line, in the same order. */
+  const summary = [];
 
-  if (state.marker.scene) chips.push(chip('Scene', state.marker.scene.id, state.marker.scene.line));
-  if (state.marker.round) chips.push(chip('Round', state.marker.round.id));
-  if (state.marker.turn) chips.push(chip('Turn', state.marker.turn.id));
+  const session = (state.sessions ?? [])[state.sessions.length - 1];
+  if (session) {
+    chips.push(chip('Session', String(session.number), session.line));
+    summary.push(`Session ${session.number}`);
+  }
+  if (state.marker.scene) {
+    chips.push(chip('Scene', state.marker.scene.id, state.marker.scene.line));
+    summary.push(state.marker.scene.id);
+  }
+  if (state.marker.round) {
+    chips.push(chip('Round', state.marker.round.id));
+    summary.push(state.marker.round.id);
+  }
+  if (state.marker.turn) {
+    chips.push(chip('Turn', state.marker.turn.id));
+    summary.push(state.marker.turn.id);
+  }
 
-  for (const block of state.blockStack) chips.push(chip('In', titleCase(block.name), block.startLine));
+  for (const block of state.blockStack) {
+    chips.push(chip('In', titleCase(block.name), block.startLine));
+    summary.push(titleCase(block.name));
+  }
 
   // The PC's own numeric stats are the thing worth keeping on screen.
   const pc = elementsOfType(state, 'PC')[0];
   if (pc) {
     for (const [key, v] of pc.fields) {
-      if (chips.length > 7) break;
       chips.push(chip(key, v.value, v.line));
+      summary.push(`${key} ${v.value}`);
     }
   }
 
   for (const clock of [...elementsOfType(state, 'Clock'), ...elementsOfType(state, 'E')]) {
     if (!clock.progress) continue;
     chips.push(chip(clock.name, `${clock.progress.current}/${clock.progress.total}`, clock.progress.line));
+    summary.push(`${clock.name} ${clock.progress.current}/${clock.progress.total}`);
   }
 
-  if (!chips.length) chips.push(chip('State', 'nothing tracked yet'));
+  if (!chips.length) {
+    chips.push(chip('State', 'nothing tracked yet'));
+    summary.push('Nothing tracked yet');
+  }
 
   function chip(key, value, line) {
-    const node = el(line != null && onTrace ? 'button' : 'span', {
+    return el(line != null && onTrace ? 'button' : 'span', {
       class: 'chip', type: line != null && onTrace ? 'button' : null,
       title: line != null ? `Set on line ${line + 1}` : null,
       onclick: line != null && onTrace ? () => onTrace(line) : null,
     }, [el('span', { class: 'chip-key' }, [key]), ` ${value}`]);
-    return node;
   }
 
-  return el('div', { class: 'state-header', role: 'status', 'aria-label': 'Campaign state' }, chips);
+  const wrap = el('div', { class: 'state-header', role: 'status', 'aria-label': 'Campaign state' });
+  const expandedHost = el('div', { class: 'state-chips' }, chips);
+
+  const toggle = el('button', {
+    class: 'state-summary', type: 'button',
+    'aria-expanded': headerExpanded ? 'true' : 'false',
+    'aria-label': 'Campaign state — show every value',
+    onclick: () => {
+      headerExpanded = !headerExpanded;
+      draw();
+    },
+  });
+
+  // Scene and session are the spine of a session and belong with the state they
+  // move, not buried in a row of six equal-weight composer tools (D12).
+  const controls = el('div', { class: 'state-lifecycle' }, [
+    lifecycle.onScene ? el('button', {
+      class: 'btn btn-tiny', type: 'button', onclick: () => lifecycle.onScene(),
+    }, ['Scene']) : null,
+    lifecycle.onSession ? el('button', {
+      class: 'btn btn-tiny', type: 'button', onclick: () => lifecycle.onSession(),
+    }, ['Session…']) : null,
+  ].filter(Boolean));
+
+  function draw() {
+    clear(wrap);
+    clear(toggle);
+    toggle.setAttribute('aria-expanded', headerExpanded ? 'true' : 'false');
+    toggle.append(
+      el('span', { class: 'state-summary-text' }, [summary.join(' · ')]),
+      el('span', { class: 'state-summary-caret', 'aria-hidden': 'true' }, [headerExpanded ? '▴' : '▾']),
+    );
+    wrap.append(el('div', { class: 'state-strip' }, [
+      toggle,
+      controls.childElementCount ? controls : null,
+    ]));
+    if (headerExpanded) wrap.append(expandedHost);
+  }
+
+  draw();
+  return wrap;
 }
 
 /**

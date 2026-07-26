@@ -213,6 +213,17 @@ export function renderGuide(host, ctx) {
     + 'each step just points at the screen it describes.',
   ]));
 
+  // A first-ever launch lands here (F9), so the first thing on the page is the
+  // thing that first launch needs.
+  if (!ctx.hasCampaign) {
+    host.append(el('div', { class: 'row' }, [
+      el('button', {
+        class: 'btn btn-primary', type: 'button', id: 'guide-start',
+        onclick: () => ctx.go('campaigns'),
+      }, ['Start my first campaign']),
+    ]));
+  }
+
   host.append(el('ol', { class: 'guide-list' }, STEPS.map((step, index) => {
     const body = [
       el('div', { class: 'guide-head' }, [

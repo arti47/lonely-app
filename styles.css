@@ -191,10 +191,49 @@ p { margin: 0 0 12px; }
 .el-detail { color: var(--ink-soft); font-size: 0.85rem; flex: 1 1 auto; min-width: 0; word-break: break-word; }
 .el-line { color: var(--ink-soft); font-size: 0.75rem; font-variant-numeric: tabular-nums; }
 
-.state-header {
-  display: flex; gap: 6px; flex-wrap: wrap;
-  margin-bottom: var(--gap);
+.state-header { margin-bottom: var(--gap); }
+
+/* One line by default (D12); the chip set opens underneath it on demand. */
+.state-strip { display: flex; gap: 6px; align-items: stretch; }
+.state-summary {
+  flex: 1 1 auto; min-width: 0;
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 10px; min-height: 34px;
+  font: inherit; font-size: 0.85rem;
+  text-align: left;
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--paper-raised); color: var(--ink);
+  cursor: pointer;
 }
+.state-summary-text {
+  flex: 1 1 auto; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.state-summary-caret { flex: 0 0 auto; color: var(--ink-soft); }
+.state-lifecycle { display: flex; gap: 6px; flex: 0 0 auto; }
+.state-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+
+/* Getting-started checklist (F7). */
+.checklist {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 8px 10px; margin-bottom: var(--gap);
+  background: var(--paper-raised);
+}
+.checklist-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.checklist-title { font-size: 0.8rem; color: var(--ink-soft); letter-spacing: 0.02em; }
+.checklist-items { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 3px; }
+.checklist-items li { display: flex; align-items: baseline; gap: 8px; font-size: 0.85rem; }
+.checklist-items li.is-done { color: var(--ink-soft); text-decoration: line-through; }
+.checklist-mark { flex: 0 0 auto; }
+.checklist-label { flex: 0 0 auto; }
+.checklist-hint {
+  flex: 1 1 auto; min-width: 0;
+  font-size: 0.75rem; color: var(--ink-soft);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* The roll drawer is the shared modal presenting as a bottom sheet (F6). */
+.modal-sheet { width: min(560px, 100%); max-height: 88dvh; }
 .chip {
   border: 1px solid var(--line); border-radius: 999px;
   padding: 3px 10px; font-size: 0.78rem;
@@ -253,8 +292,18 @@ p { margin: 0 0 12px; }
 .screen[data-screen="log"] {
   display: flex;
   flex-direction: column;
+  /* Fixed height, not just a floor: the log area absorbs whatever else the
+     screen is carrying — the checklist, a lint note — so the composer stays on
+     screen instead of being pushed below the fold (F7). */
+  height: calc(100dvh - var(--nav-h) - 52px);
   min-height: calc(100dvh - var(--nav-h) - 52px);
 }
+/* The log is the only part that may give. Everything else keeps its full height
+   or a flex item quietly clips itself — which is how the checklist lost its
+   last row. */
+.screen[data-screen="log"] > *,
+.screen[data-screen="log"] > .state-header-slot > * { flex: 0 0 auto; }
+.screen[data-screen="log"] > .log-scroll { flex: 1 1 auto; }
 
 .head-tools { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -262,7 +311,7 @@ p { margin: 0 0 12px; }
 
 .log-scroll {
   flex: 1 1 auto;
-  min-height: 120px;
+  min-height: 80px;
   overflow-y: auto;
   overflow-x: hidden;
   border: 1px solid var(--line);
@@ -326,10 +375,10 @@ p { margin: 0 0 12px; }
 }
 
 .composer {
-  /* Sticky anchors to the viewport, which the body's bottom padding does not
-     move — so bottom:0 parked the tool row underneath the fixed nav. Sit above
-     the nav instead. */
-  position: sticky; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  /* Not sticky. The log screen is a fixed-height column whose log area absorbs
+     the slack, so the composer is always in view on its own — and sticky, being
+     pinned to the viewport rather than to this column, pulled it up out of flow
+     and painted it over the checklist. */
   background: var(--paper);
   border-top: 1px solid var(--line);
   padding-top: 10px;

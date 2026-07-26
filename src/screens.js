@@ -12,12 +12,16 @@
 
 import { $, el, clear, today } from './core.js';
 import { campaigns, toMarkdown, fromMarkdown, exportBackup, importBackup, fileBinding } from './store.js';
-import { modal, confirmModal, promptModal, showToast, announce } from './ui.js';
+import { modal, confirmModal, promptModal, showToast, announce, dismissModal } from './ui.js';
+import { sceneBundle, sessionStartBundle, sessionEndBundle } from './lifecycle.js';
+import {
+  renderChecklist, shouldShowChecklist, createSample, SAMPLE_TITLE,
+} from './onboarding.js';
 import * as settings from './settings.js';
 import { go, rememberCampaign, forgetCampaign } from './router.js';
 import { parse } from './lonelog/index.js';
 import { renderLog } from './logview.js';
-import { mountComposer } from './composer.js';
+import { mountComposer, nextSceneNumber } from './composer.js';
 import { renderState, renderStateHeader, traceButton } from './state.js';
 import { renderResolve } from './resolve.js';
 import { templates as templateStore } from './store.js';
@@ -54,6 +58,18 @@ export async function campaignsScreen(mount) {
       'No campaigns yet. Tap New campaign above — there is nothing to set up, no '
       + 'system to choose and no account. Already have a Lonelog file? Settings '
       + 'imports it.',
+    ]));
+    // Reading a played log is the quickest way to see what this app is for: the
+    // sheet, the clock and the combat panel are already there (F8).
+    mount.append(el('div', { class: 'row' }, [
+      el('button', {
+        class: 'btn', type: 'button', id: 'open-sample',
+        onclick: async () => {
+          const c = await createSample(campaigns);
+          showToast('Opened an example campaign. Delete it whenever you like.');
+          go('log', { id: c.id });
+        },
+      }, ['Look at an example']),
     ]));
     return;
   }
@@ -129,9 +145,10 @@ export async function logScreen(mount, params) {
   const header = el('div', { class: 'state-header-slot' });
   const rows = el('div', { class: 'log-scroll' });
   const lintHost = el('div', {});
+  const checklistHost = el('div', { class: 'checklist-slot' });
   const composerHost = el('div', { class: 'composer' });
 
-  mount.append(head, header, rows, lintHost, composerHost);
+  mount.append(head, header, rows, lintHost, checklistHost, composerHost);
 
   async function persist() {
     campaign = await campaigns.put(campaign);
@@ -139,6 +156,15 @@ export async function logScreen(mount, params) {
       try { await fileBinding.write(campaign); }
       catch { showToast('Could not write to the bound file.', { tone: 'error' }); }
     }
+  }
+
+  /** Append lines the way the composer does, so undo still takes the batch. */
+  async function commitLines(lines) {
+    removed = null;
+    lastBatch = lines.length;
+    campaign.log.push(...lines);
+    await persist();
+    refresh();
   }
 
   function refresh(focusLine = null) {
@@ -186,7 +212,41 @@ export async function logScreen(mount, params) {
     );
 
     clear(header);
-    header.append(renderStateHeader(state, (line) => refresh(line)));
+    header.append(renderStateHeader(state, (line) => refresh(line), {
+      // Scene and session move the state this strip shows, so they live in it
+      // rather than in a row of equal-weight composer tools (D12).
+      onScene: async () => {
+        const context = await promptModal('Scene context (where and when)', {
+          title: `Scene S${nextSceneNumber(state)}`, placeholder: 'Dark alley, midnight',
+        });
+        if (context == null) return;
+        await fire(sceneBundle(state, { context }), 'End scene', commitLines);
+      },
+      onSession: async () => {
+        const choice = await modal({
+          title: 'Session',
+          body: 'Ending a session closes any open block and snapshots the add-ons your log uses.',
+          actions: [
+            { label: 'Cancel', value: null },
+            { label: 'End session', value: 'end' },
+            { label: 'Start session', value: 'start', primary: true },
+          ],
+        });
+        if (choice === 'start') await fire(sessionStartBundle(state), 'Start session', commitLines);
+        if (choice === 'end') await fire(sessionEndBundle(state), 'End session', commitLines);
+      },
+    }));
+
+    clear(checklistHost);
+    if (shouldShowChecklist(state, entries, campaign.view?.checklist)) {
+      renderChecklist(checklistHost, state, entries, {
+        onHide: async () => {
+          campaign.view = { ...campaign.view, checklist: 'hidden' };
+          await persist();
+          refresh();
+        },
+      });
+    }
 
     const level = settings.get('lintLevel');
     const shown = level === 'off' ? []
@@ -227,16 +287,23 @@ export async function logScreen(mount, params) {
       canUndo: campaign.log.length > 0,
       canRestore: !!removed,
       undoLabel: lastBatch > 1 ? `Undo ${lastBatch} lines` : 'Undo',
-      // Slice 2 turns this into a drawer over the log (F6); until then it is the
-      // one way to reach rolling now that Resolve has no tab of its own.
-      onRoll: () => go('resolve', { id: campaign.id }),
-      commit: async (lines) => {
-        removed = null;
-        lastBatch = lines.length;
-        campaign.log.push(...lines);
-        await persist();
-        refresh();
+      // Rolling opens over the log rather than taking you to another screen, so
+      // the line you were writing is still there when the roll lands (F6).
+      onRoll: async () => {
+        const host = el('div', {});
+        await mountResolve(host, {
+          state,
+          entries,
+          commit: async (lines) => { await commitLines(lines); dismissModal(); },
+        });
+        await modal({
+          title: 'Roll',
+          body: host,
+          className: 'modal-sheet',
+          actions: [{ label: 'Done', value: null, primary: true }],
+        });
       },
+      commit: commitLines,
       // Undo takes back the whole of the last commit, so a lifecycle bundle or a
       // multi-line session header comes off in one step rather than a line at a
       // time (§8 Phase 6).
@@ -314,7 +381,7 @@ export async function stateScreen(mount, params) {
 }
 
 export async function resolveScreen(mount, params) {
-  let campaign = await openCampaign(mount, params, 'Resolve');
+  let campaign = await openCampaign(mount, params, 'Roll');
   if (!campaign) return;
 
   const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['Roll'])]);
@@ -322,16 +389,14 @@ export async function resolveScreen(mount, params) {
   const body = el('div', {});
   mount.append(head, header, body);
 
-  let saved = await templateStore.all();
-
   async function refresh() {
     const { state, entries } = parse(campaign.log.join('\n'));
     clear(header);
     header.append(renderStateHeader(state, (line) => go('log', { id: campaign.id, line })));
 
-    renderResolve(body, state, {
+    await mountResolve(body, {
+      state,
       entries,
-      templates: saved,
       commit: async (lines) => {
         campaign.log.push(...lines);
         campaign = await campaigns.put(campaign);
@@ -341,16 +406,37 @@ export async function resolveScreen(mount, params) {
         showToast(`Added ${lines.length} line${lines.length === 1 ? '' : 's'} to the log.`);
         refresh();
       },
+    });
+  }
+
+  await refresh();
+}
+
+/**
+ * Mount the roll pane. Shared by the Roll screen and the drawer over the log
+ * (F6) so both offer the same quick rolls, packs and tables.
+ *
+ * @param {HTMLElement} host
+ * @param {{state:object, entries:object[], commit:(lines:string[])=>Promise<any>}} ctx
+ */
+async function mountResolve(host, ctx) {
+  let saved = await templateStore.all();
+
+  function draw() {
+    renderResolve(host, ctx.state, {
+      entries: ctx.entries,
+      templates: saved,
+      commit: ctx.commit,
       onSaveTemplate: async (template) => {
         await templateStore.put(template);
         saved = await templateStore.all();
         showToast(`Saved “${template.label}” as a quick roll.`);
-        refresh();
+        draw();
       },
       onDeleteTemplate: async (id) => {
         await templateStore.remove(id);
         saved = await templateStore.all();
-        refresh();
+        draw();
       },
       onExportPack: async () => {
         const name = await promptModal('Pack name', {
@@ -366,7 +452,7 @@ export async function resolveScreen(mount, params) {
           for (const template of pack.templates) await templateStore.put(template);
           saved = await templateStore.all();
           showToast(`Imported ${pack.templates.length} roll${pack.templates.length === 1 ? '' : 's'} from “${pack.name}”.`);
-          refresh();
+          draw();
         } catch (err) {
           showToast(err.message, { tone: 'error' });
         }
@@ -374,7 +460,36 @@ export async function resolveScreen(mount, params) {
     });
   }
 
-  await refresh();
+  draw();
+}
+
+/**
+ * Commit a lifecycle bundle, confirming first when it does more than drop a
+ * single marker (CLAUDE.md §8 Phase 6).
+ * @param {import('./lifecycle.js').Bundle} bundle
+ * @param {string} title
+ * @param {(lines:string[])=>Promise<any>} commit
+ */
+async function fire(bundle, title, commit) {
+  if (!bundle.lines.length) {
+    showToast(bundle.summary[0] ?? 'Nothing to do.');
+    return;
+  }
+  if (bundle.heavy) {
+    const ok = await modal({
+      title,
+      body: el('div', {}, [
+        el('ul', { class: 'plain-list' }, bundle.summary.map((line) => el('li', {}, [line]))),
+        el('p', { class: 'hint' }, [
+          `${bundle.lines.length} line${bundle.lines.length === 1 ? '' : 's'} will be appended. `
+          + 'Undo removes the whole bundle.',
+        ]),
+      ]),
+      actions: [{ label: 'Cancel', value: false }, { label: title, value: true, primary: true }],
+    });
+    if (ok !== true) return;
+  }
+  await commit(bundle.lines);
 }
 
 export async function referenceScreen(mount) {

@@ -58,7 +58,9 @@ export function normalizeCampaign(c) {
     },
     log: Array.isArray(c.log) ? c.log : [],
     bindings: { path: null, lastSavedHash: null, handle: null, ...(c.bindings ?? {}) },
-    view: { hiddenPanels: [], composerMode: 'symbols', ...(c.view ?? {}) },
+    // `checklist` is 'auto' until the user hides it; it completes by itself and
+    // is presentation only — it must never reach a fold (D6).
+    view: { hiddenPanels: [], composerMode: 'symbols', checklist: 'auto', ...(c.view ?? {}) },
   };
 }
 

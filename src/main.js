@@ -7,6 +7,13 @@ import {
 import * as settings from './settings.js';
 import { showToast } from './ui.js';
 import { $$ } from './core.js';
+import { campaigns } from './store.js';
+import { landingRoute } from './onboarding.js';
+
+/** Storage may be blocked; a landing decision must not stop the app booting. */
+async function countCampaigns() {
+  try { return (await campaigns.all()).length; } catch { return 0; }
+}
 
 register('campaigns', { title: 'Campaigns', render: campaignsScreen });
 register('log', { title: 'Play', render: logScreen });
@@ -35,7 +42,16 @@ async function boot() {
     showToast('Preferences could not be loaded; using defaults.', { tone: 'error' });
   }
   rememberCampaign(settings.get('lastCampaign'));
-  if (!location.hash) location.hash = '#/campaigns';
+
+  // A first-ever launch opens the guide rather than an empty list (F9). An
+  // explicit hash is a deep link and always wins.
+  const landing = landingRoute({
+    seenGuide: !!settings.get('seenGuide'),
+    campaignCount: await countCampaigns(),
+    hasHash: !!location.hash,
+  });
+  if (landing === 'reference') await settings.set('seenGuide', true);
+  if (landing) location.hash = `#/${landing}`;
   await start();
   document.body.dataset.booted = 'true';
 }

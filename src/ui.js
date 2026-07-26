@@ -9,10 +9,13 @@ import { $, el, clear } from './core.js';
 let openModal = null;
 
 /**
- * @param {{title:string, body:Node|string, actions?:{label:string,value:any,primary?:boolean}[]}} opts
+ * @param {{title:string, body:Node|string, className?:string,
+ *   actions?:{label:string,value:any,primary?:boolean}[]}} opts
+ *   `className` lets the same accessible primitive present as a bottom sheet
+ *   (the roll drawer, §8.2 F6) without a second focus-trap implementation.
  * @returns {Promise<any>} the chosen action's value, or null if dismissed
  */
-export function modal({ title, body, actions = [{ label: 'Close', value: null, primary: true }] }) {
+export function modal({ title, body, actions = [{ label: 'Close', value: null, primary: true }], className = '' }) {
   return new Promise((resolve) => {
     const previous = document.activeElement;
     const titleId = 'modal-title';
@@ -23,7 +26,10 @@ export function modal({ title, body, actions = [{ label: 'Close', value: null, p
       onclick: () => done(a.value),
     }, [a.label]));
 
-    const dialog = el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId }, [
+    const dialog = el('div', {
+      class: `modal${className ? ` ${className}` : ''}`,
+      role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId,
+    }, [
       el('h2', { class: 'modal-title', id: titleId }, [title]),
       el('div', { class: 'modal-body' }, [body]),
       el('div', { class: 'modal-actions' }, buttons),
@@ -53,7 +59,9 @@ export function modal({ title, body, actions = [{ label: 'Close', value: null, p
     document.addEventListener('keydown', onKey, true);
     document.body.append(backdrop);
     openModal = { done };
-    (buttons.find((b) => b.classList.contains('btn-primary')) ?? buttons[0])?.focus();
+    // Focus the action without scrolling to it: a tall dialog — the roll drawer
+    // — would otherwise open scrolled past its own contents to the button.
+    (buttons.find((b) => b.classList.contains('btn-primary')) ?? buttons[0])?.focus({ preventScroll: true });
   });
 }
 

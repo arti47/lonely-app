@@ -124,7 +124,8 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `lifecycle.js` | ✅ Scene/session boundary bundles + one-step undo |
 | `settings.js` | ✅ Preferences, theme, lint level, reference links |
 | `reference.js` | ✅ Searchable notation reference; entry per construct, cited to the spec |
-| `guide.js` | ✅ Step-by-step new-user guide; shares the Notation tab with the reference |
+| `guide.js` | ✅ Step-by-step new-user guide; shares the Help tab with the reference |
+| `onboarding.js` | ✅ Getting-started checklist, sample campaign, first-launch landing (§8.2 F7–F9) |
 | `router.js` | ✅ Bottom-nav routing; tab gating and the remembered campaign (D10) |
 | `screens.js` | ✅ Screen renderers for all six routes (four of them tabs, D10) |
 | `main.js` | ✅ Entry point / boot |
@@ -219,8 +220,9 @@ campaigns/{id}
               fileHandle? }                       // §5.1 core campaign header
   log:      string[]                              // THE artifact — raw lines, ordered
   bindings: { path?, handle?, lastSavedHash? }    // File System Access binding
-  view:     { hiddenPanels[], theme?, composerMode }   // UI state ONLY — never
-                                                       // affects fold output (D6)
+  view:     { hiddenPanels[], theme?, composerMode,     // UI state ONLY — never
+              checklist }                              // affects fold output (D6)
+                                                       // checklist: 'auto'|'hidden'
   checkpoints/{sceneIndex}: { lineIndex, state }  // fold memoisation, derivable,
                                                   // safe to discard and rebuild
 templates/{id}: { id, shape, label, mode, inputs[], modifiers[], target?,
@@ -228,7 +230,8 @@ templates/{id}: { id, shape, label, mode, inputs[], modifiers[], target?,
                                                   // learned from repeated `d:`
                                                   // shapes; tables live in the log
 tables/{id}:    { name, die?, entries[] | options[] }   // core §4.3.1–2
-settings:       { theme, referenceLinks, lintLevel, notationView, lastCampaign }
+settings:       { theme, referenceLinks, lintLevel, notationView, lastCampaign,
+                  seenGuide }
                                                   // lastCampaign: which campaign
                                                   // the gated tabs point at (D10)
 ```
@@ -319,13 +322,13 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
       spec-conformance audit (§11) with every finding closed.
       *Done: 6 findings, all fixed and closed by regression checks; the
       verified-clean list is recorded in `docs/audit.md`.*
-- [ ] **Phase 9 — Onboarding & flow.** The notation is complete and the app is
+- [x] **Phase 9 — Onboarding & flow.** The notation is complete and the app is
       correct; what is missing is a legible path through it. Four tabs, symbols
       that say what they mean, a safe default on every destructive menu, and a
       first run that teaches itself. Full spec in §8.2, built in three slices.
       - [x] Slice 1 — nav, composer labels, safe row default, empty states (F1–F4)
-      - [ ] Slice 2 — status strip, roll drawer (F5–F6)
-      - [ ] Slice 3 — checklist, sample campaign, guide-first landing (F7–F9)
+      - [x] Slice 2 — status strip, roll drawer (F5–F6)
+      - [x] Slice 3 — checklist, sample campaign, guide-first landing (F7–F9)
 
 ### 8.1 Spec Conformance Ledger — mandatory
 
@@ -497,8 +500,9 @@ re-litigate them.
 - **Behavior/UI:** a dismissible checklist above the composer — start a session ·
   write a line · name someone · roll — each item ticking itself off by reading
   the folded state, the whole thing gone once complete or dismissed.
-- **Schema:** `campaigns/{id}.view.checklist` · `'auto'|'hidden'|'done'` ·
-  default `'auto'` · §6. View state: it must never affect a fold (D6).
+- **Schema:** `campaigns/{id}.view.checklist` · `'auto'|'hidden'` · default
+  `'auto'` · §6. A complete list stops showing on its own, so no third value is
+  needed. View state: it must never affect a fold (D6).
 - **Acceptance:** items tick from log content alone; dismissing survives a
   reload and leaves the log byte-identical.
 
@@ -580,6 +584,8 @@ re-litigate them.
 
 | Date | Change | Verification | Cache |
 |---|---|---|---|
+| 2026-07-26 | **Phase 9 slices 2–3 — the flow.** The state header is a one-line strip that expands to the full chip set, and Scene/Session moved into it, which is what makes the session lifecycle visible and gets the composer's tools back to one row. Rolling is a drawer over the log — the shared `modal()` presenting as a sheet, so there is one focus trap, not two — and committing a roll closes it with the line already in the log. New `onboarding.js`: a getting-started checklist that ticks itself off by reading the fold and hides as `view` state, a sample campaign whose short log already surfaces a sheet, a clock and two add-on panels, and the rule that a first-ever launch opens the guide rather than an empty list | 243 unit tests (13 new, covering every checklist tick, the sample's round-trip, lint-cleanliness, surfaced panels and system-agnosticism, and the landing rule); 113 browser checks including the strip collapsing and expanding, the drawer opening over Play and closing on commit, the checklist ticking and hiding without touching the log, and the example opening with its panels | `lonely-v14` |
+| 2026-07-26 | Fixed: the composer was `position: sticky`, which pins to the viewport rather than to the log column — so once the column became fixed-height it pulled the composer up out of flow and painted it over the checklist's last row. The column now sizes the log area to absorb the slack and the composer is static. Root cause: sticky was solving a problem the fixed-height column had already solved, and the two disagreed about where the bottom was. Also: only the log may shrink, or a flex child quietly clips itself; and a tall dialog focused its action button by scrolling past its own contents, so the drawer opened at the bottom | Browser checks: the composer's bottom edge clears the nav, the drawer shows its roll panel on open, 360/390px overflow clean | `lonely-v14` |
 | 2026-07-26 | **Phase 9 slice 1 — the way in.** Nav is four tabs (Campaigns · Play · Sheet · Help); Play and Sheet are gated on a campaign existing, which is what `setNavVisible` was written for and no caller had ever used, and the routes without a tab light the tab that owns them. Composer symbols now carry a word — `@ Did`, `? Asked`, `d: Rolled`, `=> So` — with the other four behind `⋯ More`, because the meanings had been living in `title` attributes that a phone never shows. The row menu's primary action is Close: you open it to read a line far more often than to delete the rest of your log | 230 unit tests; 96 browser checks including the gated tabs before and after a campaign exists, Play carrying the campaign back across a detour, the beginner set expanding and collapsing, and the row menu focusing a safe action | `lonely-v13` |
 | 2026-07-26 | Fixed: the composer is `position: sticky; bottom: 0`, but sticky anchors to the viewport, which the body's bottom padding does not move — so the tool row sat *underneath* the fixed nav. Latent since Phase 2 and only visible once the row wrapped to two lines, which adding the Roll button did. The bar also squeezed its labels to `Rol…` when expanded; it now holds a legible width and scrolls | Browser check: the composer's bottom edge is at or above the nav's top edge; 360/390px overflow checks still clean | `lonely-v13` |
 | 2026-07-26 | Fixed: `npm test` had been reporting a pass with the typecheck skipped, because `tsc` is optional and absent on a fresh clone. Installing it surfaced four real JSDoc errors in the composer's `ctx` type from the slice above. The skip is by design (§2 clone-and-run) but it means the typecheck only runs where someone has installed it | `npm run typecheck` clean with `typescript` installed | `lonely-v13` |
