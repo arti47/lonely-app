@@ -11,7 +11,8 @@
 
 import { el, clear, today } from './core.js';
 import { modal, showToast, announce, referenceButton } from './ui.js';
-import { serializeTag, KNOWN_TAG_TYPES, BLOCK_NAMES } from './lonelog/tags.js';
+import { serializeTag, BLOCK_NAMES } from './lonelog/tags.js';
+import { groupedTagTypes, tagTypeLabel } from './reference.js';
 import { elementsOfType } from './lonelog/fold.js';
 
 /**
@@ -279,12 +280,16 @@ function titleCase(s) {
 
 /** Build a tag through a form rather than by typing brackets. */
 async function tagDialog(state) {
-  const types = [...new Set(KNOWN_TAG_TYPES.values())];
-  let chosenType = 'N';
+  const chosenType = 'N';
 
+  // Full words, grouped by where the type comes from: a list of bare codes is a
+  // quiz. The notation itself is still shown, because it is what gets written.
   const typeSelect = /** @type {HTMLSelectElement} */ (
     el('select', { class: 'input', id: 'tag-type' },
-      types.map((t) => el('option', { value: t, selected: t === chosenType }, [t]))));
+      groupedTagTypes().map(([group, entries]) => el('optgroup', { label: group },
+        entries.map((entry) => el('option', {
+          value: entry.type, selected: entry.type === chosenType,
+        }, [tagTypeLabel(entry)]))))));
 
   const listId = 'tag-name-options';
   const datalist = el('datalist', { id: listId });

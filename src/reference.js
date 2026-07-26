@@ -230,6 +230,54 @@ export const ENTRIES = [
   },
 ];
 
+/**
+ * Tag types in plain words, for anywhere the app has to offer a choice of them.
+ *
+ * The notation is terse on purpose — `[N:]`, `[F:]`, `[R:]` — but a list of
+ * bare codes is a quiz, not a menu. `group` is where the type comes from, so a
+ * chooser can say that too.
+ *
+ * Every entry is asserted against `KNOWN_TAG_TYPES` and against `ENTRIES` by
+ * test, so this cannot drift from the notation or from the reference.
+ */
+export const TAG_TYPES = [
+  { type: 'PC', label: 'Character', group: 'Core', entry: 'tag-pc' },
+  { type: 'N', label: 'NPC', group: 'Core', entry: 'tag-n' },
+  { type: 'L', label: 'Location', group: 'Core', entry: 'tag-l' },
+  { type: 'E', label: 'Event or clock', group: 'Core', entry: 'tag-clock' },
+  { type: 'Thread', label: 'Thread', group: 'Core', entry: 'tag-thread' },
+  { type: 'Clock', label: 'Clock', group: 'Core', entry: 'tag-clock' },
+  { type: 'Track', label: 'Track', group: 'Core', entry: 'tag-clock' },
+  { type: 'Timer', label: 'Timer', group: 'Core', entry: 'tag-clock' },
+  { type: 'F', label: 'Combatant', group: 'Combat', entry: 'addon-combat' },
+  { type: 'R', label: 'Room', group: 'Dungeon', entry: 'addon-dungeon' },
+  { type: 'Inv', label: 'Inventory item', group: 'Resources', entry: 'addon-resources' },
+  { type: 'Wealth', label: 'Wealth', group: 'Resources', entry: 'addon-resources' },
+  { type: 'Unit', label: 'Unit', group: 'Battle', entry: 'addon-wargaming' },
+  { type: 'Force', label: 'Force', group: 'Battle', entry: 'addon-wargaming' },
+  { type: 'Scenario', label: 'Scenario', group: 'Battle', entry: 'addon-wargaming' },
+];
+
+/**
+ * How a tag type reads in a menu: the word first, since that is what the person
+ * is looking for, with the notation after it where the code is not the word
+ * already — `Thread (Thread)` helps nobody.
+ * @param {{type:string, label:string}} entry
+ */
+export function tagTypeLabel({ type, label }) {
+  return label === type ? label : `${label} (${type})`;
+}
+
+/** Tag types grouped in declaration order, for a chooser. */
+export function groupedTagTypes() {
+  const groups = new Map();
+  for (const entry of TAG_TYPES) {
+    if (!groups.has(entry.group)) groups.set(entry.group, []);
+    groups.get(entry.group).push(entry);
+  }
+  return [...groups];
+}
+
 /** Lint rule → the entry that explains the notation it is about. */
 export const LINT_REFERENCE = {
   L1: 'consequence', L2: 'action', L3: 'tag-clock', L4: 'addon-combat',

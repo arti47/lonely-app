@@ -11,8 +11,12 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { ENTRIES, LINT_REFERENCE, entryFor, search, grouped } from '../src/reference.js';
+import {
+  ENTRIES, LINT_REFERENCE, TAG_TYPES, entryFor, search, grouped,
+  tagTypeLabel, groupedTagTypes,
+} from '../src/reference.js';
 import { lex } from '../src/lonelog/lexer.js';
+import { KNOWN_TAG_TYPES } from '../src/lonelog/tags.js';
 import { ADDONS } from '../src/addons/index.js';
 import { SYMBOLS } from '../src/composer.js';
 import { lint } from '../src/lonelog/lint.js';
@@ -128,4 +132,31 @@ test('summaries are written for this app, not copied from the specs', () => {
       );
     }
   }
+});
+
+test('every tag type the notation knows has a plain-English name', () => {
+  const known = [...new Set(KNOWN_TAG_TYPES.values())].sort();
+  const labelled = TAG_TYPES.map((t) => t.type).sort();
+  assert.deepEqual(labelled, known,
+    'a chooser must offer every type the engine parses, and no type it does not');
+
+  for (const entry of TAG_TYPES) {
+    assert.ok(entry.label?.trim(), `${entry.type} has no label`);
+    assert.ok(entry.group?.trim(), `${entry.type} has no group`);
+    assert.ok(entryFor(entry.entry), `${entry.type} cites missing entry ${entry.entry}`);
+  }
+});
+
+test('a type reads as a word, with its notation only where they differ', () => {
+  assert.equal(tagTypeLabel({ type: 'N', label: 'NPC' }), 'NPC (N)');
+  assert.equal(tagTypeLabel({ type: 'PC', label: 'Character' }), 'Character (PC)');
+  // `Thread (Thread)` helps nobody.
+  assert.equal(tagTypeLabel({ type: 'Thread', label: 'Thread' }), 'Thread');
+});
+
+test('tag types group by where they come from, core first', () => {
+  const groups = groupedTagTypes();
+  assert.equal(groups[0][0], 'Core');
+  assert.deepEqual(groups.flatMap(([, entries]) => entries.map((e) => e.type)),
+    TAG_TYPES.map((t) => t.type), 'grouping must not drop or reorder a type');
 });

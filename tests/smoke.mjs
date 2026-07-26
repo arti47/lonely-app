@@ -343,6 +343,41 @@ try {
   })()`);
   check('undo persists to storage', persisted === 11, `saw ${persisted}`);
 
+  // The tag chooser must read as words, not as a quiz of bare codes.
+  await s.evaluate(`([...document.querySelectorAll('#screen .composer-tools .btn')]
+    .find(b => b.textContent === 'Tag…')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 300))');
+  const tagChooser = await s.evaluate(`(() => ({
+    options: [...document.querySelectorAll('#tag-type option')].map(o => o.textContent),
+    groups: [...document.querySelectorAll('#tag-type optgroup')].map(g => g.label),
+    values: [...document.querySelectorAll('#tag-type option')].map(o => o.value),
+  }))()`);
+  check('the tag type chooser spells its types out, grouped by where they come from',
+    tagChooser.options.includes('NPC (N)')
+      && tagChooser.options.includes('Character (PC)')
+      && tagChooser.options.includes('Combatant (F)')
+      && tagChooser.options.includes('Inventory item (Inv)')
+      && tagChooser.options.includes('Thread')
+      && tagChooser.groups.includes('Core') && tagChooser.groups.includes('Combat')
+      && tagChooser.options.length === 15,
+    JSON.stringify(tagChooser.options));
+  check('the chooser still carries the notation as its value',
+    tagChooser.values.includes('N') && tagChooser.values.includes('Inv'),
+    JSON.stringify(tagChooser.values));
+
+  const inserted = await s.evaluate(`(async () => {
+    document.querySelector('#tag-type').value = 'N';
+    document.querySelector('#tag-name').value = 'Jonah';
+    [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Insert').click();
+    await new Promise(r => setTimeout(r, 300));
+    const input = document.querySelector('#composer-input');
+    const value = input.value;
+    input.value = '';
+    return value;
+  })()`);
+  check('choosing a type by its word still writes the notation',
+    inserted === '[N:Jonah]', JSON.stringify(inserted));
+
   // F5: the strip is one line, and opens to the full chip set.
   const strip = await s.evaluate(`(() => {
     const summary = document.querySelector('#screen .state-summary');
