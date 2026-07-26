@@ -94,10 +94,49 @@ pack that is nothing but a dice expression box and a yes/no oracle. Users clone
 and edit packs in-app; a pack is exportable as a file, so a homebrew system is
 shareable.
 
-Dice expressions get a small evaluator: `NdM`, `+`/`-`, `kh`/`kl`, `dF`,
-`vs TN`, `vs AC`, exploding, and paired-challenge-die comparison. Anything the
-evaluator can't express, the user types the `d:` line by hand — the log accepts
-it either way.
+## The app does not roll
+
+Dice stay on the table. The app's job is **capture and resolution**, not
+generation. There is no RNG anywhere in the codebase, which makes every part of
+it deterministic and testable from fixtures alone.
+
+A roll template therefore describes *what to ask for* and *how to judge it*:
+
+```jsonc
+{ "id": "action", "label": "Action Roll",
+  "inputs": [                              // what the user types after rolling
+    { "key": "action", "label": "d6",  "die": 6 },
+    { "key": "c1",     "label": "Ch1", "die": 10 },
+    { "key": "c2",     "label": "Ch2", "die": 10 }
+  ],
+  "modifiers": ["{stat}", "{momentum?}"],  // pulled from CampaignState, editable
+  "compare": "action + mods vs c1, c2",
+  "outcomes": [
+    { "when": "beats both", "label": "Strong Hit" },
+    { "when": "beats one",  "label": "Weak Hit" },
+    { "when": "beats none", "label": "Miss" },
+    { "when": "c1 == c2",   "label": "+ Match", "append": true }
+  ]}
+```
+
+The comparator supports what real systems need: sum vs TN/DC/AC, `≥`/`≤`, paired
+challenge dice, count-successes pools, keep-highest/lowest from typed dice, `dF`
+ladders, degree bands (crit/strong/weak/miss), and doubles/match detection. It
+evaluates entered numbers — it never produces them.
+
+Entry UX is the thing that has to be fast, because it happens dozens of times a
+session: a numeric pad sized for a thumb, one field per die, auto-advance on
+entry, modifiers pre-filled from the PC's current state and editable inline.
+Committing writes the full `d:` line with roll detail, modifiers, comparison and
+labelled outcome, so the log stays reproducible by a reader.
+
+Anything the comparator can't express, the user types the `d:` line by hand — the
+log accepts it either way, and hand-typed lines fold identically.
+
+Oracles work the same way: the app shows the table and the odds column, the user
+rolls and enters the number, the app resolves the lookup and writes the `tbl:` /
+`gen:` / `d:` line. Multi-axis generators prompt for one number per axis and emit
+the indented multi-line `gen:` block from core §4.3.3.
 
 ## Play surface
 
@@ -110,9 +149,10 @@ Three panes, collapsing to tabs on phone:
    clocks with fill bars, inventory, and whatever add-on blocks are active.
    Editing a value here appends the corresponding tag line to the log rather than
    mutating state directly.
-3. **Tools** — the system pack's rolls and oracles, plus user tables. Every roll
-   emits its `d:` / `tbl:` / `gen:` line with full detail, so the log stays
-   reproducible.
+3. **Resolve** — the system pack's roll templates and oracle tables. You roll
+   physical dice, enter the numbers, the app compares and labels, then writes the
+   `d:` / `tbl:` / `gen:` line. Also holds user-defined tables (core §4.3.1–2),
+   including filtered option sets.
 
 Add-on UI is conditional on the pack's `addons` list — a Mythic investigation
 never shows a battle tracker.
@@ -140,16 +180,15 @@ be fought more than used.
 1. `packages/lonelog` — lexer, tags, fold, render, round-trip tests against every
    example in the five vendored specs. This is the correctness bar: **the spec's
    own examples must round-trip**.
-2. Generic system pack + dice evaluator.
+2. Roll comparator + Generic system pack.
 3. PWA shell: campaign list, log pane, composer, IndexedDB, export/import.
 4. State pane.
-5. Tools pane, oracles, user tables.
+5. Resolve pane: roll entry, oracle lookup, user tables.
 6. Add-on UI: combat, then resources, then dungeon, then wargaming.
 7. Lint rules surfaced as gentle inline warnings.
 
 ## Open questions
 
-- Whether the app rolls dice or records physical rolls (drives how central the
-  Tools pane is).
 - Whether add-ons are opt-in per campaign or auto-surfaced when their tags first
   appear in the log.
+- Which systems to ship as packs at launch.
