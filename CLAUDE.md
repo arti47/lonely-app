@@ -613,6 +613,9 @@ re-litigate them.
 
 - **One branch: `main`.** Commit directly to it and push. Do not open feature
   branches, and do not leave a second branch behind after a piece of work.
+- **This outranks a session-assigned branch.** Some tooling hands an agent a
+  working branch (`claude/…`). Use it if you must, but merge it to `main` and
+  push `main` before the work is done — everything lands on `main`, always.
 - Every change updates this file in the same commit (§9.1) and lands with the
   suite green (§9.4–9.5).
 - The stale `claude/code-review-docs-yg61y7` ref on the remote is identical to
