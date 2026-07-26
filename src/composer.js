@@ -15,17 +15,45 @@ import { serializeTag, KNOWN_TAG_TYPES, BLOCK_NAMES } from './lonelog/tags.js';
 import { elementsOfType } from './lonelog/fold.js';
 import { sceneBundle, sessionStartBundle, sessionEndBundle } from './lifecycle.js';
 
-/** Line kinds the composer can emit, in bar order. */
+/**
+ * Line kinds the composer can emit, in bar order.
+ *
+ * `word` is what the button says under its glyph (D9). The glyph alone put the
+ * meaning in a `title` attribute, which a phone never shows — and `->` versus
+ * `=>` is exactly the distinction a new user cannot guess. `basic` marks the
+ * four that carry a whole session on their own; the rest are one tap away.
+ */
 export const SYMBOLS = [
-  { kind: 'action', glyph: '@', label: 'Action', prefix: '@ ', ref: 'action' },
-  { kind: 'question', glyph: '?', label: 'Oracle question', prefix: '? ', ref: 'question' },
-  { kind: 'dice', glyph: 'd:', label: 'Dice or oracle roll', prefix: 'd: ', ref: 'dice' },
-  { kind: 'resolution', glyph: '->', label: 'Resolution', prefix: '-> ', ref: 'resolution' },
-  { kind: 'consequence', glyph: '=>', label: 'Consequence', prefix: '=> ', ref: 'consequence' },
-  { kind: 'tbl', glyph: 'tbl:', label: 'Table lookup', prefix: 'tbl: ', ref: 'tbl' },
-  { kind: 'gen', glyph: 'gen:', label: 'Generator', prefix: 'gen: ', ref: 'gen' },
-  { kind: 'note', glyph: '( )', label: 'Meta note', prefix: '(note: ', suffix: ')', ref: 'note' },
+  { kind: 'action', glyph: '@', word: 'Did', label: 'Action', prompt: 'What did you do?', prefix: '@ ', ref: 'action', basic: true },
+  { kind: 'question', glyph: '?', word: 'Asked', label: 'Oracle question', prompt: 'What are you asking the world?', prefix: '? ', ref: 'question', basic: true },
+  { kind: 'dice', glyph: 'd:', word: 'Rolled', label: 'Dice or oracle roll', prompt: 'What did you roll?', prefix: 'd: ', ref: 'dice', basic: true },
+  { kind: 'consequence', glyph: '=>', word: 'So', label: 'Consequence', prompt: 'What changed because of it?', prefix: '=> ', ref: 'consequence', basic: true },
+  { kind: 'resolution', glyph: '->', word: 'Result', label: 'Resolution', prompt: 'How did it turn out?', prefix: '-> ', ref: 'resolution' },
+  { kind: 'tbl', glyph: 'tbl:', word: 'Table', label: 'Table lookup', prompt: 'Which table, and what came up?', prefix: 'tbl: ', ref: 'tbl' },
+  { kind: 'gen', glyph: 'gen:', word: 'Generate', label: 'Generator', prompt: 'What did the generator give you?', prefix: 'gen: ', ref: 'gen' },
+  { kind: 'note', glyph: '( )', word: 'Note', label: 'Meta note', prompt: 'A note to yourself', prefix: '(note: ', suffix: ')', ref: 'note' },
 ];
+
+/** The four shown before the bar is expanded (D9). */
+export const BASIC_SYMBOLS = SYMBOLS.filter((s) => s.basic);
+
+/**
+ * Whether this log already uses a symbol outside the beginner four. If it does,
+ * the bar opens expanded — hiding symbols the user has plainly already met would
+ * be teaching them nothing and losing them a control.
+ * @param {object[]} entries lexed log entries
+ */
+export function usesAdvancedSymbols(entries = []) {
+  const advanced = new Set(SYMBOLS.filter((s) => !s.basic).map((s) => s.kind));
+  return entries.some((e) => advanced.has(e.kind));
+}
+
+/**
+ * Whether the symbol bar is expanded. View state for the life of the page, not
+ * a preference — the composer is re-mounted on every commit, so it cannot live
+ * in the closure, and it is not worth a schema field (§7 does not apply).
+ */
+let expanded = false;
 
 /**
  * Compose one log line.
@@ -98,7 +126,7 @@ export function blockOptions(state) {
  * @param {HTMLElement} host
  * @param {{state:object, commit:(lines:string[])=>Promise<any>, undo:()=>Promise<any>,
  *          canUndo:boolean, canRestore?:boolean, undoLabel?:string,
- *          restore?:()=>Promise<any>}} ctx
+ *          restore?:()=>Promise<any>, entries?:object[], onRoll?:()=>any}} ctx
  */
 export function mountComposer(host, ctx) {
   clear(host);
@@ -116,21 +144,54 @@ export function mountComposer(host, ctx) {
     'aria-label': 'Line text',
   }));
 
-  const bar = el('div', { class: 'symbol-bar', role: 'group', 'aria-label': 'Line type' },
-    SYMBOLS.map((s) => el('button', {
-      class: 'sym', type: 'button', title: s.label, 'aria-label': s.label,
-      'aria-pressed': s.kind === kind ? 'true' : 'false',
-      dataset: { kind: s.kind },
-      onclick: () => setKind(s.kind),
-    }, [s.glyph])));
+  // A log that already uses the advanced symbols opens expanded (D9).
+  if (usesAdvancedSymbols(ctx.entries ?? [])) expanded = true;
+
+  const bar = el('div', { class: 'symbol-bar', role: 'group', 'aria-label': 'Line type' });
+
+  const moreButton = el('button', {
+    class: 'sym sym-more', type: 'button',
+    onclick: () => {
+      expanded = !expanded;
+      // Collapsing while an advanced kind is selected would leave the bar with
+      // nothing pressed and the input still expecting that kind.
+      if (!expanded && !SYMBOLS.find((s) => s.kind === kind)?.basic) kind = 'action';
+      drawBar();
+      setKind(kind);
+    },
+  });
+
+  function drawBar() {
+    clear(bar);
+    const shown = expanded ? SYMBOLS : BASIC_SYMBOLS;
+    for (const s of shown) {
+      bar.append(el('button', {
+        class: 'sym', type: 'button', title: s.label, 'aria-label': s.label,
+        'aria-pressed': s.kind === kind ? 'true' : 'false',
+        dataset: { kind: s.kind },
+        onclick: () => setKind(s.kind),
+      }, [
+        el('span', { class: 'sym-glyph', 'aria-hidden': 'true' }, [s.glyph]),
+        el('span', { class: 'sym-word', 'aria-hidden': 'true' }, [s.word]),
+      ]));
+    }
+    clear(moreButton);
+    moreButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    moreButton.setAttribute('aria-label', expanded ? 'Show fewer line types' : 'Show more line types');
+    moreButton.append(
+      el('span', { class: 'sym-glyph', 'aria-hidden': 'true' }, [expanded ? '−' : '⋯']),
+      el('span', { class: 'sym-word', 'aria-hidden': 'true' }, [expanded ? 'Fewer' : 'More']),
+    );
+    bar.append(moreButton);
+  }
 
   function setKind(next) {
     kind = next;
-    for (const b of bar.querySelectorAll('.sym')) {
+    for (const b of bar.querySelectorAll('.sym[data-kind]')) {
       b.setAttribute('aria-pressed', b.getAttribute('data-kind') === kind ? 'true' : 'false');
     }
     const symbol = SYMBOLS.find((s) => s.kind === kind);
-    input.placeholder = symbol?.label ?? 'Line';
+    input.placeholder = symbol?.prompt ?? symbol?.label ?? 'Line';
     clear(explain);
     if (symbol?.ref) explain.append(referenceButton(symbol.ref, { label: symbol.label }));
     input.focus();
@@ -150,6 +211,10 @@ export function mountComposer(host, ctx) {
   });
 
   const tools = el('div', { class: 'composer-tools' }, [
+    ctx.onRoll ? el('button', {
+      class: 'btn btn-small', type: 'button', id: 'composer-roll',
+      onclick: () => ctx.onRoll(),
+    }, ['🎲 Roll']) : null,
     el('button', {
       class: 'btn btn-small', type: 'button',
       onclick: async () => {
@@ -207,6 +272,7 @@ export function mountComposer(host, ctx) {
     tools,
   );
 
+  drawBar();
   setKind(kind);
 }
 

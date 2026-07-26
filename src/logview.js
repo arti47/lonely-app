@@ -21,7 +21,10 @@ export function renderLog(host, entries, ctx) {
 
   if (!entries.length) {
     host.append(el('p', { class: 'empty' }, [
-      'Nothing logged yet. Use the composer below — tap a symbol, type, and press Enter.',
+      'Nothing logged yet. Tap ',
+      el('strong', {}, ['@ Did']),
+      ' below, type what your character just did, and press Enter. '
+      + 'That is the whole of it — everything else grows from lines like that one.',
     ]));
     return;
   }
@@ -107,13 +110,16 @@ async function openRowMenu(entry, ctx, findings = []) {
     ]));
   }
 
+  // Close is primary, and so is what focus lands on. You open this menu to read
+  // a line far more often than to delete the rest of your log; the highlighted
+  // action must not be the one that cannot be taken back by accident.
   const choice = await modal({
     title: `Line ${entry.line + 1}`,
     body,
     actions: [
-      { label: 'Close', value: null },
+      { label: 'Close', value: null, primary: true },
       { label: 'Edit', value: 'edit' },
-      { label: 'Truncate from here', value: 'truncate', primary: true },
+      { label: 'Delete from here…', value: 'truncate' },
     ],
   });
 
@@ -125,8 +131,8 @@ async function openRowMenu(entry, ctx, findings = []) {
 
   if (choice === 'truncate') {
     const ok = await confirmModal(
-      `Delete line ${entry.line + 1} and everything after it? Undo is available immediately afterwards.`,
-      { title: 'Truncate log', confirmLabel: 'Truncate' },
+      `Delete line ${entry.line + 1} and everything after it? Restore puts them back.`,
+      { title: 'Delete from here', confirmLabel: 'Delete' },
     );
     if (ok) await ctx.onTruncate(entry.line);
     else showToast('Left unchanged.');

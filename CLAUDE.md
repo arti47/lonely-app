@@ -125,8 +125,8 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `settings.js` | ✅ Preferences, theme, lint level, reference links |
 | `reference.js` | ✅ Searchable notation reference; entry per construct, cited to the spec |
 | `guide.js` | ✅ Step-by-step new-user guide; shares the Notation tab with the reference |
-| `router.js` | ✅ Bottom-nav routing + conditional tab gating |
-| `screens.js` | ✅ Screen renderers for all five screens |
+| `router.js` | ✅ Bottom-nav routing; tab gating and the remembered campaign (D10) |
+| `screens.js` | ✅ Screen renderers for all six routes (four of them tabs, D10) |
 | `main.js` | ✅ Entry point / boot |
 
 `src/lonelog/` imports nothing outside itself — it is the reusable engine and
@@ -323,7 +323,7 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
       correct; what is missing is a legible path through it. Four tabs, symbols
       that say what they mean, a safe default on every destructive menu, and a
       first run that teaches itself. Full spec in §8.2, built in three slices.
-      - [ ] Slice 1 — nav, composer labels, safe row default, empty states (F1–F4)
+      - [x] Slice 1 — nav, composer labels, safe row default, empty states (F1–F4)
       - [ ] Slice 2 — status strip, roll drawer (F5–F6)
       - [ ] Slice 3 — checklist, sample campaign, guide-first landing (F7–F9)
 
@@ -580,6 +580,8 @@ re-litigate them.
 
 | Date | Change | Verification | Cache |
 |---|---|---|---|
+| 2026-07-26 | **Phase 9 slice 1 — the way in.** Nav is four tabs (Campaigns · Play · Sheet · Help); Play and Sheet are gated on a campaign existing, which is what `setNavVisible` was written for and no caller had ever used, and the routes without a tab light the tab that owns them. Composer symbols now carry a word — `@ Did`, `? Asked`, `d: Rolled`, `=> So` — with the other four behind `⋯ More`, because the meanings had been living in `title` attributes that a phone never shows. The row menu's primary action is Close: you open it to read a line far more often than to delete the rest of your log | 230 unit tests; 96 browser checks including the gated tabs before and after a campaign exists, Play carrying the campaign back across a detour, the beginner set expanding and collapsing, and the row menu focusing a safe action | `lonely-v13` |
+| 2026-07-26 | Fixed: `npm test` had been reporting a pass with the typecheck skipped, because `tsc` is optional and absent on a fresh clone. Installing it surfaced four real JSDoc errors in the composer's `ctx` type from the slice above. The skip is by design (§2 clone-and-run) but it means the typecheck only runs where someone has installed it | `npm run typecheck` clean with `typescript` installed | `lonely-v13` |
 | 2026-07-26 | Vendored five Lonelog specs; catalogued 10 spec defects | Read-through of all five specs | — |
 | 2026-07-26 | Design settled: local-first PWA, log-as-source-of-truth, no RNG, system-agnostic, add-ons self-surfacing | Design review with user (D1–D8) | — |
 | 2026-07-26 | Instantiated canonical spec: architecture LOCKED to no-build ES modules, file/module tables, data model, 9-phase roadmap, 58-item conformance ledger, process rules | Template §5–§12 adapted; no code yet | — |

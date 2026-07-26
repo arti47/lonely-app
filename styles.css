@@ -335,16 +335,25 @@ p { margin: 0 0 12px; }
 
 .symbol-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .sym {
-  flex: 0 0 auto;
-  font-family: var(--mono); font-size: 0.9rem;
-  min-width: 46px; min-height: 40px;
+  flex: 1 1 0; min-width: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
+  padding: 4px 2px;
+  min-height: 46px;
   border: 1px solid var(--line); border-radius: var(--radius);
   background: var(--paper-raised); color: var(--ink);
   cursor: pointer;
 }
+/* Glyph over word (D9): the symbol stays the control, but the button says what
+   it means — a phone never shows a title attribute. */
+.sym-glyph { font-family: var(--mono); font-size: 0.9rem; line-height: 1.1; }
+.sym-word {
+  font-size: 0.62rem; line-height: 1.1; letter-spacing: 0.01em;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .sym[aria-pressed="true"] {
   background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 700;
 }
+.sym-more { color: var(--ink-soft); }
 
 .composer-row { display: flex; gap: 8px; }
 .composer-input { flex: 1 1 auto; min-width: 0; }

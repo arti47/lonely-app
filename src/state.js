@@ -254,8 +254,10 @@ export function renderState(host, state, ctx) {
 
   if (!any) {
     host.append(el('p', { class: 'empty' }, [
-      'Nothing tracked yet. State appears here as tags appear in your log — write '
-      + '[PC:Name|HP 10] and a character sheet grows itself.',
+      'Nothing tracked yet. This sheet is your log read back to you, so it fills '
+      + 'itself in as you play. On Play, tap Tag… and name a character — '
+      + '[PC:Alex|HP 10] — and a character sheet grows itself. There is nothing '
+      + 'to set up here.',
     ]));
   }
 }

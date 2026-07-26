@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {
   buildLine, buildTag, nextSceneNumber, nextSessionNumber,
   sceneLine, sessionLines, suggestNames, blockOptions, SYMBOLS,
+  BASIC_SYMBOLS, usesAdvancedSymbols,
 } from '../src/composer.js';
 import { lex } from '../src/lonelog/lexer.js';
 import { fold } from '../src/lonelog/fold.js';
@@ -17,6 +18,30 @@ test('every symbol produces a line its own lexer recognises', () => {
     const line = buildLine(s.kind, 'something happens');
     const [entry] = lex(line + '\n');
     assert.equal(entry.kind, s.kind, `${s.glyph} produced ${entry.kind}`);
+  }
+});
+
+test('D9: every symbol says what it means, in a word', () => {
+  for (const s of SYMBOLS) {
+    assert.ok(s.word?.trim(), `${s.glyph} has no word`);
+    assert.ok(s.prompt?.trim(), `${s.glyph} has no prompt`);
+    assert.ok(s.word.length <= 9, `${s.glyph}'s word "${s.word}" will not fit a 360px bar`);
+  }
+});
+
+test('D9: the beginner set is the four that carry a session on their own', () => {
+  assert.deepEqual(BASIC_SYMBOLS.map((s) => s.kind),
+    ['action', 'question', 'dice', 'consequence']);
+  // They must lead the bar, so collapsing never reorders the buttons.
+  assert.deepEqual(SYMBOLS.slice(0, 4), BASIC_SYMBOLS);
+});
+
+test('D9: a log that already uses an advanced symbol opens expanded', () => {
+  const basic = lex('@ Sneak past\n? Is anyone there\nd: d6=5 -> Yes\n=> I slip by\n');
+  assert.equal(usesAdvancedSymbols(basic), false);
+
+  for (const line of ['-> Yes, but...', 'tbl: Mood d4=2 -> Melancholic', 'gen: NPC -> Merchant', '(note: house rule)']) {
+    assert.equal(usesAdvancedSymbols(lex(line + '\n')), true, `${line} should expand the bar`);
   }
 });
 

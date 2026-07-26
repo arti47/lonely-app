@@ -33,10 +33,10 @@ export const STEPS = [
     id: 'first-line',
     title: 'Write your first line',
     body: [
-      'The Log screen has a row of symbols along the bottom. Tap one to choose what kind of line you are writing, '
-      + 'type the rest, and press Enter.',
-      'Those five symbols are the whole language. @ is something you do, ? is a question for the world, '
-      + 'd: is a roll, -> is how it turned out, => is what changed in the fiction.',
+      'The Play screen has a row of symbols along the bottom, each labelled with what it does — '
+      + '@ Did, ? Asked, d: Rolled, => So. Tap one, type the rest of the line, and press Enter.',
+      'Those four carry a whole session. Tap ⋯ More for the rest: -> is how something turned out '
+      + 'when the dice are not worth writing down, and tbl: and gen: are tables and generators.',
       'The “?” beside the input explains whichever symbol you have selected.',
     ],
     examples: [
@@ -45,7 +45,7 @@ export const STEPS = [
       '=> I slip by unnoticed.',
     ],
     route: 'log',
-    routeLabel: 'Open the Log',
+    routeLabel: 'Open Play',
     reference: 'action',
     needsCampaign: true,
   },
@@ -64,21 +64,21 @@ export const STEPS = [
     ],
     reference: 'tag-n',
     route: 'log',
-    routeLabel: 'Open the Log',
+    routeLabel: 'Open Play',
     needsCampaign: true,
   },
   {
     id: 'state',
-    title: 'Watch the State screen fill itself in',
+    title: 'Watch the Sheet fill itself in',
     body: [
-      'Open State. Everything you tagged is there — a character sheet built from your [PC:] lines, '
+      'Open Sheet. Everything you tagged is there — a character sheet built from your [PC:] lines, '
       + 'your NPCs and places, and meters for any clocks or timers.',
       'You never configured that sheet. It is your log, read back to you. Tap any value to jump to the line that set it.',
       'The steppers here write a new line to your log; they never edit state behind your back. '
       + 'That is why undo always works.',
     ],
     route: 'state',
-    routeLabel: 'Open State',
+    routeLabel: 'Open the Sheet',
     reference: 'tag-pc',
     needsCampaign: true,
   },
@@ -92,7 +92,7 @@ export const STEPS = [
     ],
     examples: ['d: Stealth 5=5 vs TN 4 -> Success'],
     route: 'resolve',
-    routeLabel: 'Open Resolve',
+    routeLabel: 'Open Roll',
     reference: 'dice',
     needsCampaign: true,
   },
@@ -106,7 +106,7 @@ export const STEPS = [
     ],
     examples: ['? Does the guard notice me? (Unlikely)', 'd: d100=12 vs 25 -> Yes, but...'],
     route: 'resolve',
-    routeLabel: 'Open Resolve',
+    routeLabel: 'Open Roll',
     reference: 'question',
     needsCampaign: true,
   },
@@ -123,7 +123,7 @@ export const STEPS = [
       'tbl: Mood d4=2 -> Melancholic',
     ],
     route: 'resolve',
-    routeLabel: 'Open Resolve',
+    routeLabel: 'Open Roll',
     reference: 'tbl-options',
     needsCampaign: true,
   },
@@ -138,7 +138,7 @@ export const STEPS = [
     ],
     examples: ['S2 *Rooftops, before dawn*', '## Session 2'],
     route: 'log',
-    routeLabel: 'Open the Log',
+    routeLabel: 'Open Play',
     reference: 'scene',
     needsCampaign: true,
   },
@@ -153,7 +153,7 @@ export const STEPS = [
     ],
     examples: ['[F:Thug|HP 6|Close]', '[Inv:Torch|3]', '[R:1|active|entry cave]'],
     route: 'state',
-    routeLabel: 'Open State',
+    routeLabel: 'Open the Sheet',
     reference: 'addon-combat',
     needsCampaign: true,
   },
@@ -166,7 +166,7 @@ export const STEPS = [
       + 'Group them into a pack and you can export it to a file.',
     ],
     route: 'resolve',
-    routeLabel: 'Open Resolve',
+    routeLabel: 'Open Roll',
     needsCampaign: true,
   },
   {

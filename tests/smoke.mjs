@@ -194,8 +194,18 @@ try {
   })`);
 
   check('app boots', await s.evaluate('document.body.dataset.booted === "true"'));
-  check('nav renders every tab', await s.evaluate('document.querySelectorAll("[data-nav]").length') === 6);
+  check('nav renders four tabs', await s.evaluate('document.querySelectorAll("[data-nav]").length') === 4);
   check('campaigns screen renders', (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Campaigns');
+
+  // F1: the tabs that need a campaign are not offered before there is one.
+  const navBefore = await s.evaluate(`[...document.querySelectorAll('[data-nav]')]
+    .filter(a => !a.hidden).map(a => a.dataset.nav)`);
+  check('Play and Sheet are hidden until a campaign is open',
+    navBefore.join(',') === 'campaigns,reference', JSON.stringify(navBefore));
+
+  check('Settings is reachable from Campaigns now that it has no tab',
+    await s.evaluate(`[...document.querySelectorAll('#screen .screen-head button')]
+      .some(b => b.textContent === 'Settings')`));
 
   // Create a campaign directly through the store, then exercise every screen.
   const created = await s.evaluate(`(async () => {
@@ -219,7 +229,7 @@ try {
   })()`);
   check('campaign persists to IndexedDB', typeof created === 'string' && created.length > 0);
 
-  for (const [route, heading] of [['log', 'Smoke Campaign'], ['state', 'State'], ['resolve', 'Resolve'], ['settings', 'Settings']]) {
+  for (const [route, heading] of [['log', 'Smoke Campaign'], ['state', 'Sheet'], ['resolve', 'Roll'], ['settings', 'Settings']]) {
     const id = route === 'settings' ? '' : `/${created}`;
     await s.evaluate(`(location.hash = '#/${route}${id}', new Promise(r => setTimeout(r, 250)))`);
     const got = await s.evaluate('document.querySelector("#screen h1")?.textContent');
@@ -239,6 +249,23 @@ try {
   const before = await rowCount();
   check('log renders one row per line', before === 11, `saw ${before}`);
 
+  // F3: opening a row to read it must not put deletion under the focused button.
+  await s.evaluate(`(document.querySelector('#screen .log-row').click(),
+    new Promise(r => setTimeout(r, 250)))`);
+  const rowMenu = await s.evaluate(`(() => ({
+    actions: [...document.querySelectorAll('.modal-actions .btn')].map(b => b.textContent),
+    primary: document.querySelector('.modal-actions .btn-primary')?.textContent,
+    focused: document.activeElement?.textContent,
+  }))()`);
+  check('the row menu defaults to a safe action, not truncation',
+    rowMenu.primary === 'Close' && rowMenu.focused === 'Close'
+      && rowMenu.actions[rowMenu.actions.length - 1] === 'Delete from here…',
+    JSON.stringify(rowMenu));
+  await s.evaluate(`([...document.querySelectorAll('.modal-actions .btn')]
+    .find(b => b.textContent === 'Close')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 200))');
+  check('closing the row menu leaves the log untouched', (await rowCount()) === before);
+
   // The gutter must not repeat the symbol the line already starts with.
   const rowText = await s.evaluate(`(() => {
     const row = [...document.querySelectorAll('#screen .log-row')]
@@ -256,7 +283,23 @@ try {
   check('the gutter shows the line number the State pane refers to',
     /^\d+$/.test(rowText.gutter ?? ''), JSON.stringify(rowText.gutter));
 
-  check('composer mounts with every symbol', await s.evaluate('document.querySelectorAll("#screen .sym").length') === 8);
+  // F2: four labelled symbols, the rest one tap away (D9).
+  const symbols = await s.evaluate(`[...document.querySelectorAll('#screen .sym[data-kind]')]
+    .map(b => [b.dataset.kind, b.querySelector('.sym-glyph')?.textContent, b.querySelector('.sym-word')?.textContent])`);
+  check('composer opens with the four beginner symbols, each carrying its word',
+    symbols.length === 4
+      && symbols.every(([, glyph, word]) => glyph?.trim() && word?.trim())
+      && symbols.map(([kind]) => kind).join(',') === 'action,question,dice,consequence',
+    JSON.stringify(symbols));
+
+  await s.evaluate(`(document.querySelector('#screen .sym-more').click(),
+    new Promise(r => setTimeout(r, 150)))`);
+  check('More reveals every symbol',
+    await s.evaluate('document.querySelectorAll("#screen .sym[data-kind]").length') === 8);
+  await s.evaluate(`(document.querySelector('#screen .sym-more').click(),
+    new Promise(r => setTimeout(r, 150)))`);
+  check('Fewer collapses back to the beginner set',
+    await s.evaluate('document.querySelectorAll("#screen .sym[data-kind]").length') === 4);
 
   // Type into the composer and commit with Enter, as a player would.
   await s.evaluate(`(() => {
@@ -654,8 +697,8 @@ try {
 
   // --- Phase 8: searchable reference, and lint that explains itself ---
   await s.evaluate(`(location.hash = '#/reference', new Promise(r => setTimeout(r, 350)))`);
-  check('reference screen renders',
-    (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Notation');
+  check('help screen renders',
+    (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Help');
 
   // The Guide is the default view for a newcomer.
   check('the guide is shown first and walks through the app',
@@ -667,7 +710,7 @@ try {
 
   // A step deep-links to the screen it describes.
   await s.evaluate(`([...document.querySelectorAll('#screen .guide-step .btn')]
-    .find(b => b.textContent === 'Open the Log')).click()`);
+    .find(b => b.textContent === 'Open Play')).click()`);
   await s.evaluate('new Promise(r => setTimeout(r, 300))');
   check('a guide step opens the screen it describes',
     /^#\/log\//.test(await s.evaluate('location.hash')), await s.evaluate('location.hash'));
@@ -754,7 +797,7 @@ try {
   // --- Every nav tab reaches its own screen when clicked ---
   const tabs = await s.evaluate(`(async () => {
     const seen = [];
-    for (const tab of ['campaigns', 'log', 'state', 'resolve', 'reference', 'settings']) {
+    for (const tab of ['campaigns', 'log', 'state', 'reference']) {
       document.querySelector('[data-nav="' + tab + '"]').click();
       await new Promise(r => setTimeout(r, 300));
       seen.push([tab, location.hash.split('/')[1], document.querySelector('#screen h1')?.textContent]);
@@ -765,6 +808,24 @@ try {
     tabs.every(([tab, route]) => route === tab)
       && new Set(tabs.map((x) => x[2])).size === tabs.length,
     JSON.stringify(tabs));
+
+  // F1: Play carries the campaign across a detour through the campaign list.
+  const kept = await s.evaluate(`(async () => {
+    document.querySelector('[data-nav="campaigns"]').click();
+    await new Promise(r => setTimeout(r, 250));
+    document.querySelector('[data-nav="log"]').click();
+    await new Promise(r => setTimeout(r, 300));
+    return location.hash;
+  })()`);
+  check('Play returns to the campaign you were playing', kept === `#/log/${created}`, kept);
+
+  // F1: a route with no tab of its own lights the tab that owns it.
+  await s.evaluate(`(location.hash = '#/resolve/${created}', new Promise(r => setTimeout(r, 300)))`);
+  check('rolling marks Play as the current tab',
+    await s.evaluate(`document.querySelector('[data-nav][aria-current="page"]')?.dataset.nav`) === 'log');
+  await s.evaluate(`(location.hash = '#/settings', new Promise(r => setTimeout(r, 300)))`);
+  check('settings marks Campaigns as the current tab',
+    await s.evaluate(`document.querySelector('[data-nav][aria-current="page"]')?.dataset.nav`) === 'campaigns');
 
   // An unknown route must announce itself rather than impersonating a screen.
   await s.evaluate(`(location.hash = '#/nosuchscreen', new Promise(r => setTimeout(r, 300)))`);

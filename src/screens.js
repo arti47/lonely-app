@@ -1,16 +1,20 @@
 /**
- * Phase 0 screen renderers (CLAUDE.md §8).
+ * Screen renderers (CLAUDE.md §3.1).
  *
- * Campaigns and Settings are functional — they prove storage, export/import and
- * the engine boot path. Log, State and Resolve are placeholders that render the
- * real folded summary of the open campaign; they are filled in by Phases 2–4.
+ * One function per route. Screens own layout and wiring only: notation lives in
+ * `src/lonelog/`, persistence in `store.js`, and the panes themselves in
+ * `logview.js`, `state.js` and `resolve.js`.
+ *
+ * Four of these routes have a tab (D10); `resolve` and `settings` are reached
+ * from Play and Campaigns respectively, and stay real routes so the guide can
+ * link straight to them.
  */
 
 import { $, el, clear, today } from './core.js';
 import { campaigns, toMarkdown, fromMarkdown, exportBackup, importBackup, fileBinding } from './store.js';
 import { modal, confirmModal, promptModal, showToast, announce } from './ui.js';
 import * as settings from './settings.js';
-import { go } from './router.js';
+import { go, rememberCampaign, forgetCampaign } from './router.js';
 import { parse } from './lonelog/index.js';
 import { renderLog } from './logview.js';
 import { mountComposer } from './composer.js';
@@ -21,28 +25,35 @@ import { toPack, fromPack } from './templates.js';
 import { search, grouped } from './reference.js';
 import { renderGuide } from './guide.js';
 
-const PHASE_NOTE = 'Not built yet — this pane arrives in a later phase. The notation engine underneath it is complete and tested.';
-
 export async function campaignsScreen(mount) {
   const list = await campaigns.all();
 
   mount.append(el('header', { class: 'screen-head' }, [
     el('h1', {}, ['Campaigns']),
-    el('button', {
-      class: 'btn btn-primary', type: 'button',
-      onclick: async () => {
-        const title = await promptModal('Name this campaign', { title: 'New campaign', placeholder: 'The Clearview Mystery' });
-        if (title == null) return;
-        const c = await campaigns.create(title.trim());
-        showToast(`Created “${c.meta.title}”.`);
-        go('log', { id: c.id });
-      },
-    }, ['New campaign']),
+    el('div', { class: 'head-tools' }, [
+      // Settings has no tab of its own (D10), so this is its way in.
+      el('button', {
+        class: 'btn btn-small', type: 'button',
+        onclick: () => go('settings'),
+      }, ['Settings']),
+      el('button', {
+        class: 'btn btn-primary', type: 'button',
+        onclick: async () => {
+          const title = await promptModal('Name this campaign', { title: 'New campaign', placeholder: 'The Clearview Mystery' });
+          if (title == null) return;
+          const c = await campaigns.create(title.trim());
+          showToast(`Created “${c.meta.title}”.`);
+          go('log', { id: c.id });
+        },
+      }, ['New campaign']),
+    ]),
   ]));
 
   if (!list.length) {
     mount.append(el('p', { class: 'empty' }, [
-      'No campaigns yet. Create one, or import a Lonelog markdown file from Settings.',
+      'No campaigns yet. Tap New campaign above — there is nothing to set up, no '
+      + 'system to choose and no account. Already have a Lonelog file? Settings '
+      + 'imports it.',
     ]));
     return;
   }
@@ -69,6 +80,8 @@ export async function campaignsScreen(mount) {
         onclick: async () => {
           if (!await confirmModal(`Delete “${c.meta.title}”? Its log cannot be recovered.`, { confirmLabel: 'Delete' })) return;
           await campaigns.remove(c.id);
+          forgetCampaign(c.id);
+          if (settings.get('lastCampaign') === c.id) await settings.set('lastCampaign', null);
           showToast('Campaign deleted.');
           go('campaigns');
         },
@@ -85,6 +98,7 @@ export async function campaignsScreen(mount) {
 async function openCampaign(mount, params, title) {
   const c = params.id ? await campaigns.get(params.id) : null;
   if (!c) {
+    if (params.id) forgetCampaign(params.id);
     mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, [title])]));
     mount.append(el('p', { class: 'empty' }, [
       params.id
@@ -96,6 +110,9 @@ async function openCampaign(mount, params, title) {
     }, ['Choose a campaign']));
     return null;
   }
+  // The gated tabs follow whichever campaign was opened last (D10).
+  rememberCampaign(c.id);
+  if (settings.get('lastCampaign') !== c.id) await settings.set('lastCampaign', c.id);
   return c;
 }
 
@@ -206,9 +223,13 @@ export async function logScreen(mount, params) {
 
     mountComposer(composerHost, {
       state,
+      entries,
       canUndo: campaign.log.length > 0,
       canRestore: !!removed,
       undoLabel: lastBatch > 1 ? `Undo ${lastBatch} lines` : 'Undo',
+      // Slice 2 turns this into a drawer over the log (F6); until then it is the
+      // one way to reach rolling now that Resolve has no tab of its own.
+      onRoll: () => go('resolve', { id: campaign.id }),
       commit: async (lines) => {
         removed = null;
         lastBatch = lines.length;
@@ -249,7 +270,7 @@ export async function stateScreen(mount, params) {
   let campaign = await openCampaign(mount, params, 'State');
   if (!campaign) return;
 
-  const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['State'])]);
+  const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['Sheet'])]);
   const header = el('div', { class: 'state-header-slot' });
   const body = el('div', { class: 'state-body' });
   mount.append(head, header, body);
@@ -296,7 +317,7 @@ export async function resolveScreen(mount, params) {
   let campaign = await openCampaign(mount, params, 'Resolve');
   if (!campaign) return;
 
-  const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['Resolve'])]);
+  const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['Roll'])]);
   const header = el('div', { class: 'state-header-slot' });
   const body = el('div', {});
   mount.append(head, header, body);
@@ -362,8 +383,8 @@ export async function referenceScreen(mount) {
 
   const panel = el('div', {});
 
-  const tabs = el('div', { class: 'view-switch', role: 'group', 'aria-label': 'Notation view' },
-    [['guide', 'Guide'], ['reference', 'Reference']].map(([id, label]) => el('button', {
+  const tabs = el('div', { class: 'view-switch', role: 'group', 'aria-label': 'Help view' },
+    [['guide', 'Guide'], ['reference', 'Notation']].map(([id, label]) => el('button', {
       class: 'btn btn-small', type: 'button', dataset: { view: id },
       'aria-pressed': view === id ? 'true' : 'false',
       onclick: async () => {
@@ -389,7 +410,7 @@ export async function referenceScreen(mount) {
   }
 
   mount.append(
-    el('header', { class: 'screen-head' }, [el('h1', {}, ['Notation']), tabs]),
+    el('header', { class: 'screen-head' }, [el('h1', {}, ['Help']), tabs]),
     panel,
   );
   draw();

@@ -12,6 +12,37 @@ import { dismissModal } from './ui.js';
 const routes = new Map();
 let current = null;
 
+/**
+ * Routes with no tab of their own, and the tab that owns them (D10). Rolling is
+ * part of playing and Settings is part of managing campaigns, so those routes
+ * light their parent tab rather than leaving the nav with nothing marked.
+ */
+const TAB_FOR = new Map([['resolve', 'log'], ['settings', 'campaigns']]);
+
+/** Tabs that need a campaign to point at (§7). */
+const GATED = new Set(['log', 'state']);
+
+/**
+ * The campaign the gated tabs point at. Remembered so stepping back to the
+ * campaign list does not strand you with the tabs gone — you came from
+ * somewhere, and Play should still take you back there.
+ */
+let lastCampaign = null;
+
+/** @param {string|null} id */
+export function rememberCampaign(id) {
+  lastCampaign = id || null;
+}
+
+/** @param {string|null} id forget only this campaign, e.g. when it is deleted */
+export function forgetCampaign(id) {
+  if (!id || lastCampaign === id) lastCampaign = null;
+}
+
+export function currentCampaign() {
+  return lastCampaign;
+}
+
 export function register(name, route) {
   routes.set(name, route);
 }
@@ -50,6 +81,7 @@ export async function render() {
     mount.append(unknownScreen(name));
     mount.focus({ preventScroll: true });
     markNav(null);
+    gateNav(null);
     return;
   }
 
@@ -58,18 +90,34 @@ export async function render() {
   clear(mount);
   document.title = route.title ? `${route.title} · Lonely` : 'Lonely';
 
+  if (params.id) rememberCampaign(params.id);
   markNav(name);
+  gateNav(name);
 
   await route.render(mount, params);
   mount.focus({ preventScroll: true });
 }
 
 function markNav(name) {
+  const tab = name == null ? null : TAB_FOR.get(name) ?? name;
   for (const link of $$('[data-nav]')) {
-    const active = link.dataset.nav === name;
+    const active = link.dataset.nav === tab;
     link.classList.toggle('is-active', active);
     if (active) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
+  }
+}
+
+/**
+ * Hide the tabs that have nowhere to go (§7, D10). The active tab is never
+ * hidden — a tab marked current that is not on screen is worse than a tab with
+ * a dead end behind it.
+ * @param {string|null} name the route being rendered
+ */
+function gateNav(name) {
+  const tab = name == null ? null : TAB_FOR.get(name) ?? name;
+  for (const gated of GATED) {
+    setNavVisible(gated, !!lastCampaign || gated === tab);
   }
 }
 
