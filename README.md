@@ -79,8 +79,10 @@ resolve rolls, oracles and tables, and get combat, resource, dungeon and
 wargaming panels that appear on their own when your log starts using them.
 Scene and session boundaries fire as one bundle — closing open blocks and
 snapshotting whichever add-ons are in play — with a summary first and one-step
-undo after. Remaining: learned roll templates and the searchable notation
-reference. See `CLAUDE.md` §8.
+undo after. Roll the same shape a few times and the app offers to save it as a
+one-tap quick roll, which you can export as a pack — so a "system" accretes from
+play rather than being configured first. Remaining: lint surfacing and the
+searchable notation reference. See `CLAUDE.md` §8.
 
 ## Licensing
 

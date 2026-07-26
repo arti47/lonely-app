@@ -86,6 +86,20 @@ export const campaigns = {
   },
 };
 
+export const templates = {
+  async all() {
+    return (await tx(STORES.templates, 'readonly', (s) => s.getAll())) ?? [];
+  },
+  async put(template) {
+    const record = { ...template, id: template.id ?? nextId('tpl') };
+    await tx(STORES.templates, 'readwrite', (s) => s.put(record));
+    return record;
+  },
+  async remove(id) {
+    await tx(STORES.templates, 'readwrite', (s) => s.delete(id));
+  },
+};
+
 export const settings = {
   async get(key, fallback = null) {
     const row = await tx(STORES.settings, 'readonly', (s) => s.get(key));

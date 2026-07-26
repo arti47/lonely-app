@@ -105,7 +105,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `lonelog/lint.js` | ✅ Spec-conformance rules (§10, `docs/spec-review.md`) |
 | `lonelog/index.js` | ✅ Engine barrel + `parse()` (lex → fold → lint) |
 | `compare.js` | ✅ Roll comparator over **entered** numbers, oracle ladder, table lookup. No RNG |
-| `templates.js` | Learned roll templates + saved tables; pack import/export |
+| `templates.js` | ✅ Learned roll templates; pack import/export |
 | `store.js` | ✅ IndexedDB persistence, markdown + JSON export/import, File System Access binding |
 | `composer.js` | ✅ Symbol-first entry: line kinds, tag builder, autocomplete |
 | `logview.js` | ✅ Transcript rendering, editing, truncation-undo |
@@ -216,9 +216,10 @@ campaigns/{id}
                                                        // affects fold output (D6)
   checkpoints/{sceneIndex}: { lineIndex, state }  // fold memoisation, derivable,
                                                   // safe to discard and rebuild
-templates/{id}: { label, inputs[], modifiers[], compare, outcomes[], packId?, seenCount }
-                                                  // Phase 7; tables defined in a
-                                                  // log fold out of it directly
+templates/{id}: { id, shape, label, mode, inputs[], modifiers[], target?,
+                  targetLabel?, compare, packId?, seenCount }
+                                                  // learned from repeated `d:`
+                                                  // shapes; tables live in the log
 tables/{id}:    { name, die?, entries[] | options[] }   // core §4.3.1–2
 settings:       { theme, referenceLinks, lintLevel }
 ```
@@ -294,9 +295,11 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
       those add-ons are live), with confirmation summary and one-step undo.
       *Done: a bundle is a list of lines, so undo is truncation of exactly its
       length. Confirmation appears when a bundle does more than drop a marker.*
-- [ ] **Phase 7 — Learned templates.** Detect repeated `d:` shapes; offer to save
+- [x] **Phase 7 — Learned templates.** Detect repeated `d:` shapes; offer to save
       as a quick roll; template editor; group into a named pack; pack
       export/import as a file (D4).
+      *Done: a shape abstracts the rolled numbers and keeps the roll, so a
+      repeat is offered — never saved silently — and a pack falls out of play.*
 - [ ] **Phase 8 — Lint & reference.** `lint.js` rules from `docs/spec-review.md`
       surfaced as gentle inline warnings, never blocking; searchable notation
       reference; every automated surface links to its reference entry.
@@ -459,6 +462,7 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 | 2026-07-26 | **Phase 3 — state pane.** `state.js`: character sheet folded from `[PC:]` tags (D5), clock/track fill meters, countdown timers, thread states, NPC/location index, and the persistent state header now shared by Log, State and Resolve. Every value links back to the line that set it (§5.7). Editing appends a tag line and never mutates state (§5.1). Thread state changes emit the transition form `[Thread:X\|Open -> Closed]` rather than a restatement, because flags accumulate — restating `Closed` would leave `Open` set too | 98 unit tests, each edit asserted by folding the emitted line back; 36 browser checks including stepping a clock from the State pane and tracing a value into the log | `lonely-v3` |
 | 2026-07-26 | **Phase 4 — resolve pane.** `compare.js` (six comparison shapes: target incl. roll-under, success pools, paired challenge dice, keep high/low, `dF` ladders, degree bands; match detection; a generic d100 oracle ladder labelled a house aid; table lookup) and `resolve.js` (roll entry, oracle, tables). Every number is entered by the player — `src/` still contains no RNG, enforced by test. Engine gained inline table definitions, filtered option sets and multi-line generator axes, so a table defined in a log is immediately usable and the log stays self-contained. **Ledger complete: 58/58** | 129 unit tests; 46 browser checks including entering a roll, an oracle answer and a table lookup through the real UI | `lonely-v4` |
 | 2026-07-26 | Fixed: an omitted numeric field parsed as `0`, so a roll with no target compared against 0 and always succeeded. Root cause: `Number('')` is `0`, and the guard only rejected `NaN`. Empty now reads as "not given" | Regression test per mode; `MODES` all evaluate safely on empty input | `lonely-v4` |
+| 2026-07-26 | **Phase 7 — learned roll templates.** `templates.js`: a shape abstracts the numbers that change roll to roll (`=5` → `=#`) and keeps the ones that describe the roll, so a different target is correctly a different shape. After three occurrences the Resolve pane *offers* to save — nothing is stored without being asked (D4). Applying a template presets label, target and dice count but never the dice themselves (D2). Packs export and import as a file, validated with readable errors | 195 unit tests; 69 browser checks including a shape being learned from a real log, the suggestion withdrawn once saved, and the preset leaving the dice empty | `lonely-v7` |
 | 2026-07-26 | **Phase 6 — lifecycle engine.** `lifecycle.js`: End Scene closes explicitly opened blocks then opens the next scene (a scene-header block is left to the marker that closes it, combat §1.1); End Session closes every open block innermost-first and snapshots each surfaced add-on. Combat gets no snapshot because its spec defines none, and an add-on holding nothing writes no empty block. A bundle is a plain list of lines, so one-step undo is truncation of exactly its length | 176 unit tests, including that truncating a bundle restores the byte-identical prior fold; 63 browser checks covering the confirmation summary, the bundle landing, one-step undo and restore | `lonely-v6` |
 | 2026-07-26 | Fixed: undo popped a single line, so a three-line session header or any multi-line insert needed three presses and left the log half-edited in between. Undo now takes back the whole of the last commit, with a separate Restore for putting it back | Browser check: an eight-line bundle undoes in one press and restores in one | `lonely-v6` |
 | 2026-07-26 | **Phase 5 — add-on surfaces.** `addons/{combat,resources,dungeon,wargaming}.js`, surfacing purely from folded log content (D6) and sticky once seen; hiding a panel is `view` state and never edits the log. Combat: rounds, rosters, damage against whatever stat the system uses, range transitions, group splitting. Resources: quantity steps, usage-die step-down chain, wealth deltas, `[RESOURCES]` snapshot. Dungeon: room status accumulation, exits, `[DUNGEON STATUS]` snapshot. Wargaming: casualties, status transitions, heat with advisory thresholds, location armor, `[BATTLE]`/`[CAMPAIGN]` snapshots. The tag-line builders live once in `state.js` and are reused by all four (§9.2) | 162 unit tests, every control asserted by folding its emitted line back; 55 browser checks including all four panels surfacing, a combat control appending, `Tn#` advancing independently of `Rd#`, a balanced snapshot block, and hiding leaving the log byte-identical | `lonely-v5` |

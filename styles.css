@@ -473,3 +473,13 @@ p { margin: 0 0 12px; }
   color: var(--warn); border: 1px solid var(--warn);
   border-radius: 999px; padding: 0 6px; white-space: nowrap;
 }
+
+/* --- Phase 7: learned quick rolls --- */
+
+.suggestion {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+  padding: 8px; margin-bottom: 8px;
+  border: 1px dashed var(--accent); border-radius: var(--radius);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+.suggestion .el-detail { flex: 1 1 160px; }

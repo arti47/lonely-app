@@ -16,6 +16,8 @@ import { renderLog } from './logview.js';
 import { mountComposer } from './composer.js';
 import { renderState, renderStateHeader, traceButton } from './state.js';
 import { renderResolve } from './resolve.js';
+import { templates as templateStore } from './store.js';
+import { toPack, fromPack } from './templates.js';
 
 const PHASE_NOTE = 'Not built yet — this pane arrives in a later phase. The notation engine underneath it is complete and tested.';
 
@@ -269,11 +271,16 @@ export async function resolveScreen(mount, params) {
   const body = el('div', {});
   mount.append(head, header, body);
 
-  function refresh() {
-    const { state } = parse(campaign.log.join('\n'));
+  let saved = await templateStore.all();
+
+  async function refresh() {
+    const { state, entries } = parse(campaign.log.join('\n'));
     clear(header);
     header.append(renderStateHeader(state, (line) => go('log', { id: campaign.id, line })));
+
     renderResolve(body, state, {
+      entries,
+      templates: saved,
       commit: async (lines) => {
         campaign.log.push(...lines);
         campaign = await campaigns.put(campaign);
@@ -283,10 +290,40 @@ export async function resolveScreen(mount, params) {
         showToast(`Added ${lines.length} line${lines.length === 1 ? '' : 's'} to the log.`);
         refresh();
       },
+      onSaveTemplate: async (template) => {
+        await templateStore.put(template);
+        saved = await templateStore.all();
+        showToast(`Saved “${template.label}” as a quick roll.`);
+        refresh();
+      },
+      onDeleteTemplate: async (id) => {
+        await templateStore.remove(id);
+        saved = await templateStore.all();
+        refresh();
+      },
+      onExportPack: async () => {
+        const name = await promptModal('Pack name', {
+          title: 'Export roll pack', placeholder: 'My house rolls',
+        });
+        if (!name?.trim()) return;
+        download(`${name.trim()}.lonelypack.json`,
+          JSON.stringify(toPack(name.trim(), saved), null, 2), 'application/json');
+      },
+      onImportPack: () => pickFile('.json', async (text) => {
+        try {
+          const pack = fromPack(JSON.parse(text));
+          for (const template of pack.templates) await templateStore.put(template);
+          saved = await templateStore.all();
+          showToast(`Imported ${pack.templates.length} roll${pack.templates.length === 1 ? '' : 's'} from “${pack.name}”.`);
+          refresh();
+        } catch (err) {
+          showToast(err.message, { tone: 'error' });
+        }
+      }),
     });
   }
 
-  refresh();
+  await refresh();
 }
 
 export async function settingsScreen(mount) {

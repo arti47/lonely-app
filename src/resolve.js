@@ -16,6 +16,7 @@ import {
   MODES, ODDS, evaluate, rollLine, resolveOracle, lookup, tableDie,
 } from './compare.js';
 import { tablesOf } from './lonelog/fold.js';
+import { detectRepeats, templateFromShape, applyTemplate, REPEAT_THRESHOLD } from './templates.js';
 
 /** Fields each mode asks for, beyond the dice themselves. */
 const MODE_FIELDS = {
@@ -30,11 +31,15 @@ const MODE_FIELDS = {
 /**
  * @param {HTMLElement} host
  * @param {object} state folded CampaignState
- * @param {{commit:(lines:string[])=>Promise<any>}} ctx
+ * @param {{commit:(lines:string[])=>Promise<any>, entries?:object[],
+ *          templates?:object[], onSaveTemplate?:(t:object)=>any,
+ *          onDeleteTemplate?:(id:string)=>any,
+ *          onExportPack?:()=>any, onImportPack?:()=>any}} ctx
  */
 export function renderResolve(host, state, ctx) {
   clear(host);
-  host.append(rollPanel(ctx), oraclePanel(ctx), tablePanel(state, ctx));
+  const roll = rollPanel(ctx);
+  host.append(roll.node, quickRolls(state, ctx, roll.applyPreset), oraclePanel(ctx), tablePanel(state, ctx));
 }
 
 /* ------------------------------ roll entry ------------------------------- */
@@ -201,7 +206,26 @@ function rollPanel(ctx) {
   label.addEventListener('input', update);
   draw();
 
-  return el('section', { class: 'group' }, [
+  /**
+   * Fill the form from a saved template. The dice stay empty — the player still
+   * rolls them (D2).
+   * @param {object} template
+   */
+  function applyPreset(template) {
+    const preset = applyTemplate(template, {});
+    mode = preset.mode;
+    modeSelect.value = mode;
+    label.value = preset.label ?? '';
+    values.target = preset.target == null ? '' : String(preset.target);
+    values.threshold = preset.threshold == null ? '' : String(preset.threshold);
+    values.modifier = '';
+    compare = preset.compare ?? '>=';
+    dice = (template.inputs ?? [{}]).map(() => '');
+    draw();
+    /** @type {HTMLElement|null} */ (body.querySelector('.die-input'))?.focus();
+  }
+
+  const node = el('section', { class: 'group' }, [
     el('h2', {}, ['Roll']),
     el('div', { class: 'field-row' }, [
       field('Roll mode', modeSelect, 'roll-mode'),
@@ -211,6 +235,74 @@ function rollPanel(ctx) {
     preview,
     el('div', { class: 'row' }, [addButton]),
   ]);
+
+  return { node, applyPreset };
+}
+
+/* ------------------------------ quick rolls ------------------------------ */
+
+function quickRolls(state, ctx, applyPreset) {
+  const saved = ctx.templates ?? [];
+  const suggestions = detectRepeats(ctx.entries ?? [], { known: saved.map((t) => t.shape) });
+  const section = el('section', { class: 'group', dataset: { panel: 'quick-rolls' } }, [
+    el('h2', {}, ['Quick rolls']),
+  ]);
+
+  // A repeated shape is offered, never saved behind the player's back (D4).
+  for (const repeat of suggestions.slice(0, 3)) {
+    section.append(el('div', { class: 'suggestion' }, [
+      el('span', { class: 'el-detail' }, [
+        `You've rolled ${repeat.shape} ${repeat.count} times.`,
+      ]),
+      el('button', {
+        class: 'btn btn-tiny', type: 'button',
+        onclick: () => ctx.onSaveTemplate(templateFromShape(repeat.shape, { count: repeat.count })),
+      }, ['Save as quick roll']),
+    ]));
+  }
+
+  if (!saved.length) {
+    section.append(el('p', { class: 'hint' }, [
+      suggestions.length
+        ? 'Saving one turns it into a one-tap roll. Nothing is saved unless you ask.'
+        : `Roll the same shape ${REPEAT_THRESHOLD} times and the app offers to save it. `
+          + 'Nothing needs setting up first.',
+    ]));
+  } else {
+    section.append(el('ul', { class: 'plain-list' }, saved.map((template) => el('li', {}, [
+      el('button', {
+        class: 'btn btn-tiny', type: 'button',
+        onclick: () => applyPreset(template),
+      }, [template.label]),
+      el('span', { class: 'el-detail' }, [template.shape]),
+      el('button', {
+        class: 'btn btn-tiny', type: 'button',
+        onclick: async () => {
+          const next = await promptModal('Name this quick roll', {
+            title: template.label, value: template.label,
+          });
+          if (next?.trim()) await ctx.onSaveTemplate({ ...template, label: next.trim() });
+        },
+      }, ['rename']),
+      el('button', {
+        class: 'btn btn-tiny btn-quiet', type: 'button',
+        onclick: () => ctx.onDeleteTemplate(template.id),
+      }, ['remove']),
+    ]))));
+  }
+
+  section.append(el('div', { class: 'addon-tools' }, [
+    saved.length ? el('button', {
+      class: 'btn btn-tiny', type: 'button',
+      onclick: () => ctx.onExportPack(),
+    }, ['Export pack…']) : null,
+    el('button', {
+      class: 'btn btn-tiny', type: 'button',
+      onclick: () => ctx.onImportPack(),
+    }, ['Import pack…']),
+  ].filter(Boolean)));
+
+  return section;
 }
 
 const DEFAULT_BANDS = [

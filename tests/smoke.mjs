@@ -580,6 +580,61 @@ try {
   check('restore puts the bundle back', afterRestore === bundled.n,
     `${afterUndo} -> ${afterRestore}, expected ${bundled.n}`);
 
+  // --- Phase 7: quick rolls are learned from the log, never preconfigured ---
+  await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    c.log.push(
+      'd: Stealth d6=5 vs TN 4 -> Success',
+      'd: Stealth d6=2 vs TN 4 -> Fail',
+      'd: Stealth d6=6 vs TN 4 -> Success',
+    );
+    await store.campaigns.put(c);
+  })()`);
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 200)))`);
+  await s.evaluate(`(location.hash = '#/resolve/${created}', new Promise(r => setTimeout(r, 400)))`);
+
+  check('a repeated roll shape is offered as a quick roll',
+    await s.evaluate('document.querySelectorAll("[data-panel=\'quick-rolls\'] .suggestion").length') === 1);
+
+  await s.evaluate(`([...document.querySelectorAll("[data-panel='quick-rolls'] .btn-tiny")]
+    .find(b => b.textContent === 'Save as quick roll')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 400))');
+
+  const savedRolls = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const all = await store.templates.all();
+    return all.map(t => [t.label, t.shape]);
+  })()`);
+  check('saving stores the learned template',
+    savedRolls.length === 1 && savedRolls[0][0] === 'Stealth'
+      && savedRolls[0][1] === 'Stealth d6=# vs TN 4',
+    JSON.stringify(savedRolls));
+
+  check('the suggestion is withdrawn once saved',
+    await s.evaluate('document.querySelectorAll("[data-panel=\'quick-rolls\'] .suggestion").length') === 0);
+
+  // Tapping the quick roll presets the form but leaves the dice empty (D2).
+  await s.evaluate(`([...document.querySelectorAll("[data-panel='quick-rolls'] .btn-tiny")]
+    .find(b => b.textContent === 'Stealth')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+
+  const preset = await s.evaluate(`(() => {
+    const fields = [...document.querySelectorAll('#screen .field .input')];
+    const label = fields.find(f => f.previousElementSibling?.textContent === 'Label');
+    const target = fields.find(f => f.previousElementSibling?.textContent === 'Target');
+    return {
+      label: label.value,
+      target: target.value,
+      dice: [...document.querySelectorAll('#screen .dice-row .die-input')].map(d => d.value),
+      addDisabled: document.querySelector('#roll-add').disabled,
+    };
+  })()`);
+  check('a quick roll presets label and target but not the dice',
+    preset.label === 'Stealth' && preset.target === '4'
+      && preset.dice.length === 1 && preset.dice[0] === '' && preset.addDisabled === true,
+    JSON.stringify(preset));
+
   for (const width of [360, 390]) {
     await s.send('Emulation.setDeviceMetricsOverride', { width, height: 780, deviceScaleFactor: 1, mobile: true });
     for (const route of ['campaigns', 'log', 'state', 'resolve', 'settings']) {
