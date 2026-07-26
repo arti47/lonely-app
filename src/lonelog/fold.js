@@ -89,6 +89,12 @@ function applyEntry(state, e) {
       if (m) state.sessions.push({ number: Number(m[1]), title: e.title, line: e.line });
       return;
     }
+    case 'sessionMeta': {
+      // Attaches to the session it sits under (core §5.2.1).
+      const session = state.sessions[state.sessions.length - 1];
+      if (session) session.meta = { ...(session.meta ?? {}), ...e.meta };
+      return;
+    }
     case 'block': {
       const addon = ADDON_BY_BLOCK.get(e.name);
       if (addon) state.addons.add(addon);

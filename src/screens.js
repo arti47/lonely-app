@@ -7,11 +7,13 @@
  */
 
 import { $, el, clear, today } from './core.js';
-import { campaigns, toMarkdown, fromMarkdown, exportBackup, importBackup } from './store.js';
-import { confirmModal, promptModal, showToast, announce } from './ui.js';
+import { campaigns, toMarkdown, fromMarkdown, exportBackup, importBackup, fileBinding } from './store.js';
+import { modal, confirmModal, promptModal, showToast, announce } from './ui.js';
 import * as settings from './settings.js';
 import { go } from './router.js';
 import { parse } from './lonelog/index.js';
+import { renderLog } from './logview.js';
+import { mountComposer } from './composer.js';
 
 const PHASE_NOTE = 'Not built yet — this pane arrives in a later phase. The notation engine underneath it is complete and tested.';
 
@@ -93,29 +95,120 @@ async function openCampaign(mount, params) {
 }
 
 export async function logScreen(mount, params) {
-  const c = await openCampaign(mount, params);
-  if (!c) return;
-  const { entries, state, findings } = parse(c.log.join('\n'));
+  let campaign = await openCampaign(mount, params);
+  if (!campaign) return;
 
-  mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, [c.meta.title])]));
-  mount.append(stateHeader(state));
+  /** Last truncation, kept in memory only so it can be undone once. */
+  let removed = null;
 
-  if (!c.log.length) {
-    mount.append(el('p', { class: 'empty' }, ['This log is empty. The composer arrives in Phase 2.']));
-  } else {
-    mount.append(el('pre', { class: 'log-view' }, [c.log.join('\n')]));
+  const head = el('header', { class: 'screen-head' }, []);
+  const header = el('div', { class: 'state-header-slot' });
+  const rows = el('div', { class: 'log-scroll' });
+  const composerHost = el('div', { class: 'composer' });
+
+  mount.append(head, header, rows, composerHost);
+
+  async function persist() {
+    campaign = await campaigns.put(campaign);
+    if (campaign.bindings?.handle) {
+      try { await fileBinding.write(campaign); }
+      catch { showToast('Could not write to the bound file.', { tone: 'error' }); }
+    }
   }
 
-  const errors = findings.filter((f) => f.severity === 'error');
-  if (errors.length) {
-    mount.append(el('p', { class: 'note note-warn' }, [
-      `${errors.length} spec issue${errors.length === 1 ? '' : 's'} in this log — see docs/spec-review.md.`,
-    ]));
+  function refresh(focusLine = null) {
+    const { entries, state, findings } = parse(campaign.log.join('\n'));
+
+    clear(head);
+    head.append(
+      el('h1', {}, [campaign.meta.title]),
+      el('div', { class: 'head-tools' }, [
+        el('button', {
+          class: 'btn btn-small', type: 'button',
+          onclick: async () => {
+            const text = campaign.log.join('\n');
+            const findingCount = findings.length;
+            await modal({
+              title: 'Log details',
+              body: el('div', {}, [
+                el('p', {}, [`${campaign.log.length} lines · ${entries.length} entries · ${state.elements.size} elements`]),
+                el('p', {}, [`${state.scenes.length} scenes · ${state.sessions.length} sessions · ${state.counts.rolls} rolls`]),
+                el('p', { class: 'hint' }, [findingCount
+                  ? `${findingCount} lint finding${findingCount === 1 ? '' : 's'} — see docs/spec-review.md.`
+                  : 'No lint findings.']),
+                el('pre', { class: 'log-preview' }, [text.slice(0, 400) + (text.length > 400 ? '…' : '')]),
+              ]),
+            });
+          },
+        }, ['Details']),
+        fileBinding.supported()
+          ? el('button', {
+            class: 'btn btn-small', type: 'button',
+            onclick: async () => {
+              try {
+                const name = campaign.bindings?.handle
+                  ? (await fileBinding.write(campaign), campaign.bindings.path)
+                  : await fileBinding.bind(campaign);
+                showToast(`Saved to ${name}.`);
+                refresh();
+              } catch (err) {
+                if (err?.name !== 'AbortError') showToast(err.message, { tone: 'error' });
+              }
+            },
+          }, [campaign.bindings?.handle ? 'Save to file' : 'Bind to file…'])
+          : null,
+      ]),
+    );
+
+    clear(header);
+    header.append(stateHeader(state));
+
+    renderLog(rows, entries, {
+      findings,
+      focusLine,
+      onTruncate: async (line) => {
+        removed = campaign.log.slice(line);
+        campaign.log = campaign.log.slice(0, line);
+        await persist();
+        refresh();
+        showToast(`Removed ${removed.length} line${removed.length === 1 ? '' : 's'}. Use Undo to restore.`);
+      },
+      onEdit: async (line, text) => {
+        campaign.log[line] = text;
+        await persist();
+        refresh(line);
+      },
+    });
+
+    mountComposer(composerHost, {
+      state,
+      canUndo: campaign.log.length > 0 || !!removed,
+      commit: async (lines) => {
+        removed = null;
+        campaign.log.push(...lines);
+        await persist();
+        refresh();
+      },
+      undo: async () => {
+        if (removed) {
+          campaign.log.push(...removed);
+          const n = removed.length;
+          removed = null;
+          await persist();
+          refresh();
+          showToast(`Restored ${n} line${n === 1 ? '' : 's'}.`);
+          return;
+        }
+        if (!campaign.log.length) return;
+        campaign.log.pop();
+        await persist();
+        refresh();
+        announce('Last line removed.');
+      },
+    });
   }
 
-  mount.append(el('p', { class: 'note' }, [
-    `Parsed ${entries.length} entries into ${state.elements.size} tracked elements. ${PHASE_NOTE}`,
-  ]));
+  refresh();
 }
 
 export async function stateScreen(mount, params) {

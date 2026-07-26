@@ -184,3 +184,15 @@ test('an explicit block is not closed by a scene marker', () => {
   assert.equal(s.blockStack.length, 1);
   assert.equal(s.blockStack[0].name, 'COMBAT');
 });
+
+test('T25 session metadata attaches to its session (core §5.2.1)', () => {
+  const s = foldText('## Session 4\n*Date: 2026-07-26 | Duration: 1h30 | Scenes: S1-S2*\n');
+  assert.deepEqual(s.sessions[0].meta, {
+    date: '2026-07-26', duration: '1h30', scenes: 'S1-S2',
+  });
+});
+
+test('ordinary italic prose is not mistaken for session metadata', () => {
+  const entries = lex('*The fog rolls in off the harbour*\n');
+  assert.equal(entries[0].kind, 'prose');
+});

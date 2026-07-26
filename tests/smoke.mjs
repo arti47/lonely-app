@@ -231,6 +231,60 @@ try {
   check('folded state lists tracked element types', ['PC', 'N', 'F', 'Inv'].every((t) => groups.includes(t)),
     `saw ${JSON.stringify(groups)}`);
 
+  // --- Phase 2: compose a session through the real UI ---
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 250)))`);
+
+  const rowCount = () => s.evaluate('document.querySelectorAll("#screen .log-row").length');
+  const before = await rowCount();
+  check('log renders one row per line', before === 11, `saw ${before}`);
+
+  check('composer mounts with every symbol', await s.evaluate('document.querySelectorAll("#screen .sym").length') === 8);
+
+  // Type into the composer and commit with Enter, as a player would.
+  await s.evaluate(`(() => {
+    const input = document.querySelector('#composer-input');
+    input.value = 'Climb the fire escape';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+
+  const after = await rowCount();
+  check('composer appends a line', after === before + 1, `${before} -> ${after}`);
+
+  const lastLine = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return c.log[c.log.length - 1];
+  })()`);
+  check('committed line carries its symbol', lastLine === '@ Climb the fire escape', JSON.stringify(lastLine));
+
+  // Undo pops it again.
+  await s.evaluate(`([...document.querySelectorAll('#screen .composer-tools .btn')]
+    .find(b => b.textContent === 'Undo')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+  check('undo removes the last line', await rowCount() === before);
+
+  const persisted = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return c.log.length;
+  })()`);
+  check('undo persists to storage', persisted === 11, `saw ${persisted}`);
+
+  // Export and reimport must fold identically (First Session Logged).
+  const identical = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const { lex } = await import('${base}/src/lonelog/lexer.js');
+    const { fold } = await import('${base}/src/lonelog/fold.js');
+    const norm = (st) => JSON.stringify(st, (k, v) =>
+      v instanceof Map ? { m: [...v.entries()] } : v instanceof Set ? { s: [...v].sort() } : v);
+    const c = await store.campaigns.get('${created}');
+    const md = store.toMarkdown(c);
+    const back = store.fromMarkdown(md, c.meta.title);
+    return norm(fold(lex(back.log.join('\\n')))) === norm(fold(lex(c.log.join('\\n'))));
+  })()`);
+  check('export/reimport folds identically', identical === true);
+
   for (const width of [360, 390]) {
     await s.send('Emulation.setDeviceMetricsOverride', { width, height: 780, deviceScaleFactor: 1, mobile: true });
     for (const route of ['campaigns', 'log', 'state', 'resolve', 'settings']) {

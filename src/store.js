@@ -57,7 +57,7 @@ export function normalizeCampaign(c) {
       ...(c.meta ?? {}),
     },
     log: Array.isArray(c.log) ? c.log : [],
-    bindings: { path: null, lastSavedHash: null, ...(c.bindings ?? {}) },
+    bindings: { path: null, lastSavedHash: null, handle: null, ...(c.bindings ?? {}) },
     view: { hiddenPanels: [], composerMode: 'symbols', ...(c.view ?? {}) },
   };
 }
@@ -158,6 +158,50 @@ export async function exportBackup() {
     tables: (await tx(STORES.tables, 'readonly', (s) => s.getAll())) ?? [],
   };
 }
+
+/**
+ * Bind a campaign to a real `.md` file on disk (CLAUDE.md §2). Where the File
+ * System Access API is missing the app falls back to download/upload, so this is
+ * an enhancement and never a requirement.
+ */
+export const fileBinding = {
+  supported() {
+    return typeof globalThis.showSaveFilePicker === 'function';
+  },
+
+  /** @param {object} campaign */
+  async bind(campaign) {
+    if (!fileBinding.supported()) throw new Error('This browser cannot bind to a file.');
+    const handle = await globalThis.showSaveFilePicker({
+      suggestedName: `${campaign.meta.title || 'campaign'}.md`,
+      types: [{ description: 'Lonelog markdown', accept: { 'text/markdown': ['.md'] } }],
+    });
+    campaign.bindings = { ...campaign.bindings, handle, path: handle.name };
+    await campaigns.put(campaign);
+    await fileBinding.write(campaign);
+    return handle.name;
+  },
+
+  /** @param {object} campaign @returns {Promise<boolean>} whether a write happened */
+  async write(campaign) {
+    const handle = campaign.bindings?.handle;
+    if (!handle) return false;
+    const mode = { mode: 'readwrite' };
+    let granted = await handle.queryPermission?.(mode);
+    if (granted !== 'granted') granted = await handle.requestPermission?.(mode);
+    if (granted !== 'granted') return false;
+    const writable = await handle.createWritable();
+    await writable.write(toMarkdown(campaign));
+    await writable.close();
+    return true;
+  },
+
+  /** @param {object} campaign */
+  async unbind(campaign) {
+    campaign.bindings = { path: null, lastSavedHash: null };
+    await campaigns.put(campaign);
+  },
+};
 
 /** @param {object} backup */
 export async function importBackup(backup) {

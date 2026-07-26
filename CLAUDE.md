@@ -98,7 +98,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 |---|---|
 | `core.js` | ✅ Constants, DOM/util helpers. No imports. **No RNG.** |
 | `ui.js` | ✅ Themed modals/toasts/confirm/prompt; theme switching |
-| `lonelog/lexer.js` | ✅ Line → `Entry{kind, raw, indent, …}`. Kinds: `action question dice resolution consequence tbl gen note dialogue tag marker block prose` |
+| `lonelog/lexer.js` | ✅ Line → `Entry{kind, raw, indent, …}`. Kinds: `action question dice resolution consequence tbl gen note dialogue sessionMeta tag marker block prose` |
 | `lonelog/tags.js` | ✅ Tag parse/serialise; tolerant of whitespace, `x`/`×`, `>=`/`≥` |
 | `lonelog/fold.js` | ✅ `Entry[]` → `CampaignState`, with per-scene checkpoints |
 | `lonelog/render.js` | ✅ `Entry[]` → markdown, digital or analog form |
@@ -106,9 +106,9 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `lonelog/index.js` | ✅ Engine barrel + `parse()` (lex → fold → lint) |
 | `compare.js` | Roll comparator over **entered** numbers. No RNG |
 | `templates.js` | Learned roll templates + saved tables; pack import/export |
-| `store.js` | ✅ IndexedDB persistence, markdown + JSON export/import. File-system binding still to come |
-| `composer.js` | Symbol-first entry: line kinds, tag builder, autocomplete |
-| `logview.js` | Transcript rendering, editing, truncation-undo |
+| `store.js` | ✅ IndexedDB persistence, markdown + JSON export/import, File System Access binding |
+| `composer.js` | ✅ Symbol-first entry: line kinds, tag builder, autocomplete |
+| `logview.js` | ✅ Transcript rendering, editing, truncation-undo |
 | `state.js` | State pane: folded PC sheet, NPC/location index, threads, clocks |
 | `resolve.js` | Roll entry, oracle lookup, user tables |
 | `addons/combat.js` | `[COMBAT]`, `Rd#`, `[F:]` surfaces |
@@ -118,7 +118,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `lifecycle.js` | Scene/session/campaign boundary events + undo (§6) |
 | `settings.js` | ✅ Preferences, theme, panel visibility, reference links |
 | `router.js` | ✅ Bottom-nav routing + conditional tab gating |
-| `screens.js` | ◐ Screen renderers. Campaigns + Settings functional; Log/State/Resolve render real folded state, awaiting Phases 2–4 |
+| `screens.js` | ◐ Screen renderers. Campaigns, Log and Settings functional; State/Resolve render real folded state, awaiting Phases 3–4 |
 | `main.js` | ✅ Entry point / boot |
 
 `src/lonelog/` imports nothing outside itself — it is the reusable engine and
@@ -210,7 +210,7 @@ campaigns/{id}
   meta:     { title, ruleset?, genre?, player?, tone?, createdAt, updatedAt,
               fileHandle? }                       // §5.1 core campaign header
   log:      string[]                              // THE artifact — raw lines, ordered
-  bindings: { path?, lastSavedHash? }             // File System Access binding
+  bindings: { path?, handle?, lastSavedHash? }    // File System Access binding
   view:     { hiddenPanels[], theme?, composerMode }   // UI state ONLY — never
                                                        // affects fold output (D6)
   checkpoints/{sceneIndex}: { lineIndex, state }  // fold memoisation, derivable,
@@ -251,14 +251,19 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
       round-trips byte-identically.** Engine is complete before any UI consumes
       it. *Done: 377/377 spec snippets round-trip; 69 unit tests and 20 browser
       checks green.*
-- [ ] **Phase 2 — Log pane.** Symbol-first composer (tap `@ ? d: -> =>`, tag
+- [x] **Phase 2 — Log pane.** Symbol-first composer (tap `@ ? d: -> =>`, tag
       builder, autocomplete from folded state); transcript rendering + editing;
       truncation-undo; scene/session markers; markdown export/import **and** JSON
       backup in Settings; file binding where supported.
-- [ ] **🏁 Milestone — First Session Logged.** Start a campaign → log a real solo
+      *Done: composer emits all eight line kinds plus scene, session, block and
+      tag builders; rows are clickable for edit and truncate-from-here.*
+- [x] **🏁 Milestone — First Session Logged.** Start a campaign → log a real solo
       session end-to-end → export valid Lonelog markdown → reimport it and get an
       identical fold. Verified at a real play session. **No system configuration
       of any kind is required to reach this milestone.**
+      *Met: `tests/milestone.test.js` composes a full session through the
+      composer's own helpers, exports, reimports and asserts an identical fold;
+      the browser run does the same through the UI.*
 - [ ] **Phase 3 — State pane.** Folded PC sheet from `[PC:]` tags (D5); NPC and
       location index; threads; clocks/tracks/timers with fill meters; persistent
       state header on every in-play screen; every value traceable to its line
@@ -436,6 +441,8 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 | 2026-07-26 | Instantiated canonical spec: architecture LOCKED to no-build ES modules, file/module tables, data model, 9-phase roadmap, 58-item conformance ledger, process rules | Template §5–§12 adapted; no code yet | — |
 | 2026-07-26 | **Phase 1 — notation engine.** `src/lonelog/{lexer,tags,fold,render,lint,index}.js`. Losslessness is achieved by replaying `raw`+`eol`, which makes canonicalisation an explicit opt-in transform rather than a side effect of reading a log. Ledger T1–T2, T4, T7, T9–T58 ticked; T3/T5/T6/T8 deferred to Phase 4 with reasons recorded inline | 377/377 spec snippets round-trip byte-identically; 69 unit tests green; fold deterministic and checkpoint-equivalent across the whole corpus | `lonely-v1` |
 | 2026-07-26 | **Phase 0 — foundations.** PWA shell, service worker, light/dark theme, IndexedDB store, hash router, accessible modal/toast primitives, markdown + JSON export/import, campaign CRUD | 20 headless-browser checks green: boots, all five screens render, zero console errors, zero horizontal overflow at 360/390px | `lonely-v1` |
+| 2026-07-26 | **Phase 2 — log pane, and the First Session Logged milestone.** `composer.js` (symbol bar, tag builder with autocomplete from folded state, scene/session/block inserters), `logview.js` (per-entry rows, tag highlighting, inline lint flags, edit, truncate-from-here), file binding via the File System Access API with download fallback. Undo is truncation throughout, with one-step restore of a truncated tail | 85 unit tests; 27 browser checks — composing through the real UI appends and persists, undo pops and persists, export→reimport folds identically | `lonely-v2` |
+| 2026-07-26 | Added a `sessionMeta` line kind for `*Date: … \| Duration: …*` under a session heading (core §5.2.1), which had been falling through to prose. Found by the milestone test asserting the composer cannot emit an unrecognised line. Fold attaches the pairs to the session they sit under | Regression tests both ways: metadata parses, ordinary italic prose still lexes as prose | `lonely-v2` |
 | 2026-07-26 | Fixed four parser defects found during the ledger pass: `exits DIR:ID` took its key as `exits S`; space-separated stat keys (`Armor CT30/RT25`) lost their key; `[Inv:Torch\|4]` quantity and `[Inv:Torch-1]` delta landed on different slots; a block opened in a scene header (`S9 *Ambush* [COMBAT]`, combat §1.1) never opened. Root cause in each: a parse rule written for one spec's shape that another spec's shape also matched | Regression test added per fix; full suite green | `lonely-v1` |
 
 ## Git

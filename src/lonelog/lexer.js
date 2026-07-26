@@ -17,7 +17,7 @@ export const KINDS = /** @type {const} */ ([
   'blank', 'frontmatter', 'fence', 'heading',
   'narrativeOpen', 'narrativeClose', 'narrative',
   'block', 'marker', 'action', 'question', 'dice', 'resolution',
-  'consequence', 'tbl', 'gen', 'note', 'dialogue', 'tag', 'prose',
+  'consequence', 'tbl', 'gen', 'note', 'dialogue', 'sessionMeta', 'tag', 'prose',
 ]);
 
 const RE_SCENE = /^(T(\d+)-)?S(\d+)([a-z])?(?:\.(\d+))?\b/;
@@ -27,6 +27,10 @@ const RE_BLOCK_BRACKET = /^\[\s*(\/?)\s*([A-Z][A-Z ]*?)\s*\]$/;
 const RE_BLOCK_ANALOG = /^---\s*(END\s+)?([A-Z][A-Z ]*?)\s*---$/;
 const RE_HEADING = /^(#{1,6})\s+(.*)$/;
 const RE_DIALOGUE = /^(N|PC)\s*(\(([^)]*)\))?\s*:\s*(.*)$/;
+// `*Date: 2025-09-03 | Duration: 1h30 | Scenes: S1-S2*` under a session heading
+// (core §5.2.1). Requires a `Key: value` opener so ordinary italic prose is not
+// swallowed.
+const RE_SESSION_META = /^\*\s*([A-Z][A-Za-z ]*:[^*]*)\*$/;
 
 /**
  * @param {string} text
@@ -183,6 +187,16 @@ function classify(s) {
 
   const d = RE_DIALOGUE.exec(s);
   if (d) return { kind: 'dialogue', speakerRole: d[1], speaker: d[3]?.trim() || null, text: d[4] };
+
+  const sm = RE_SESSION_META.exec(s);
+  if (sm) {
+    const meta = {};
+    for (const part of sm[1].split('|')) {
+      const kv = /^\s*([A-Za-z][A-Za-z ]*?)\s*:\s*(.*?)\s*$/.exec(part);
+      if (kv) meta[kv[1].trim().toLowerCase()] = kv[2];
+    }
+    return { kind: 'sessionMeta', meta, text: sm[1].trim() };
+  }
 
   const payload = tagPayload(s);
   if (payload.tags.length && payload.stripped === '') return { kind: 'tag', ...payload };
