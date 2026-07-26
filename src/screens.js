@@ -14,6 +14,7 @@ import { go } from './router.js';
 import { parse } from './lonelog/index.js';
 import { renderLog } from './logview.js';
 import { mountComposer } from './composer.js';
+import { renderState, renderStateHeader } from './state.js';
 
 const PHASE_NOTE = 'Not built yet — this pane arrives in a later phase. The notation engine underneath it is complete and tested.';
 
@@ -69,19 +70,6 @@ export async function campaignsScreen(mount) {
       }, ['Delete']),
     ]);
   })));
-}
-
-/** Shared header showing folded state — the persistent resource header (§1). */
-function stateHeader(state) {
-  const bits = [];
-  if (state.marker.scene) bits.push(['Scene', state.marker.scene.id]);
-  if (state.marker.round) bits.push(['Round', state.marker.round.id]);
-  if (state.marker.turn) bits.push(['Turn', state.marker.turn.id]);
-  bits.push(['Elements', String(state.elements.size)]);
-  bits.push(['Rolls', String(state.counts.rolls)]);
-
-  return el('div', { class: 'state-header', role: 'status' }, bits.map(([k, v]) =>
-    el('span', { class: 'chip' }, [el('span', { class: 'chip-key' }, [k]), ` ${v}`])));
 }
 
 async function openCampaign(mount, params) {
@@ -161,7 +149,7 @@ export async function logScreen(mount, params) {
     );
 
     clear(header);
-    header.append(stateHeader(state));
+    header.append(renderStateHeader(state, (line) => refresh(line)));
 
     renderLog(rows, entries, {
       findings,
@@ -208,53 +196,50 @@ export async function logScreen(mount, params) {
     });
   }
 
-  refresh();
+  refresh(params.line ?? null);
 }
 
 export async function stateScreen(mount, params) {
-  const c = await openCampaign(mount, params);
-  if (!c) return;
-  const { state } = parse(c.log.join('\n'));
+  let campaign = await openCampaign(mount, params);
+  if (!campaign) return;
 
-  mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, ['State'])]));
-  mount.append(stateHeader(state));
+  const head = el('header', { class: 'screen-head' }, [el('h1', {}, ['State'])]);
+  const header = el('div', { class: 'state-header-slot' });
+  const body = el('div', { class: 'state-body' });
+  mount.append(head, header, body);
 
-  const byType = new Map();
-  for (const element of state.elements.values()) {
-    if (!byType.has(element.type)) byType.set(element.type, []);
-    byType.get(element.type).push(element);
+  function refresh() {
+    const { state } = parse(campaign.log.join('\n'));
+    clear(header);
+    header.append(renderStateHeader(state, trace));
+    renderState(body, state, {
+      trace,
+      // Editing state appends a tag line; it never mutates state (§5.1).
+      commit: async (lines) => {
+        campaign.log.push(...lines);
+        campaign = await campaigns.put(campaign);
+        if (campaign.bindings?.handle) {
+          try { await fileBinding.write(campaign); } catch { /* reported on the log screen */ }
+        }
+        announce(`Appended ${lines.length} line${lines.length === 1 ? '' : 's'} to the log.`);
+        refresh();
+      },
+    });
   }
 
-  if (!byType.size) {
-    mount.append(el('p', { class: 'empty' }, ['Nothing tracked yet. State appears as tags appear in the log.']));
+  function trace(line) {
+    go('log', { id: campaign.id, line });
   }
 
-  for (const [type, items] of [...byType].sort()) {
-    mount.append(el('section', { class: 'group' }, [
-      el('h2', {}, [type]),
-      el('ul', { class: 'plain-list' }, items.map((item) => {
-        const parts = [];
-        if (item.count) parts.push(`x${item.count.value}`);
-        if (item.value) parts.push(item.value.value);
-        if (item.progress) parts.push(`${item.progress.current}/${item.progress.total}`);
-        for (const [k, v] of item.fields) parts.push(`${k} ${v.value}`);
-        for (const f of item.flags.keys()) parts.push(f);
-        return el('li', {}, [
-          el('span', { class: 'el-name' }, [item.name]),
-          el('span', { class: 'el-detail' }, [parts.join(' · ')]),
-          el('span', { class: 'el-line' }, [`line ${item.lastLine + 1}`]),
-        ]);
-      })),
-    ]));
-  }
-
-  mount.append(el('p', { class: 'note' }, [PHASE_NOTE]));
+  refresh();
 }
 
 export async function resolveScreen(mount, params) {
   const c = await openCampaign(mount, params);
   if (!c) return;
+  const { state } = parse(c.log.join('\n'));
   mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, ['Resolve'])]));
+  mount.append(renderStateHeader(state, (line) => go('log', { id: c.id, line })));
   mount.append(el('p', { class: 'note' }, [
     'You roll the dice; this pane will capture the numbers and label the outcome. It never rolls for you. ' + PHASE_NOTE,
   ]));

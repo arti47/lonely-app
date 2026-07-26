@@ -19,11 +19,16 @@ export function register(name, route) {
 export function parseHash(hash = location.hash) {
   const raw = hash.replace(/^#\/?/, '');
   const [name, ...rest] = raw.split('/');
-  return { name: name || 'campaigns', params: { id: rest[0] ?? null } };
+  const line = rest[1] != null && rest[1] !== '' ? Number(rest[1]) : null;
+  return {
+    name: name || 'campaigns',
+    params: { id: rest[0] ?? null, line: Number.isFinite(line) ? line : null },
+  };
 }
 
 export function go(name, params = {}) {
-  const suffix = params.id ? `/${params.id}` : '';
+  let suffix = params.id ? `/${params.id}` : '';
+  if (params.id && params.line != null) suffix += `/${params.line}`;
   location.hash = `#/${name}${suffix}`;
 }
 

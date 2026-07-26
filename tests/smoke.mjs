@@ -228,7 +228,8 @@ try {
 
   await s.evaluate(`(location.hash = '#/state/${created}', new Promise(r => setTimeout(r, 250)))`);
   const groups = await s.evaluate('[...document.querySelectorAll("#screen .group h2")].map(h => h.textContent)');
-  check('folded state lists tracked element types', ['PC', 'N', 'F', 'Inv'].every((t) => groups.includes(t)),
+  check('folded state groups core types under named sections and keeps add-on types visible',
+    ['Character', 'People & places', 'F', 'Inv'].every((t) => groups.includes(t)),
     `saw ${JSON.stringify(groups)}`);
 
   // --- Phase 2: compose a session through the real UI ---
@@ -284,6 +285,58 @@ try {
     return norm(fold(lex(back.log.join('\\n')))) === norm(fold(lex(c.log.join('\\n'))));
   })()`);
   check('export/reimport folds identically', identical === true);
+
+  // --- Phase 3: the State pane is a live view onto the fold ---
+  await s.evaluate(`(location.hash = '#/state/${created}', new Promise(r => setTimeout(r, 300)))`);
+
+  check('state header renders on the State pane',
+    await s.evaluate('!!document.querySelector("#screen .state-header")'));
+  check('character sheet is derived from [PC:] tags',
+    await s.evaluate('document.querySelector("#screen .sheet-name")?.textContent') === 'Alex');
+  check('PC stats render as steppable values',
+    await s.evaluate('document.querySelectorAll("#screen .stat").length') >= 1);
+
+  // Add a clock through the log, then step it from the State pane.
+  await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    c.log.push('[Clock:Suspicion 3/6]');
+    await store.campaigns.put(c);
+  })()`);
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 200)))`);
+  await s.evaluate(`(location.hash = '#/state/${created}', new Promise(r => setTimeout(r, 300)))`);
+
+  check('clocks render a fill meter',
+    await s.evaluate('document.querySelectorAll("#screen .meter-bar").length') === 1);
+
+  const linesBefore = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    return (await store.campaigns.get('${created}')).log.length;
+  })()`);
+
+  await s.evaluate(`(() => {
+    const meter = document.querySelector('#screen .meter');
+    [...meter.querySelectorAll('.btn-tiny')].find(b => b.textContent === '+').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+
+  const edit = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return { n: c.log.length, last: c.log[c.log.length - 1] };
+  })()`);
+  check('editing state appends a tag line to the log',
+    edit.n === linesBefore + 1 && edit.last === '[Clock:Suspicion 4/6]', JSON.stringify(edit));
+  check('the stepped meter re-renders from the fold',
+    (await s.evaluate('document.querySelector("#screen .meter-head .stat-trace")?.textContent')) === '4/6');
+
+  // Traceability: a value links back to the line that set it.
+  await s.evaluate(`(() => document.querySelector('#screen .stat-trace').click())()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 300))');
+  check('a state value traces back into the log',
+    /^#\/log\//.test(await s.evaluate('location.hash'))
+      && await s.evaluate('!!document.querySelector("#screen .log-row.is-focused")'),
+    await s.evaluate('location.hash'));
 
   for (const width of [360, 390]) {
     await s.send('Emulation.setDeviceMetricsOverride', { width, height: 780, deviceScaleFactor: 1, mobile: true });

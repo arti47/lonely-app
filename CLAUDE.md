@@ -109,7 +109,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `store.js` | ✅ IndexedDB persistence, markdown + JSON export/import, File System Access binding |
 | `composer.js` | ✅ Symbol-first entry: line kinds, tag builder, autocomplete |
 | `logview.js` | ✅ Transcript rendering, editing, truncation-undo |
-| `state.js` | State pane: folded PC sheet, NPC/location index, threads, clocks |
+| `state.js` | ✅ State pane: folded PC sheet, NPC/location index, threads, clocks; persistent state header |
 | `resolve.js` | Roll entry, oracle lookup, user tables |
 | `addons/combat.js` | `[COMBAT]`, `Rd#`, `[F:]` surfaces |
 | `addons/resources.js` | `[Inv:]`, `[Wealth:]`, `[RESOURCES]` surfaces |
@@ -118,7 +118,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `lifecycle.js` | Scene/session/campaign boundary events + undo (§6) |
 | `settings.js` | ✅ Preferences, theme, panel visibility, reference links |
 | `router.js` | ✅ Bottom-nav routing + conditional tab gating |
-| `screens.js` | ◐ Screen renderers. Campaigns, Log and Settings functional; State/Resolve render real folded state, awaiting Phases 3–4 |
+| `screens.js` | ◐ Screen renderers. Campaigns, Log, State and Settings functional; Resolve awaits Phase 4 |
 | `main.js` | ✅ Entry point / boot |
 
 `src/lonelog/` imports nothing outside itself — it is the reusable engine and
@@ -264,10 +264,13 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
       *Met: `tests/milestone.test.js` composes a full session through the
       composer's own helpers, exports, reimports and asserts an identical fold;
       the browser run does the same through the UI.*
-- [ ] **Phase 3 — State pane.** Folded PC sheet from `[PC:]` tags (D5); NPC and
+- [x] **Phase 3 — State pane.** Folded PC sheet from `[PC:]` tags (D5); NPC and
       location index; threads; clocks/tracks/timers with fill meters; persistent
       state header on every in-play screen; every value traceable to its line
       (§5.7); editing appends a tag line (§5.1).
+      *Done: steppers emit `[PC:Alex|HP-2]`, `[Clock:Name 4/6]`, `[Timer:Name 2]`,
+      `[N:X|+flag]` / `[N:X|-flag]` and `[Thread:X|Open -> Closed]`; every value
+      links back to the line that set it.*
 - [ ] **Phase 4 — Resolve pane.** Free-form roll entry; comparator (§3.1 module)
       covering sum vs TN/DC/AC, `≥`/`≤`, paired challenge dice, count-successes
       pools, keep-high/low, `dF` ladders, degree bands, match detection; generic
@@ -443,6 +446,8 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 | 2026-07-26 | **Phase 0 — foundations.** PWA shell, service worker, light/dark theme, IndexedDB store, hash router, accessible modal/toast primitives, markdown + JSON export/import, campaign CRUD | 20 headless-browser checks green: boots, all five screens render, zero console errors, zero horizontal overflow at 360/390px | `lonely-v1` |
 | 2026-07-26 | **Phase 2 — log pane, and the First Session Logged milestone.** `composer.js` (symbol bar, tag builder with autocomplete from folded state, scene/session/block inserters), `logview.js` (per-entry rows, tag highlighting, inline lint flags, edit, truncate-from-here), file binding via the File System Access API with download fallback. Undo is truncation throughout, with one-step restore of a truncated tail | 85 unit tests; 27 browser checks — composing through the real UI appends and persists, undo pops and persists, export→reimport folds identically | `lonely-v2` |
 | 2026-07-26 | Added a `sessionMeta` line kind for `*Date: … \| Duration: …*` under a session heading (core §5.2.1), which had been falling through to prose. Found by the milestone test asserting the composer cannot emit an unrecognised line. Fold attaches the pairs to the session they sit under | Regression tests both ways: metadata parses, ordinary italic prose still lexes as prose | `lonely-v2` |
+| 2026-07-26 | **Phase 3 — state pane.** `state.js`: character sheet folded from `[PC:]` tags (D5), clock/track fill meters, countdown timers, thread states, NPC/location index, and the persistent state header now shared by Log, State and Resolve. Every value links back to the line that set it (§5.7). Editing appends a tag line and never mutates state (§5.1). Thread state changes emit the transition form `[Thread:X\|Open -> Closed]` rather than a restatement, because flags accumulate — restating `Closed` would leave `Open` set too | 98 unit tests, each edit asserted by folding the emitted line back; 36 browser checks including stepping a clock from the State pane and tracing a value into the log | `lonely-v3` |
+| 2026-07-26 | Router now carries an optional line index (`#/log/<id>/<line>`) so a folded value can open the exact line that set it | Browser check: clicking a stat focuses its row in the log | `lonely-v3` |
 | 2026-07-26 | Fixed four parser defects found during the ledger pass: `exits DIR:ID` took its key as `exits S`; space-separated stat keys (`Armor CT30/RT25`) lost their key; `[Inv:Torch\|4]` quantity and `[Inv:Torch-1]` delta landed on different slots; a block opened in a scene header (`S9 *Ambush* [COMBAT]`, combat §1.1) never opened. Root cause in each: a parse rule written for one spec's shape that another spec's shape also matched | Regression test added per fix; full suite green | `lonely-v1` |
 
 ## Git
