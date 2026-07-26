@@ -15,6 +15,7 @@ import { flagLine, tag, field } from '../state.js';
 import { pick } from './combat.js';
 
 export const id = 'dungeon';
+export const reference = 'addon-dungeon';
 export const title = 'Dungeon';
 export const types = ['R'];
 

@@ -12,6 +12,7 @@ import { elementsOfType } from '../lonelog/fold.js';
 import { deltaLine, flagLine, transitionLine, countLine, tag, field } from '../state.js';
 
 export const id = 'combat';
+export const reference = 'addon-combat';
 export const title = 'Combat';
 export const types = ['F'];
 

@@ -81,8 +81,10 @@ Scene and session boundaries fire as one bundle — closing open blocks and
 snapshotting whichever add-ons are in play — with a summary first and one-step
 undo after. Roll the same shape a few times and the app offers to save it as a
 one-tap quick roll, which you can export as a pack — so a "system" accretes from
-play rather than being configured first. Remaining: lint surfacing and the
-searchable notation reference. See `CLAUDE.md` §8.
+play rather than being configured first. A searchable Notation tab explains every
+construct, and any line that breaks a spec rule is flagged with an explanation —
+never blocked. Remaining: the hardening pass (accessibility, full spec-conformance
+audit). See `CLAUDE.md` §8.
 
 ## Licensing
 

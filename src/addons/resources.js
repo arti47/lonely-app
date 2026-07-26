@@ -13,6 +13,7 @@ import { flagLine, tag, field } from '../state.js';
 import { pick } from './combat.js';
 
 export const id = 'resources';
+export const reference = 'addon-resources';
 export const title = 'Resources';
 export const types = ['Inv', 'Wealth'];
 

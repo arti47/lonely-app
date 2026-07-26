@@ -7,7 +7,8 @@
  */
 
 import { el, clear } from './core.js';
-import { modal, confirmModal, promptModal, showToast } from './ui.js';
+import { LINT_REFERENCE } from './reference.js';
+import { modal, confirmModal, promptModal, showToast, referenceButton } from './ui.js';
 
 /** Symbol shown in the gutter for each entry kind. */
 const GLYPH = {
@@ -66,9 +67,9 @@ export function renderLog(host, entries, ctx) {
 
     if (entry.line === ctx.focusLine) row.classList.add('is-focused');
 
-    row.addEventListener('click', () => openRowMenu(entry, ctx));
+    row.addEventListener('click', () => openRowMenu(entry, ctx, findings));
     row.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openRowMenu(entry, ctx); }
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openRowMenu(entry, ctx, findings); }
     });
 
     list.append(row);
@@ -99,10 +100,22 @@ function highlight(entry) {
   return out;
 }
 
-async function openRowMenu(entry, ctx) {
+async function openRowMenu(entry, ctx, findings = []) {
+  const body = el('div', {}, [el('pre', { class: 'log-preview' }, [entry.raw || '(blank)'])]);
+
+  // Lint is advisory: it explains, links to the reference, and never blocks.
+  for (const finding of findings) {
+    body.append(el('div', { class: `note note-${finding.severity === 'error' ? 'warn' : ''} lint-summary` }, [
+      el('span', {}, [finding.message]),
+      LINT_REFERENCE[finding.rule]
+        ? referenceButton(LINT_REFERENCE[finding.rule], { label: finding.rule })
+        : null,
+    ]));
+  }
+
   const choice = await modal({
     title: `Line ${entry.line + 1}`,
-    body: el('pre', { class: 'log-preview' }, [entry.raw || '(blank)']),
+    body,
     actions: [
       { label: 'Close', value: null },
       { label: 'Edit', value: 'edit' },

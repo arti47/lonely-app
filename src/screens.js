@@ -18,6 +18,7 @@ import { renderState, renderStateHeader, traceButton } from './state.js';
 import { renderResolve } from './resolve.js';
 import { templates as templateStore } from './store.js';
 import { toPack, fromPack } from './templates.js';
+import { search, grouped } from './reference.js';
 
 const PHASE_NOTE = 'Not built yet — this pane arrives in a later phase. The notation engine underneath it is complete and tested.';
 
@@ -97,9 +98,10 @@ export async function logScreen(mount, params) {
   const head = el('header', { class: 'screen-head' }, []);
   const header = el('div', { class: 'state-header-slot' });
   const rows = el('div', { class: 'log-scroll' });
+  const lintHost = el('div', {});
   const composerHost = el('div', { class: 'composer' });
 
-  mount.append(head, header, rows, composerHost);
+  mount.append(head, header, rows, lintHost, composerHost);
 
   async function persist() {
     campaign = await campaigns.put(campaign);
@@ -156,8 +158,13 @@ export async function logScreen(mount, params) {
     clear(header);
     header.append(renderStateHeader(state, (line) => refresh(line)));
 
+    const level = settings.get('lintLevel');
+    const shown = level === 'off' ? []
+      : level === 'all' ? findings
+        : findings.filter((f) => f.severity !== 'info');
+
     renderLog(rows, entries, {
-      findings,
+      findings: shown,
       focusLine,
       onTruncate: async (line) => {
         removed = campaign.log.slice(line);
@@ -173,6 +180,16 @@ export async function logScreen(mount, params) {
         refresh(line);
       },
     });
+
+    clear(lintHost);
+    if (shown.length) {
+      const errors = shown.filter((f) => f.severity === 'error').length;
+      lintHost.append(el('p', { class: `note ${errors ? 'note-warn' : ''}` }, [
+        `${shown.length} spec note${shown.length === 1 ? '' : 's'}`
+        + (errors ? `, ${errors} of them worth fixing` : '')
+        + ' — tap a flagged line to see why.',
+      ]));
+    }
 
     mountComposer(composerHost, {
       state,
@@ -326,6 +343,44 @@ export async function resolveScreen(mount, params) {
   await refresh();
 }
 
+export async function referenceScreen(mount) {
+  mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, ['Notation'])]));
+
+  const results = el('div', {});
+  const box = /** @type {HTMLInputElement} */ (el('input', {
+    class: 'input', type: 'search', id: 'ref-search', autocomplete: 'off',
+    placeholder: 'Search — clock, damage, inventory, flashback…',
+    'aria-label': 'Search the notation reference',
+    oninput: () => draw(box.value),
+  }));
+
+  function draw(query) {
+    clear(results);
+    const found = search(query);
+    if (!found.length) {
+      results.append(el('p', { class: 'empty' }, [`Nothing matches “${query}”.`]));
+      return;
+    }
+    for (const [group, entries] of grouped(found)) {
+      results.append(el('section', { class: 'group' }, [
+        el('h2', {}, [group]),
+        el('ul', { class: 'plain-list ref-list' }, entries.map((entry) => el('li', {}, [
+          el('div', { class: 'ref-head' }, [
+            el('span', { class: 'el-name' }, [entry.title]),
+            el('code', { class: 'ref-syntax' }, [entry.syntax]),
+          ]),
+          el('p', { class: 'el-detail' }, [entry.summary]),
+          el('pre', { class: 'log-preview' }, [entry.examples.join('\n')]),
+          el('p', { class: 'hint' }, [`Spec: ${entry.spec}`]),
+        ]))),
+      ]));
+    }
+  }
+
+  mount.append(el('div', { class: 'group' }, [box]), results);
+  draw('');
+}
+
 export async function settingsScreen(mount) {
   mount.append(el('header', { class: 'screen-head' }, [el('h1', {}, ['Settings'])]));
 
@@ -344,6 +399,29 @@ export async function settingsScreen(mount) {
       themeSelect,
     ]),
     el('p', { class: 'hint' }, ['“system” follows your device’s light or dark setting.']),
+  ]));
+
+  const lintSelect = el('select', {
+    class: 'input', id: 'lint-select',
+    onchange: async (e) => {
+      await settings.set('lintLevel', e.target.value);
+      announce(`Spec warnings set to ${e.target.value}.`);
+    },
+  }, [
+    ['warn', 'warnings and errors'],
+    ['all', 'everything, including style'],
+    ['off', 'off'],
+  ].map(([value, label]) => el('option', { value, selected: settings.get('lintLevel') === value }, [label])));
+
+  mount.append(el('section', { class: 'group' }, [
+    el('h2', {}, ['Spec warnings']),
+    el('div', { class: 'row' }, [
+      el('label', { class: 'field-label', for: 'lint-select' }, ['Show']),
+      lintSelect,
+    ]),
+    el('p', { class: 'hint' }, [
+      'Warnings are advisory and never block writing. Your log is yours.',
+    ]),
   ]));
 
   mount.append(el('section', { class: 'group' }, [

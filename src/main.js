@@ -1,7 +1,9 @@
 /** Entry point (CLAUDE.md §3.1). */
 
 import { register, start, go, parseHash } from './router.js';
-import { campaignsScreen, logScreen, stateScreen, resolveScreen, settingsScreen } from './screens.js';
+import {
+  campaignsScreen, logScreen, stateScreen, resolveScreen, referenceScreen, settingsScreen,
+} from './screens.js';
 import * as settings from './settings.js';
 import { showToast } from './ui.js';
 import { $$ } from './core.js';
@@ -10,6 +12,7 @@ register('campaigns', { title: 'Campaigns', render: campaignsScreen });
 register('log', { title: 'Log', render: logScreen });
 register('state', { title: 'State', render: stateScreen });
 register('resolve', { title: 'Resolve', render: resolveScreen });
+register('reference', { title: 'Notation', render: referenceScreen });
 register('settings', { title: 'Settings', render: settingsScreen });
 
 // Nav links carry the open campaign id across tabs.

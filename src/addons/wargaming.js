@@ -16,6 +16,7 @@ import { flagLine, transitionLine, countLine, tag, field } from '../state.js';
 import { pick } from './combat.js';
 
 export const id = 'wargaming';
+export const reference = 'addon-wargaming';
 export const title = 'Battle';
 export const types = ['Unit', 'Force', 'Scenario'];
 

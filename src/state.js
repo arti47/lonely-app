@@ -9,7 +9,7 @@
  */
 
 import { el, clear } from './core.js';
-import { modal, promptModal } from './ui.js';
+import { modal, promptModal, referenceButton } from './ui.js';
 import { serializeTag } from './lonelog/tags.js';
 import { elementsOfType } from './lonelog/fold.js';
 import { surfaced } from './addons/index.js';
@@ -219,6 +219,7 @@ export function renderState(host, state, ctx) {
     const panel = el('section', { class: 'group addon', dataset: { addon: addon.id } }, [
       el('div', { class: 'addon-head' }, [
         el('h2', {}, [addon.title]),
+        addon.reference ? referenceButton(addon.reference, { label: addon.title }) : null,
         el('button', {
           class: 'btn btn-tiny', type: 'button',
           'aria-expanded': hidden ? 'false' : 'true',

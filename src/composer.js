@@ -10,21 +10,21 @@
  */
 
 import { el, clear, today } from './core.js';
-import { modal, promptModal, showToast, announce } from './ui.js';
+import { modal, promptModal, showToast, announce, referenceButton } from './ui.js';
 import { serializeTag, KNOWN_TAG_TYPES, BLOCK_NAMES } from './lonelog/tags.js';
 import { elementsOfType } from './lonelog/fold.js';
 import { sceneBundle, sessionStartBundle, sessionEndBundle } from './lifecycle.js';
 
 /** Line kinds the composer can emit, in bar order. */
 export const SYMBOLS = [
-  { kind: 'action', glyph: '@', label: 'Action', prefix: '@ ' },
-  { kind: 'question', glyph: '?', label: 'Oracle question', prefix: '? ' },
-  { kind: 'dice', glyph: 'd:', label: 'Dice or oracle roll', prefix: 'd: ' },
-  { kind: 'resolution', glyph: '->', label: 'Resolution', prefix: '-> ' },
-  { kind: 'consequence', glyph: '=>', label: 'Consequence', prefix: '=> ' },
-  { kind: 'tbl', glyph: 'tbl:', label: 'Table lookup', prefix: 'tbl: ' },
-  { kind: 'gen', glyph: 'gen:', label: 'Generator', prefix: 'gen: ' },
-  { kind: 'note', glyph: '( )', label: 'Meta note', prefix: '(note: ', suffix: ')' },
+  { kind: 'action', glyph: '@', label: 'Action', prefix: '@ ', ref: 'action' },
+  { kind: 'question', glyph: '?', label: 'Oracle question', prefix: '? ', ref: 'question' },
+  { kind: 'dice', glyph: 'd:', label: 'Dice or oracle roll', prefix: 'd: ', ref: 'dice' },
+  { kind: 'resolution', glyph: '->', label: 'Resolution', prefix: '-> ', ref: 'resolution' },
+  { kind: 'consequence', glyph: '=>', label: 'Consequence', prefix: '=> ', ref: 'consequence' },
+  { kind: 'tbl', glyph: 'tbl:', label: 'Table lookup', prefix: 'tbl: ', ref: 'tbl' },
+  { kind: 'gen', glyph: 'gen:', label: 'Generator', prefix: 'gen: ', ref: 'gen' },
+  { kind: 'note', glyph: '( )', label: 'Meta note', prefix: '(note: ', suffix: ')', ref: 'note' },
 ];
 
 /**
@@ -105,6 +105,8 @@ export function mountComposer(host, ctx) {
 
   let kind = 'action';
 
+  const explain = el('span', { class: 'composer-explain' });
+
   const input = /** @type {HTMLInputElement} */ (el('input', {
     class: 'input composer-input',
     type: 'text',
@@ -127,7 +129,10 @@ export function mountComposer(host, ctx) {
     for (const b of bar.querySelectorAll('.sym')) {
       b.setAttribute('aria-pressed', b.getAttribute('data-kind') === kind ? 'true' : 'false');
     }
-    input.placeholder = SYMBOLS.find((s) => s.kind === kind)?.label ?? 'Line';
+    const symbol = SYMBOLS.find((s) => s.kind === kind);
+    input.placeholder = symbol?.label ?? 'Line';
+    clear(explain);
+    if (symbol?.ref) explain.append(referenceButton(symbol.ref, { label: symbol.label }));
     input.focus();
   }
 
@@ -196,6 +201,7 @@ export function mountComposer(host, ctx) {
     bar,
     el('div', { class: 'composer-row' }, [
       input,
+      explain,
       el('button', { class: 'btn btn-primary', type: 'button', onclick: commitCurrent }, ['Add']),
     ]),
     tools,

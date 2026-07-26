@@ -113,3 +113,31 @@ export function applyTheme(theme) {
 export function dismissModal() {
   openModal?.done(null);
 }
+
+/**
+ * A small “?” that opens a notation reference entry (CLAUDE.md §8 Phase 8 —
+ * every automated surface links to its entry).
+ * @param {string} entryId
+ * @param {{label?:string}} [opts]
+ */
+export function referenceButton(entryId, opts = {}) {
+  return el('button', {
+    class: 'ref-btn', type: 'button',
+    'aria-label': `What is ${opts.label ?? entryId}?`,
+    title: 'Explain this notation',
+    onclick: async () => {
+      const { entryFor } = await import('./reference.js');
+      const entry = entryFor(entryId);
+      if (!entry) return;
+      await modal({
+        title: entry.title,
+        body: el('div', {}, [
+          el('code', { class: 'ref-syntax' }, [entry.syntax]),
+          el('p', {}, [entry.summary]),
+          el('pre', { class: 'log-preview' }, [entry.examples.join('\n')]),
+          el('p', { class: 'hint' }, [`Spec: ${entry.spec}`]),
+        ]),
+      });
+    },
+  }, ['?']);
+}

@@ -483,3 +483,30 @@ p { margin: 0 0 12px; }
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 .suggestion .el-detail { flex: 1 1 160px; }
+
+/* --- Phase 8: lint surfacing and the notation reference --- */
+
+.ref-btn {
+  flex: 0 0 auto;
+  width: 26px; height: 26px; padding: 0;
+  border: 1px solid var(--line); border-radius: 50%;
+  background: var(--paper); color: var(--ink-soft);
+  font: inherit; font-size: 0.8rem; line-height: 1; cursor: pointer;
+}
+.ref-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.composer-explain { display: flex; align-items: center; }
+
+.ref-syntax {
+  font-family: var(--mono); font-size: 0.8rem;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  border-radius: 4px; padding: 1px 6px;
+  word-break: break-word;
+}
+
+.ref-list li { display: block; padding: 10px 0; }
+.ref-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-bottom: 4px; }
+.ref-list .el-detail { display: block; margin: 0 0 6px; }
+.ref-list .log-preview { margin-bottom: 4px; }
+
+.lint-summary { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }

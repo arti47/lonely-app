@@ -194,7 +194,7 @@ try {
   })`);
 
   check('app boots', await s.evaluate('document.body.dataset.booted === "true"'));
-  check('nav renders all five tabs', await s.evaluate('document.querySelectorAll("[data-nav]").length') === 5);
+  check('nav renders every tab', await s.evaluate('document.querySelectorAll("[data-nav]").length') === 6);
   check('campaigns screen renders', (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Campaigns');
 
   // Create a campaign directly through the store, then exercise every screen.
@@ -635,10 +635,61 @@ try {
       && preset.dice.length === 1 && preset.dice[0] === '' && preset.addDisabled === true,
     JSON.stringify(preset));
 
+  // --- Phase 8: searchable reference, and lint that explains itself ---
+  await s.evaluate(`(location.hash = '#/reference', new Promise(r => setTimeout(r, 350)))`);
+  check('reference screen renders',
+    (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Notation');
+
+  const allEntries = await s.evaluate('document.querySelectorAll("#screen .ref-list li").length');
+  check('the reference lists every entry', allEntries > 20, String(allEntries));
+
+  await s.evaluate(`(() => {
+    const box = document.querySelector('#ref-search');
+    box.value = 'clock';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 200))');
+  const narrowed = await s.evaluate('document.querySelectorAll("#screen .ref-list li").length');
+  check('searching narrows the reference', narrowed > 0 && narrowed < allEntries,
+    `${allEntries} -> ${narrowed}`);
+
+  // A composer symbol explains the notation it writes.
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 350)))`);
+  check('the composer links to the reference entry for the selected symbol',
+    await s.evaluate('!!document.querySelector("#screen .composer-explain .ref-btn")'));
+
+  await s.evaluate('document.querySelector("#screen .composer-explain .ref-btn").click()');
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+  check('the reference opens from the composer',
+    (await s.evaluate('document.querySelector(".modal-title")?.textContent')) === 'Action');
+  await s.evaluate(`document.querySelector('.modal-actions .btn').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 200))');
+
+  // Lint is advisory: a violation is flagged, never blocked.
+  await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    c.log.push('[Wealth:Gold 50gc+7gc] => [Wealth:Gold 57gc]');
+    await store.campaigns.put(c);
+  })()`);
+  await s.evaluate(`(location.hash = '#/state/${created}', new Promise(r => setTimeout(r, 200)))`);
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 400)))`);
+
+  check('a spec violation is flagged on its line but still written',
+    await s.evaluate('document.querySelectorAll("#screen .log-row.has-error").length') === 1);
+
+  await s.evaluate(`document.querySelector('#screen .log-row.has-error').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+  check('the flag explains itself and links to the reference',
+    await s.evaluate('!!document.querySelector(".modal .lint-summary .ref-btn")'));
+  await s.evaluate(`([...document.querySelectorAll('.modal-actions .btn')]
+    .find(b => b.textContent === 'Close')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 200))');
+
   for (const width of [360, 390]) {
     await s.send('Emulation.setDeviceMetricsOverride', { width, height: 780, deviceScaleFactor: 1, mobile: true });
-    for (const route of ['campaigns', 'log', 'state', 'resolve', 'settings']) {
-      const id = route === 'campaigns' || route === 'settings' ? '' : `/${created}`;
+    for (const route of ['campaigns', 'log', 'state', 'resolve', 'reference', 'settings']) {
+      const id = ['campaigns', 'settings', 'reference'].includes(route) ? '' : `/${created}`;
       await s.evaluate(`(location.hash = '#/${route}${id}', new Promise(r => setTimeout(r, 200)))`);
       const overflow = await s.evaluate('document.documentElement.scrollWidth - document.documentElement.clientWidth');
       check(`no horizontal overflow at ${width}px on ${route}`, overflow <= 0, `overflow ${overflow}px`);
