@@ -1,0 +1,10 @@
+[RESOURCES]
+[PC:Kael | HP 10/15 | Supply d6] [Wealth: Gold 52]
+[Inv: Torch|2] [Inv: Arrow|9] [Inv: Healing Potion | 1]
+[/RESOURCES]
+@Light a torch
+[Inv: Torch-1] [Timer: Torchlight 6]
+@Fire at the orc
+d: Ranged d6=5 vs TN 4 -> Success
+=> [F:Orc|HP-4] [Inv: Arrow-1]
+=> I bandage up after the fight. [Inv: Healing Potion-1] [PC:Kael|HP+5|HP 15]

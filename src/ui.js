@@ -1,0 +1,115 @@
+/**
+ * Themed UI primitives (CLAUDE.md §2). Native alert/confirm/prompt are not used
+ * anywhere in the app; these are the accessible replacements — focus trap,
+ * Escape to dismiss, focus restore, sized to the visual viewport.
+ */
+
+import { $, el, clear } from './core.js';
+
+let openModal = null;
+
+/**
+ * @param {{title:string, body:Node|string, actions?:{label:string,value:any,primary?:boolean}[]}} opts
+ * @returns {Promise<any>} the chosen action's value, or null if dismissed
+ */
+export function modal({ title, body, actions = [{ label: 'Close', value: null, primary: true }] }) {
+  return new Promise((resolve) => {
+    const previous = document.activeElement;
+    const titleId = 'modal-title';
+
+    const buttons = actions.map((a) => el('button', {
+      class: a.primary ? 'btn btn-primary' : 'btn',
+      type: 'button',
+      onclick: () => done(a.value),
+    }, [a.label]));
+
+    const dialog = el('div', { class: 'modal', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId }, [
+      el('h2', { class: 'modal-title', id: titleId }, [title]),
+      el('div', { class: 'modal-body' }, [body]),
+      el('div', { class: 'modal-actions' }, buttons),
+    ]);
+    const backdrop = el('div', { class: 'modal-backdrop' }, [dialog]);
+
+    function onKey(e) {
+      if (e.key === 'Escape') { e.preventDefault(); done(null); return; }
+      if (e.key !== 'Tab') return;
+      const focusable = /** @type {HTMLElement[]} */ ([...dialog.querySelectorAll(
+        'button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])')]);
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+
+    function done(value) {
+      document.removeEventListener('keydown', onKey, true);
+      backdrop.remove();
+      openModal = null;
+      if (previous instanceof HTMLElement) previous.focus();
+      resolve(value);
+    }
+
+    backdrop.addEventListener('mousedown', (e) => { if (e.target === backdrop) done(null); });
+    document.addEventListener('keydown', onKey, true);
+    document.body.append(backdrop);
+    openModal = { done };
+    (buttons.find((b) => b.classList.contains('btn-primary')) ?? buttons[0])?.focus();
+  });
+}
+
+/** @param {string} message */
+export async function confirmModal(message, { title = 'Confirm', confirmLabel = 'Confirm' } = {}) {
+  return (await modal({
+    title, body: message,
+    actions: [
+      { label: 'Cancel', value: false },
+      { label: confirmLabel, value: true, primary: true },
+    ],
+  })) === true;
+}
+
+/** @param {string} message */
+export async function promptModal(message, { title = 'Enter a value', value = '', placeholder = '' } = {}) {
+  const input = /** @type {HTMLInputElement} */ (
+    el('input', { class: 'input', type: 'text', value, placeholder, 'aria-label': message }));
+  const body = el('div', {}, [el('label', { class: 'field-label' }, [message]), input]);
+  const result = await modal({
+    title, body,
+    actions: [{ label: 'Cancel', value: null }, { label: 'OK', value: true, primary: true }],
+  });
+  return result === true ? input.value : null;
+}
+
+let toastTimer = null;
+
+/** @param {string} message @param {{tone?:'info'|'error'}} [opts] */
+export function showToast(message, { tone = 'info' } = {}) {
+  const host = $('#toast');
+  if (!host) return;
+  clear(host);
+  host.dataset.tone = tone;
+  host.append(el('div', { class: 'toast-body' }, [message]));
+  host.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { host.hidden = true; }, 4000);
+}
+
+/** Screen-reader announcement without a visual toast. */
+export function announce(message) {
+  const host = $('#live');
+  if (host) host.textContent = message;
+}
+
+export const THEMES = ['system', 'light', 'dark'];
+
+/** @param {string} theme */
+export function applyTheme(theme) {
+  const t = THEMES.includes(theme) ? theme : 'system';
+  document.documentElement.dataset.theme = t;
+  return t;
+}
+
+/** Close whatever modal is open, if any (used on route changes). */
+export function dismissModal() {
+  openModal?.done(null);
+}

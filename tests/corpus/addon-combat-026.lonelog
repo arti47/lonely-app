@@ -1,0 +1,6 @@
+S9 *Dock ambush* [COMBAT]
+[PC:HP 12] [F: Captain | HP 10] [F: Piratex2|HP 4] [F:Rat | HP 2]
+Rd1 @Rat d: 17 >= 10 Hit => dead @(Cap) d: 19 >= 14 Hit HP-7 @(Pirx2) d: 15,9 vs11 1Hit [N: Jordan HP-4]
+Rd2 @Cap d: 20 >= 13 Hit =>HP-6 @(Pir) d: 8 >= 14 Miss @(Jordan) d: 16 >= 11 Hit =>Pir dead
+Rd3 @Cap d: 15 >= 13 Hit =>Cap HP-4, flees
+[/COMBAT] =>Captain escapes

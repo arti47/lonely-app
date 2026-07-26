@@ -1,0 +1,32 @@
+[BATTLE]
+[Scenario:Wyrdstone Hunt | Collect 3 shards | 6 turns]
+[Unit: Swordsmen|x3| Morale 7 | Fresh]
+[N: Captain Streng|WS4|Ld8|sword+pistol|Fresh]
+[Unit:Skaven Night Runners|x6|Morale 5|Fresh]
+[N:Skaven Assassin | WS5|hidden]
+Tn1
+@Advance Swordsmen to center ruins
+@(Night Runners) Move toward objective marker
+Tn2
+@(Skaven Assassin) Reveals and charges Streng
+- personal combat begins
+[COMBAT]
+[F:Skaven Assassin | WS5 | Str4|2 attacks]
+Rd1
+@Streng parries, counterattack
+d: WS4 vs WS5 2d6=8 -> Hit
+d: Wound Str3 vs T3 1d6=5 -> Wound
+=> [F:Skaven Assassin | HP-1|wounded]
+@(Skaven Assassin) Two attacks
+d: WS5 vs WS4 2d6=7 -> 1 hit
+d: Wound Str4 vs T4 1d6=3 -> No wound
+Rd2
+@Press the advantage
+d: WS4 vs WS5 2d6=10 -> Hit
+=> [F:Skaven Assassin | knocked down]
+[/COMBAT]
+=> [N:Skaven Assassin|fled]
+Tn3
+@Swordsmen charge the Night Runners
+d: Charge 2d6+1=9 vs TN 7 -> Hit
+=> [Unit:Night Runners|x4|wavering]

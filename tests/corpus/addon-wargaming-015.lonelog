@@ -1,0 +1,4 @@
+[Unit:Ironclad Rifles | x12 | Morale 8 | Fresh]
+[Unit:Skeleton Warriors |x8 | Morale 4 | Fresh|at bridge]
+[Unit:Cavalry Screen|x6|Morale 7 | at ridge| Engaged]
+[Unit:Artillery Battery | x4 | Morale 6| rear | Pinned]

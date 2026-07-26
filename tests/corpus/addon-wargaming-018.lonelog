@@ -1,0 +1,3 @@
+[Unit:Orc Mob|full|Morale 5|Fresh]
+=> [Unit:Orc Mob|half|wavering]
+=> [Unit:Orc Mob|depleted|broken]

@@ -1,0 +1,18 @@
+S7 *Guard room* [COMBAT]
+[PC:Alex | HP 10 | Engaged] [Inv: Health Potion|2]
+[F:Guard 2|HP 5 each | Close|armed]
+Rd1
+@Strike Guard 1
+d: d20+4=19 vs AC 12 -> Hit, 1d8=7
+=> [F:Guard 1 | dead]
+@(Guard 2) Counterattack
+d: d20+3=16 vs AC 14 -> Hit, 1d6=4
+=> [PC:Alex|HP-4|HP 6]
+Rd2
+@Drink healing potion (action)
+=> [PC:Alex|HP+4|HP 10] [Inv: Health Potion | 1]
+@(Guard 2) Retreats and raises alarm
+=> [F:Guard 2 | fled]
+[/COMBAT]
+=> Guard room clear, one potion used, alarm raised.
+[Thread: Alarm Raised | Open]

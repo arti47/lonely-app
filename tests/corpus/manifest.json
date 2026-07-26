@@ -1,0 +1,1887 @@
+[
+  {
+    "file": "addon-combat-001.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-002.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-003.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-combat-004.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 8
+  },
+  {
+    "file": "addon-combat-005.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-006.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-combat-007.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-008.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 13
+  },
+  {
+    "file": "addon-combat-009.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-010.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-011.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-combat-012.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-013.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-014.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-015.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-016.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-017.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-018.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 8
+  },
+  {
+    "file": "addon-combat-019.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-020.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-combat-021.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-combat-022.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 6
+  },
+  {
+    "file": "addon-combat-023.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-combat-024.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-combat-025.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-combat-026.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 6
+  },
+  {
+    "file": "addon-combat-027.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 29
+  },
+  {
+    "file": "addon-combat-028.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 48
+  },
+  {
+    "file": "addon-combat-029.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 18
+  },
+  {
+    "file": "addon-combat-030.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 8
+  },
+  {
+    "file": "addon-combat-031.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 11
+  },
+  {
+    "file": "addon-combat-032.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 7
+  },
+  {
+    "file": "addon-combat-033.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-034.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-combat-035.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-combat-036.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-combat-037.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-038.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-039.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-combat-040.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-041.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-combat-042.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-combat-043.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-combat-044.lonelog",
+    "source": "docs/spec/addon-combat.md",
+    "lines": 11
+  },
+  {
+    "file": "addon-dungeon-001.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-dungeon-002.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 13
+  },
+  {
+    "file": "addon-dungeon-003.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-dungeon-004.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-dungeon-005.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-dungeon-006.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-dungeon-007.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-dungeon-008.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-dungeon-009.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-dungeon-010.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-dungeon-011.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-dungeon-012.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-dungeon-013.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 7
+  },
+  {
+    "file": "addon-dungeon-014.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 12
+  },
+  {
+    "file": "addon-dungeon-015.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-dungeon-016.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-dungeon-017.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 6
+  },
+  {
+    "file": "addon-dungeon-018.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 31
+  },
+  {
+    "file": "addon-dungeon-019.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-dungeon-020.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 10
+  },
+  {
+    "file": "addon-dungeon-021.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 13
+  },
+  {
+    "file": "addon-dungeon-022.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 10
+  },
+  {
+    "file": "addon-dungeon-023.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 7
+  },
+  {
+    "file": "addon-dungeon-024.lonelog",
+    "source": "docs/spec/addon-dungeon.md",
+    "lines": 14
+  },
+  {
+    "file": "addon-resources-001.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-resources-002.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-003.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-resources-004.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-resources-005.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-resources-006.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-resources-007.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-008.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-resources-009.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-resources-010.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-011.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-resources-012.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 9
+  },
+  {
+    "file": "addon-resources-013.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-resources-014.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-resources-015.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-016.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-resources-017.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-018.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-resources-019.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-resources-020.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-resources-021.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-resources-022.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 6
+  },
+  {
+    "file": "addon-resources-023.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-024.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-025.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 10
+  },
+  {
+    "file": "addon-resources-026.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 8
+  },
+  {
+    "file": "addon-resources-027.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-resources-028.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 12
+  },
+  {
+    "file": "addon-resources-029.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 9
+  },
+  {
+    "file": "addon-resources-030.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 38
+  },
+  {
+    "file": "addon-resources-031.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 5
+  },
+  {
+    "file": "addon-resources-032.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-resources-033.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 7
+  },
+  {
+    "file": "addon-resources-034.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-035.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-resources-036.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 12
+  },
+  {
+    "file": "addon-resources-037.lonelog",
+    "source": "docs/spec/addon-resources.md",
+    "lines": 10
+  },
+  {
+    "file": "addon-wargaming-001.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 32
+  },
+  {
+    "file": "addon-wargaming-002.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-wargaming-003.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-004.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-wargaming-005.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-wargaming-006.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-007.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-wargaming-008.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-wargaming-009.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-010.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-wargaming-011.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 10
+  },
+  {
+    "file": "addon-wargaming-012.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-013.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-wargaming-014.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 12
+  },
+  {
+    "file": "addon-wargaming-015.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-wargaming-016.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-wargaming-017.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-018.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-019.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-wargaming-020.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-wargaming-021.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-022.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 6
+  },
+  {
+    "file": "addon-wargaming-023.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-024.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-025.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-026.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 8
+  },
+  {
+    "file": "addon-wargaming-027.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 10
+  },
+  {
+    "file": "addon-wargaming-028.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-wargaming-029.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 1
+  },
+  {
+    "file": "addon-wargaming-030.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 7
+  },
+  {
+    "file": "addon-wargaming-031.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 9
+  },
+  {
+    "file": "addon-wargaming-032.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-033.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 2
+  },
+  {
+    "file": "addon-wargaming-034.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-035.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 12
+  },
+  {
+    "file": "addon-wargaming-036.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-037.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 3
+  },
+  {
+    "file": "addon-wargaming-038.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 4
+  },
+  {
+    "file": "addon-wargaming-039.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 32
+  },
+  {
+    "file": "addon-wargaming-040.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 8
+  },
+  {
+    "file": "addon-wargaming-041.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 65
+  },
+  {
+    "file": "addon-wargaming-042.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 59
+  },
+  {
+    "file": "addon-wargaming-043.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 43
+  },
+  {
+    "file": "addon-wargaming-044.lonelog",
+    "source": "docs/spec/addon-wargaming.md",
+    "lines": 33
+  },
+  {
+    "file": "lonelog-core-001.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 5
+  },
+  {
+    "file": "lonelog-core-002.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-003.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 5
+  },
+  {
+    "file": "lonelog-core-004.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-005.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-006.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-007.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-008.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 6
+  },
+  {
+    "file": "lonelog-core-009.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-010.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-011.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-012.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-013.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-014.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-015.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-016.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-017.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-018.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-019.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-020.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-021.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-022.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-023.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-024.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-025.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-026.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-027.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-028.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-029.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-030.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-031.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-032.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-033.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-034.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-035.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-036.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-037.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-038.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-039.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-040.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-041.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-042.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-043.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-044.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-045.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-046.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-047.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-048.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-049.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-050.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-051.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-052.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-053.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-054.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-055.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-056.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-057.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-058.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-059.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-060.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-061.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-062.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-063.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-064.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-065.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-066.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-067.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-068.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-069.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-070.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-071.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-072.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-073.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-074.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-075.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-076.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-077.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-078.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-079.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-080.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-081.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-082.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-083.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-084.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-085.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-086.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-087.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-088.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-089.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-090.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-091.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-092.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-093.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-094.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-095.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-096.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-097.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-098.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-099.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-100.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-101.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-102.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-103.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-104.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-105.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-106.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-107.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-108.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-109.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-110.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-111.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-112.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-113.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-114.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-115.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-116.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-117.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-118.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-119.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-120.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-121.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 5
+  },
+  {
+    "file": "lonelog-core-122.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-123.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-124.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-125.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-126.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-127.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-128.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-129.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 5
+  },
+  {
+    "file": "lonelog-core-130.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-131.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 10
+  },
+  {
+    "file": "lonelog-core-132.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 5
+  },
+  {
+    "file": "lonelog-core-133.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-134.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 6
+  },
+  {
+    "file": "lonelog-core-135.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-136.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-137.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-138.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-139.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 5
+  },
+  {
+    "file": "lonelog-core-140.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 6
+  },
+  {
+    "file": "lonelog-core-141.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-142.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-143.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-144.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-145.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-146.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-147.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-148.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-149.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-150.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-151.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-152.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-153.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-154.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-155.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-156.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-157.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-158.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-159.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-160.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-161.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-162.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-163.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-164.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-165.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-166.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-167.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 4
+  },
+  {
+    "file": "lonelog-core-168.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-169.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 6
+  },
+  {
+    "file": "lonelog-core-170.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-171.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-172.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-173.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-174.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-175.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-176.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-177.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-178.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-179.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-180.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-181.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-182.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-183.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-184.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-185.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-186.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-187.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-188.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-189.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-190.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-191.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-192.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-193.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-194.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-195.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-196.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-197.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-198.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-199.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-200.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-201.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-202.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-203.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-204.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-205.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-206.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 3
+  },
+  {
+    "file": "lonelog-core-207.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-208.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-209.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-210.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-211.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-212.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 6
+  },
+  {
+    "file": "lonelog-core-213.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-214.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-215.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-216.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-217.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-218.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-219.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-220.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-221.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-222.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-223.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-224.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 2
+  },
+  {
+    "file": "lonelog-core-225.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-226.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-227.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  },
+  {
+    "file": "lonelog-core-228.lonelog",
+    "source": "docs/spec/lonelog-core.md",
+    "lines": 1
+  }
+]

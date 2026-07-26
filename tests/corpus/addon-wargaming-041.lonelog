@@ -1,0 +1,65 @@
+[CAMPAIGN]
+[Force: Reiklanders | Captain Streng | 5 units | 16 XP warband]
+[N:Captain Streng|WS4|BS3|S3|T3|W1|I4|A2|Ld8| 6 XP|Fresh]
+[N:Champion Aldric|WS3|BS3|S3|T3|W1|I3|A1 | Ld7|Step Aside | 4 XP|Fresh]
+[Unit:Swordsmen|x3| Exp 0|Fresh]
+[Unit:Marksmen|x2| Exp 2 | Marksman skill|Fresh]
+[Unit:Dwarf Slayer |x1| Exp 3 | Fearless | Fresh]
+[Wealth: Gold 57gc]
+[/CAMPAIGN]
+
+### S1 *The Merchant Quarter wyrdstone hunt*
+[BATTLE]
+[Scenario: Wyrdstone Hunt | Collect 3 shards before opponent |6 turns | Dusk: shooting range -6"]
+[Force: Skaven | Grey Seer (hidden) |3 units]
+[Unit:Night Runners|x6|Morale 5 | Fresh|east deployment]
+[Unit:Clanrats|x4|Morale 4|Fresh|east deployment]
+[N:Skaven Grey Seer | WS3|magic|hidden]
+
+Tn1
+@Advance Swordsmen to center ruins
+@(Aldric) Move to cover the left alley
+@(Night Runners) Advance through rubble
+=> [Unit:Night Runners|x6|at rubble]
+
+Tn2
+@Marksmen fire on Night Runners
+d: Shooting BS3 2d6=7 vs TN 7 -> Hit
+=> [Unit:Night Runners|x5| Morale 5 | Steady]
+@ Streng moves to search first wyrdstone marker
+d: Search 1d6=5 -> Shard found
+=> Shard 1/3 collected.
+@(Grey Seer) Reveals and casts Warp Lightning at Streng
+d: Magic 2d6=9 vs TN 7 -> Success, Str5 hit
+d: Wound S5 vs T3 1d6=6 -> Wound, Streng knocked down
+=> [N:Captain Streng|knocked down|HP-1]
+
+Tn3
+@Streng recovers, charges Grey Seer
+d: WS4 vs WS3 2d6=8 -> Hit
+d: Wound S3 vs T3 1d6=4 -> Wound
+=> [N:Grey Seer | wounded|fleeing]
+@Aldric charges Night Runners with Swordsmen
+d: WS3 vs WS3 2d6=10 -> Hit, 2 kills
+=> [Unit:Night Runners|x3|wavering]
+d: Morale 1d6=5 vs Ld 5 -> Broken
+=> [Unit:Night Runners|x3|broken|fleeing]
+
+Tn4-6
+@ Collect remaining shards, hold position
+d: Search x2 1d6=4, 1d6=6 -> 1 more shard found
+=> Shards 2/3 collected. Clanrats withdrew.
+[/BATTLE]
+
+=> Scenario: Draw. Only 2 shards vs 3 needed. Skaven fled but completed their objective.
+
+[CAMPAIGN]
+d: Injury Streng 1d6 =2 -> Chest Wound (-1 Toughness next battle)
+[N: Captain Streng | Chest Wound|-1T next battle | 7 XP]
+[N:Champion Aldric | 5 XP]
+d: XP advance Swordsmen 2d6=7 -> +1 to hit
+[Unit: Swordsmen|x3| Exp 1|+1 to hit]
+d: Income 2d6=8 -> 8gc + 2 shards (sell for 15gc each)
+[Wealth:Gold 57gc+38gc] => [Wealth:Gold 95gc]
+[Thread: The Merchant Quarter | Skaven also hunting here | Open]
+[/CAMPAIGN]

@@ -1,0 +1,8 @@
+Rd1
+@Draw sword and attack Thug A
+d: d20+5=18 vs AC 12 -> Hit
+d: 1d8=6 damage
+=> [F:Thug A|HP-6|dead]
+@(Thug B) Lunges at me with a knife
+d: d20+3=14 vs AC 15 -> Miss
+=> The knife whistles past my ear.

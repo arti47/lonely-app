@@ -1,0 +1,4 @@
+@(Pirate Captain) Presses the attack
+d: d20+6 [against: staggered] = 11 vs AC 14 -> Miss
+@Strike at the weakened Captain
+d: d20+5 [+flanking, +high ground] = 18 vs AC 13 -> Hit

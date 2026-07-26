@@ -1,0 +1,10 @@
+S4 *R3 Crypt, turn 3*
+@Search the sarcophagi
+d: 1-in-6 secret door check: d6=2 -> None found
+? Wandering monster check
+d: d6=5 -> No
+@Light the wall sconces and examine the inscriptions
+d: INT check d20=8 vs DC 12 -> Fail
+=> The script is too archaic-I can't make sense of it.
+[R:3|cleared]
+(note: torch supply -1 for this turn)

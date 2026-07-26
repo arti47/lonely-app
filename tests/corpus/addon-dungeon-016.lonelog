@@ -1,0 +1,5 @@
+@Open the east door
+tbl: d20=14 -> "Large room, two exits"
+? What's inside?
+tbl: d100=67 -> "Library with a trapped chest"
+[R:6|active|library, trapped chest|exits W:R3, N:R7]

@@ -1,0 +1,8 @@
+[F:Skeleton|HP 13 | AC 13|Close]
+Rd1
+@Attack with shortsword
+d: d20+4=17 vs AC 13 -> Hit
+d: 1d6+2=7 damage
+=> [F:Skeleton|HP-7|HP 6|damaged]
+@(Skeleton) Claw swipe
+d: d20+4=11 vs AC 15 -> Miss

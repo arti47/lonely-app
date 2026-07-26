@@ -1,0 +1,8 @@
+[R:4|active|Fungal cavern | exits E:R5, W:R2]
+@Navigate the cavern carefully
+d: Survival d6=4 vs TN 4 -> Success
+=> I find a path through. Torch is getting low. [Inv:Torch|2->1] [Timer: Torchlight 3]
+@Search for useful fungi
+tbl: d6=5 -> "Glowing moss - edible"
+=> [Inv: Edible Moss |3| restores 1 HP each]
+[R:4|cleared, looted]

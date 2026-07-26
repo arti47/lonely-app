@@ -1,0 +1,4 @@
+@Search the chest
+d: Investigation d6=5 vs TN 4 -> Success
+=> Inside: torches, rope, some coin.
+[Inv:Torch|4] [Inv: Rope|1|50ft] [Inv:Gold|25]

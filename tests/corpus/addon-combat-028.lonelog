@@ -1,0 +1,48 @@
+S9 *Dockside, fog rolling in off the harbor*
+The crates provide cover, but not for long. A rat-faced man with a knife lunges from behind a barrel. Behind him, the Pirate Captain draws his cutlass with a grin. Two crossbowmen take position on the cargo stack.
+[COMBAT]
+[PC:Alex | HP 12 | Engaged] [N: Jordan|ally|HP 8|Close]
+[F:Pirate Captain | HP 10|Close|cutlass]
+[F:Piratex2|HP 4 each | Medium|crossbow]
+[F:Dock Rat | HP 2 | Engaged | knife]
+Rd1
+@Sidestep the Dock Rat and slash
+d: d20+4=17 vs AC 10 -> Hit, 1d8=5
+=> The rat-faced man crumples. [F: Dock Rat| dead]
+But I've left my flank open.
+@(Pirate Captain) Charges across the dock, cutlass high [Close->Engaged]
+d: d20+6=19 vs AC 14 -> Hit, 1d8+2=7
+=> His blade bites deep across my ribs. I stagger back. [PC: Alex | HP 5 | wounded]
+PC: "Jordan-the crossbows!"
+@(Jordan) Snaps off a shot at the Captain
+d: d20+3=12 vs AC 13 -> Miss
+=> The bolt sparks off a mooring chain.
+@(Piratex2) Fire at Jordan from the cargo stack
+d: d20+2=15, d20+2=9 vs AC 11 -> 1 Hit, 1 Miss
+d: 1d6=4
+=> A bolt punches through Jordan's shoulder. [N:Jordan | HP 4 | wounded]
+N (Jordan): "I'm hit-still in it!"
+Rd2
+The Captain is close, bleeding confidence. I press the advantage.
+@Power attack on Captain
+d: d20+4=20 vs AC 13 -> Critical Hit, 1d8 x 2 = 8
+=> My sword catches him across the chest. He stumbles. [F: Captain | HP 2| staggered]
+@(Captain) Wild swing in desperation
+d: d20+6=11 vs AC 14 -> Miss
+=> His cutlass sweeps wide-I duck under it.
+@(Jordan) Pivots and fires at the crossbowmen
+d: d20+3=16 vs AC 11 -> Hit, 1d6=5
+=> One pirate tumbles off the cargo stack. [F:Piratex1|dead]
+The surviving pirate drops his crossbow and bolts into the fog.
+[F:Piratex1|fled]
+Rd3
+@Chase the Captain before he escapes
+d: Athletics d6=3 vs TN 5 -> Fail
+=> He's too fast-vaults the dock railing and drops into a hidden rowboat. The fog swallows him in seconds.
+[/COMBAT]
+I press a hand to my ribs, breathing hard. Jordan limps over, shoulder dark with blood. The dock is quiet except for lapping water and the creak of ropes.
+PC (Alex): "He'll be back."
+N (Jordan): "Then we'd better be ready."
+=> Two pirates dead, one fled, Captain escaped by sea.
+[N:Jordan | wounded | HP 4] [PC:Alex | HP 5 | Stress+1]
+[Thread: Pirate Captain's Revenge | Open]

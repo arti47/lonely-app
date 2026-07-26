@@ -81,7 +81,8 @@ Recorded from user Q&A. These are settled; do not re-litigate.
 | `index.html` | App shell: header, bottom nav, screen mount, module entry |
 | `styles.css` | Theme (light + dark) + all component styles |
 | `manifest.json`, `service-worker.js`, `icon.svg` | PWA |
-| `tests/` + `package.json` | Dev-only headless regression harness (`npm test`), `playwright-core`, `typescript` for `--checkJs`. `node_modules` gitignored; not in the SW app shell |
+| `jsconfig.json` | `tsc --checkJs` config for the JSDoc typecheck |
+| `tests/` + `package.json` | Dev-only regression harness (`npm test`): `*.test.js` unit tests, `corpus/` spec examples, `smoke.mjs` headless-browser run, `typecheck.mjs`, `extract-corpus.mjs`. The only devDependency is `typescript`, and it is optional. `node_modules` gitignored; not in the SW app shell |
 | `docs/spec/*.md` | Vendored Lonelog specs — upstream copies, never edited (§10) |
 | `docs/spec-review.md` | Catalogued spec defects; source of the lint rules |
 | `docs/design.md` | Rationale and reasoning. Non-canonical — this file wins |
@@ -95,16 +96,17 @@ One module per responsibility; explicit `import`/`export`, nothing through
 
 | Module | Responsibility |
 |---|---|
-| `core.js` | Constants, DOM/util helpers. No imports. **No RNG.** |
-| `ui.js` | Themed modals/toasts/confirm/prompt; theme switching |
-| `lonelog/lexer.js` | Line → `Entry{kind, raw, indent, …}`. Kinds: `action question dice resolution consequence tbl gen note dialogue tag marker block prose` |
-| `lonelog/tags.js` | Tag parse/serialise; tolerant of whitespace, `x`/`×`, `>=`/`≥` |
-| `lonelog/fold.js` | `Entry[]` → `CampaignState`, with per-scene checkpoints |
-| `lonelog/render.js` | `Entry[]` → markdown, digital or analog form |
-| `lonelog/lint.js` | Spec-conformance rules (§10, `docs/spec-review.md`) |
+| `core.js` | ✅ Constants, DOM/util helpers. No imports. **No RNG.** |
+| `ui.js` | ✅ Themed modals/toasts/confirm/prompt; theme switching |
+| `lonelog/lexer.js` | ✅ Line → `Entry{kind, raw, indent, …}`. Kinds: `action question dice resolution consequence tbl gen note dialogue tag marker block prose` |
+| `lonelog/tags.js` | ✅ Tag parse/serialise; tolerant of whitespace, `x`/`×`, `>=`/`≥` |
+| `lonelog/fold.js` | ✅ `Entry[]` → `CampaignState`, with per-scene checkpoints |
+| `lonelog/render.js` | ✅ `Entry[]` → markdown, digital or analog form |
+| `lonelog/lint.js` | ✅ Spec-conformance rules (§10, `docs/spec-review.md`) |
+| `lonelog/index.js` | ✅ Engine barrel + `parse()` (lex → fold → lint) |
 | `compare.js` | Roll comparator over **entered** numbers. No RNG |
 | `templates.js` | Learned roll templates + saved tables; pack import/export |
-| `store.js` | IndexedDB persistence, file binding, markdown + JSON export/import |
+| `store.js` | ✅ IndexedDB persistence, markdown + JSON export/import. File-system binding still to come |
 | `composer.js` | Symbol-first entry: line kinds, tag builder, autocomplete |
 | `logview.js` | Transcript rendering, editing, truncation-undo |
 | `state.js` | State pane: folded PC sheet, NPC/location index, threads, clocks |
@@ -114,9 +116,10 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `addons/dungeon.js` | `[R:]`, `[DUNGEON STATUS]` surfaces |
 | `addons/wargaming.js` | `[Unit:]`, `[Force:]`, `[BATTLE]`, `[CAMPAIGN]`, `Tn#` surfaces |
 | `lifecycle.js` | Scene/session/campaign boundary events + undo (§6) |
-| `settings.js` | Preferences, theme, panel visibility, reference links |
-| `router.js` | Bottom-nav routing + conditional tab gating |
-| `main.js` | Entry point / boot |
+| `settings.js` | ✅ Preferences, theme, panel visibility, reference links |
+| `router.js` | ✅ Bottom-nav routing + conditional tab gating |
+| `screens.js` | ◐ Screen renderers. Campaigns + Settings functional; Log/State/Resolve render real folded state, awaiting Phases 2–4 |
+| `main.js` | ✅ Entry point / boot |
 
 `src/lonelog/` imports nothing outside itself — it is the reusable engine and
 must stay portable to a future CLI or plugin.
@@ -239,14 +242,15 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
 **Behavior/UI** · **Schema** (field · type · default · location, §6 updated) ·
 **Acceptance** (how to confirm in a browser).
 
-- [ ] **Phase 0 — Foundations.** Scaffold §3 files; PWA shell + SW +
+- [x] **Phase 0 — Foundations.** Scaffold §3 files; PWA shell + SW +
       `CACHE_VERSION`; theme (light/dark/system); `ui.js` primitives; IndexedDB
       store; router + empty screens; `npm test` harness booting headless with
       zero console errors; no-RNG check; 360px overflow check.
-- [ ] **Phase 1 — Notation engine.** `src/lonelog/*`: lexer, tags, fold, render.
+- [x] **Phase 1 — Notation engine.** `src/lonelog/*`: lexer, tags, fold, render.
       Ledger T1–T27. **Correctness bar: every example in all five vendored specs
       round-trips byte-identically.** Engine is complete before any UI consumes
-      it.
+      it. *Done: 377/377 spec snippets round-trip; 69 unit tests and 20 browser
+      checks green.*
 - [ ] **Phase 2 — Log pane.** Symbol-first composer (tap `@ ? d: -> =>`, tag
       builder, autocomplete from folded state); transcript rendering + editing;
       truncation-undo; scene/session markers; markdown export/import **and** JSON
@@ -292,79 +296,82 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 
 **Core** (`docs/spec/lonelog-core.md`)
 
-- [ ] T1 Five core symbols `@ ? d: -> =>` (§3.1–3.3)
-- [ ] T2 `@(Name)` actor attribution (§3.1.1)
-- [ ] T3 Comparison shorthand `≥ ≤ >= <= vs S F` (§3.2.1)
-- [ ] T4 `tbl:` simple lookup (§4.3)
-- [ ] T5 `tbl:` inline table definition, named + die + entries (§4.3.1)
-- [ ] T6 `tbl:` filtered option sets `[A, B, C]` (§4.3.2)
-- [ ] T7 `gen:` single-line compound (§4.3)
-- [ ] T8 `gen:` multi-line axis blocks (§4.3.3)
-- [ ] T9 `[N:]` NPCs (§4.1.1)
-- [ ] T10 `[L:]` locations (§4.1.2)
-- [ ] T11 `[E:]` events/clocks (§4.1.3)
-- [ ] T12 `[Thread:]` + states (§4.1.4)
-- [ ] T13 `[PC:]` + stat updates (§4.1.5)
-- [ ] T14 `[#Type:Name]` reference tags (§4.1.6)
-- [ ] T15 Tag categories `trait:a,b` (§4.1.7)
-- [ ] T16 Multi-line tag form (§4.1.8)
-- [ ] T17 Roll context `d: ... [tags] ...` (§4.1.9)
-- [ ] T18 `+field` / `-field` deltas and `a -> b` transitions (§4.1.1)
-- [ ] T19 `[Clock:]` `[Track:]` `[Timer:]` (§4.2)
-- [ ] T20 Dialogue lines `N (Name):` / `PC:` (§4.4)
-- [ ] T21 `\--- ... ---\` narrative blocks (§4.4)
-- [ ] T22 `(note: ...)` meta notes (§4.5)
-- [ ] T23 Scene markers `S#`, `S#a`, `S#.#`, `T#-S#` (§5.3)
-- [ ] T24 Campaign header — YAML front matter + analog block (§5.1)
-- [ ] T25 Session header — digital + analog (§5.2)
-- [ ] T26 Indentation insignificance (§2.3)
-- [ ] T27 Digital ↔ analog equivalence round-trip (§2.4)
+- [x] T1 Five core symbols `@ ? d: -> =>` (§3.1–3.3)
+- [x] T2 `@(Name)` actor attribution (§3.1.1)
+- [ ] T3 Comparison shorthand `≥ ≤ >= <= vs S F` (§3.2.1) — round-trips, but is
+      not interpreted; needs the Phase 4 comparator
+- [x] T4 `tbl:` simple lookup (§4.3)
+- [ ] T5 `tbl:` inline table definition, named + die + entries (§4.3.1) — the
+      indented entry block is not yet parsed into a table (Phase 4)
+- [ ] T6 `tbl:` filtered option sets `[A, B, C]` (§4.3.2) — Phase 4
+- [x] T7 `gen:` single-line compound (§4.3)
+- [ ] T8 `gen:` multi-line axis blocks (§4.3.3) — the per-axis lines are not yet
+      grouped under their generator (Phase 4)
+- [x] T9 `[N:]` NPCs (§4.1.1)
+- [x] T10 `[L:]` locations (§4.1.2)
+- [x] T11 `[E:]` events/clocks (§4.1.3)
+- [x] T12 `[Thread:]` + states (§4.1.4)
+- [x] T13 `[PC:]` + stat updates (§4.1.5)
+- [x] T14 `[#Type:Name]` reference tags (§4.1.6)
+- [x] T15 Tag categories `trait:a,b` (§4.1.7)
+- [x] T16 Multi-line tag form (§4.1.8)
+- [x] T17 Roll context `d: ... [tags] ...` (§4.1.9)
+- [x] T18 `+field` / `-field` deltas and `a -> b` transitions (§4.1.1)
+- [x] T19 `[Clock:]` `[Track:]` `[Timer:]` (§4.2)
+- [x] T20 Dialogue lines `N (Name):` / `PC:` (§4.4)
+- [x] T21 `\--- ... ---\` narrative blocks (§4.4)
+- [x] T22 `(note: ...)` meta notes (§4.5)
+- [x] T23 Scene markers `S#`, `S#a`, `S#.#`, `T#-S#` (§5.3)
+- [x] T24 Campaign header — YAML front matter + analog block (§5.1)
+- [x] T25 Session header — digital + analog (§5.2)
+- [x] T26 Indentation insignificance (§2.3)
+- [x] T27 Digital ↔ analog equivalence round-trip (§2.4)
 
 **Combat** (`docs/spec/addon-combat.md`)
 
-- [ ] T28 `[COMBAT]`/`[/COMBAT]`, analog form, scene-header form (§1)
-- [ ] T29 `Rd#` round markers (§2)
-- [ ] T30 `[F:]` combatant tag (§3.1)
-- [ ] T31 `[F:Namex#]` groups + splitting (§3.2)
-- [ ] T32 Position bands + `[Far->Close]` movement (§3.3)
-- [ ] T33 `Rd# Roster:` lines (§5.2)
-- [ ] T34 `(Init: ...)` initiative note (Quick Ref)
+- [x] T28 `[COMBAT]`/`[/COMBAT]`, analog form, scene-header form (§1)
+- [x] T29 `Rd#` round markers (§2)
+- [x] T30 `[F:]` combatant tag (§3.1)
+- [x] T31 `[F:Namex#]` groups + splitting (§3.2)
+- [x] T32 Position bands + `[Far->Close]` movement (§3.3)
+- [x] T33 `Rd# Roster:` lines (§5.2)
+- [x] T34 `(Init: ...)` initiative note (Quick Ref)
 
 **Dungeon** (`docs/spec/addon-dungeon.md`)
 
-- [ ] T35 `[R:ID|status|desc]` room tag (§1)
-- [ ] T36 `exits DIR:ID`, directional shortcuts, `(secret)` (§2)
-- [ ] T37 `[R:ID|+status]` inline status add (§1.2)
-- [ ] T38 `[DUNGEON STATUS]` block + analog (§3)
-- [ ] T39 Room tag in scene header (§4.1)
+- [x] T35 `[R:ID|status|desc]` room tag (§1)
+- [x] T36 `exits DIR:ID`, directional shortcuts, `(secret)` (§2)
+- [x] T37 `[R:ID|+status]` inline status add (§1.2)
+- [x] T38 `[DUNGEON STATUS]` block + analog (§3)
+- [x] T39 Room tag in scene header (§4.1)
 
 **Resources** (`docs/spec/addon-resources.md`)
 
-- [ ] T40 `[Inv:Item|qty|props]` (§1)
-- [ ] T41 `[Inv:]` deltas `+N` `-N` `N->M` `depleted` (§1.2)
-- [ ] T42 Property transitions, `+prop` / `-prop` (§1.3)
-- [ ] T43 Grouped/bulk `x`/`×` multipliers, slot inventories (§1.5)
-- [ ] T44 Usage dice in `[PC:]`, step-down chain `d12→…→depleted` (§2.1)
-- [ ] T45 Supply tracks + qualitative levels (§2.2–2.3)
-- [ ] T46 `[Wealth:]` totals and deltas (§3.1)
-- [ ] T47 `[RESOURCES]` block + analog (§5)
+- [x] T40 `[Inv:Item|qty|props]` (§1)
+- [x] T41 `[Inv:]` deltas `+N` `-N` `N->M` `depleted` (§1.2)
+- [x] T42 Property transitions, `+prop` / `-prop` (§1.3)
+- [x] T43 Grouped/bulk `x`/`×` multipliers, slot inventories (§1.5)
+- [x] T44 Usage dice in `[PC:]`, step-down chain `d12→…→depleted` (§2.1)
+- [x] T45 Supply tracks + qualitative levels (§2.2–2.3)
+- [x] T46 `[Wealth:]` totals and deltas (§3.1)
+- [x] T47 `[RESOURCES]` block + analog (§5)
 
 **Wargaming** (`docs/spec/addon-wargaming.md`)
 
-- [ ] T48 `[Unit:Name|size|stats|pos|status]` (§2)
-- [ ] T49 Unit status vocabulary (§2)
-- [ ] T50 Abstract size `full`/`half`/`depleted` (§2)
-- [ ] T51 Formation labels (§2)
-- [ ] T52 `[Force:]` (§2)
-- [ ] T53 `[Scenario:]` incl. multi-line form (§3)
-- [ ] T54 `[BATTLE]` block + analog (§1)
-- [ ] T55 `Tn#` markers + phase suffixes (§1)
-- [ ] T56 Location armor `CT#/RT#/…`, `Heat N` + thresholds (§5)
-- [ ] T57 `[CAMPAIGN]` block + analog (§4)
+- [x] T48 `[Unit:Name|size|stats|pos|status]` (§2)
+- [x] T49 Unit status vocabulary (§2)
+- [x] T50 Abstract size `full`/`half`/`depleted` (§2)
+- [x] T51 Formation labels (§2)
+- [x] T52 `[Force:]` (§2)
+- [x] T53 `[Scenario:]` incl. multi-line form (§3)
+- [x] T54 `[BATTLE]` block + analog (§1)
+- [x] T55 `Tn#` markers + phase suffixes (§1)
+- [x] T56 Location armor `CT#/RT#/…`, `Heat N` + thresholds (§5)
+- [x] T57 `[CAMPAIGN]` block + analog (§4)
 
 **Lint** (`docs/spec-review.md`)
 
-- [ ] T58 Rules for all 10 catalogued defects, each linking to its review entry
+- [x] T58 Rules for all 10 catalogued defects, each linking to its review entry
 
 ## 9. Process rules — LOCKED
 
@@ -427,6 +434,9 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 | 2026-07-26 | Vendored five Lonelog specs; catalogued 10 spec defects | Read-through of all five specs | — |
 | 2026-07-26 | Design settled: local-first PWA, log-as-source-of-truth, no RNG, system-agnostic, add-ons self-surfacing | Design review with user (D1–D8) | — |
 | 2026-07-26 | Instantiated canonical spec: architecture LOCKED to no-build ES modules, file/module tables, data model, 9-phase roadmap, 58-item conformance ledger, process rules | Template §5–§12 adapted; no code yet | — |
+| 2026-07-26 | **Phase 1 — notation engine.** `src/lonelog/{lexer,tags,fold,render,lint,index}.js`. Losslessness is achieved by replaying `raw`+`eol`, which makes canonicalisation an explicit opt-in transform rather than a side effect of reading a log. Ledger T1–T2, T4, T7, T9–T58 ticked; T3/T5/T6/T8 deferred to Phase 4 with reasons recorded inline | 377/377 spec snippets round-trip byte-identically; 69 unit tests green; fold deterministic and checkpoint-equivalent across the whole corpus | `lonely-v1` |
+| 2026-07-26 | **Phase 0 — foundations.** PWA shell, service worker, light/dark theme, IndexedDB store, hash router, accessible modal/toast primitives, markdown + JSON export/import, campaign CRUD | 20 headless-browser checks green: boots, all five screens render, zero console errors, zero horizontal overflow at 360/390px | `lonely-v1` |
+| 2026-07-26 | Fixed four parser defects found during the ledger pass: `exits DIR:ID` took its key as `exits S`; space-separated stat keys (`Armor CT30/RT25`) lost their key; `[Inv:Torch\|4]` quantity and `[Inv:Torch-1]` delta landed on different slots; a block opened in a scene header (`S9 *Ambush* [COMBAT]`, combat §1.1) never opened. Root cause in each: a parse rule written for one spec's shape that another spec's shape also matched | Regression test added per fix; full suite green | `lonely-v1` |
 
 ## Git
 

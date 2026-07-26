@@ -1,0 +1,4 @@
+[BATTLE]
+[Scenario: Raid | Grab the loot | 5 turns]
+[Unit:Warband|x8|Morale 6|Fresh]
+[Unit: Defenders | x6 | Morale 7|Fresh]

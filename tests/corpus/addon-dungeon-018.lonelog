@@ -1,0 +1,31 @@
+S6 *Approaching the barracks*
+@Move quietly down the corridor
+d: Stealth d6=4 vs TN 4 -> Success
+=> I creep forward unseen.
+[R:5|active|barracks, stench of sweat|exits S:R3, W:R6, N:R7]
+? How many guards?
+tbl: d6=3 -> "Three enemies"
+=> Two eating, one sharpening a blade.
+[COMBAT]
+[PC:Alex | HP 12|Engaged]
+[F:Guard 1 | HP 5 | Close | eating]
+[F:Guard 2 | HP 5 | Close | eating]
+[F:Guard 3 | HP 5 | Close|alert]
+@Ambush the alert guard first
+d: d20+4=18 vs AC 12 -> Hit, 1d8=7
+=> [F:Guard 3 | dead]
+@(Guard 1) Grabs weapon and charges
+d: d20+3=11 vs AC 14 -> Miss
+Rd2
+@Sweep at both remaining guards
+d: d20+4=15 vs AC 12 -> Hit, 1d8=5 => [F:Guard 1 | dead]
+d: d20+4=12 vs AC 12 -> Hit, 1d8=3 => [F:Guard 2 | dead]
+[/COMBAT]
+=> Room clear before they could raise an alarm.
+[R:5|cleared]
+@Search the barracks
+tbl: d20=8 -> "Rations and a crude map"
+=> A rough map scratched on hide. Shows rooms to the west!
+[R:5|cleared, looted]
+[R:6|unexplored | marked on orc map]
+(note: update my map with R6)

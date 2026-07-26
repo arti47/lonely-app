@@ -1,0 +1,9 @@
+[CAMPAIGN]
+[Unit:Atlas AS7-D|Armor CT8/RT25|needs repair: CT armor]
+d: Repair time 1d6 days =3 -> Atlas operational in 3 days
+[Unit:Marauder MAD-3R | Armor CT22/RT18 | Fresh]
+[Unit: Wolverine WVR-6R | Armor CT16/RT6|needs repair: RT armor]
+[Unit:Jenner JR7-D | Pilot: Minh|ejected | mech salvageable]
+d: Pilot injury 1d6=2 -> Bruised: Minh out 2 days
+[N:Minh|bruised | out 2 days]
+[/CAMPAIGN]

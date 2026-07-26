@@ -1,0 +1,5 @@
+[DUNGEON STATUS]
+[R:1|cleared, looted|entry hall|exits N:R2, E:R3]
+[R:2|cleared|guard room|exits S:R1, W:R5]
+[R:3|active|crypt|exits W:R1, D:R8]
+[/DUNGEON STATUS]

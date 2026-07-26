@@ -1,0 +1,12 @@
+Tn1
+@Advance Rifles to hedge
+@(Raiders) Move up the road
+Tn2
+@Rifles fire volley
+d: Shooting 2d6=10 vs TN 7 -> Hit
+=> [Unit: Raiders | x13 | Morale 6|Steady]
+@(Raiders) Return fire
+d: Shooting 2d6=6 vs TN 8 -> Miss
+Tn3
+@Charge the raiders while they reload
+d: Charge 2d6+2=12 vs TN 9 -> Hit, +1 attack

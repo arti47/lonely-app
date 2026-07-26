@@ -1,0 +1,5 @@
+[PC: Varn | Torches d8| Rations d6| Ammo d10|HP 14/18]
+@Set up camp
+d: Rations d6=2 -> Step down!
+=> [PC:Varn|Rations d6->d4]
+(note: one more step-down and they're gone)

@@ -1,0 +1,4 @@
+[Unit:Tank|Intact | Morale N/A|Fresh]
+=> [Unit:Tank | Damaged | Move -2]
+=> [Unit:Tank |Critical|movement halved, weapon offline]
+=> [Unit:Tank | destroyed]

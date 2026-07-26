@@ -1,0 +1,32 @@
+## Session 7 The River Crossing
+*Date: 2026-04-05 | Duration: 2h | Scenes: S1*
+
+[CAMPAIGN]
+[Force: Ironclad Company | Colonel Vane | 3 units| Hold the bridge]
+[Unit:Rifles | x12 | Morale 8| Fresh]
+[Unit:Cavalry|x6|Morale 7|Fresh]
+[Unit:Artillery|x4| Morale 6|Fresh]
+[/CAMPAIGN]
+
+### S1 *Broken bridge, dawn*
+[BATTLE]
+[Scenario: Hold the Line | Deny bridge 6 turns | Turn limit 8]
+[Unit: Raider Infantry | x15 | Morale 6 | Fresh | road approach]
+[Unit: Raider Skirmishers|x8|Morale 5|Fresh| left flank]
+
+Tn1
+@(Raider Skirmishers) Advance through woods
+@(Rifles) Hold position, volley fire
+d: Shooting 2d6=9 vs TN 7 -> Hit
+=> [Unit: Raider Skirmishers|x6|wavering]
+
+Tn2
+d: Morale 2d6=11 vs Morale 5 -> Broken
+=> [Unit: Raider Skirmishers|x6|broken | fleeing]
+[/BATTLE]
+
+=> Bridge held. Raiders withdrew after two turns.
+
+[CAMPAIGN]
+[Unit:Rifles|x11 | Morale 8| Fresh] (one casualty)
+[/CAMPAIGN]

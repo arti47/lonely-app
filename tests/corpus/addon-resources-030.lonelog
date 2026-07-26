@@ -1,0 +1,38 @@
+[RESOURCES]
+[PC:Kael | HP 12/15 | Supply d6]
+[Inv: Torch|2] [Inv: Arrow|9] [Inv: Healing Potion|1]
+[Wealth:Gold 52]
+[/RESOURCES]
+S5 *Entering the crypt*
+[R:1 | active | Entry hall, bones everywhere | exits N:R2, E:R3]
+@Light a torch and move in
+[Inv: Torch-1] [Timer: Torchlight 6]
+? Are there enemies?
+d: d6=6 -> Yes, and...
+=> Skeletons rise from the bone piles!
+[COMBAT]
+[F:Skeletonx3|HP 3 each | Close]
+Rd1
+@Fire at the nearest skeleton
+d: Ranged d6=5 vs TN 4 -> Success
+=> Arrow shatters its skull! [F:Skeletonx3->2] [Inv:Arrow-1]
+@(Skeleton) Charge at me
+d: Attack d6=3 vs TN 4 -> Fail
+=> Clumsy swing, I dodge.
+Rd2
+@Draw sword, press the attack
+d: Melee d6=6 vs TN 4 -> Success
+=> Cut clean through! [F:Skeleton 2->1]
+@Finish the last one
+d: Melee d6=4 vs TN 4 -> Success
+=> The crypt goes quiet. [F: Skeletonx0]
+[/COMBAT]
+@Search the room
+tbl: d20=14 -> "A locked chest"
+? Can I pick the lock?
+d: Lockpicking d6=5 vs TN 5 -> Success
+=> Inside: [Inv: Gold Bracelet|1|valuable] [Wealth:Gold+10]
+[R:1 | cleared, looted]
+[Timer: Torchlight-1]
+@Move north toward R2
+[R:2|active|Ritual chamber | exits S:R1, D:R3]

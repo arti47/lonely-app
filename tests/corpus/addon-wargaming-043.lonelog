@@ -1,0 +1,43 @@
+[CAMPAIGN]
+[Force: Sigilist Warband | Sigilist Caldris|6 figures | Level 4]
+[N:Caldris | Sigilist|Lv4|Will 14 | HP 14 | Fresh]
+[N: Apprentice Voss | Apprentice | Lv1| Will 11 | HP 10|Fresh]
+[Unit:Infantryman|x2|Exp 0|Fresh]
+[Unit:Thug|x2|Exp 0|Fresh]
+[Wealth: Gold 200gc]
+[/CAMPAIGN]
+
+### S3 *Frozen ruins, midwinter*
+[BATTLE]
+[Scenario: The Library | Find and retrieve 4 treasure tokens | unlimited turns | Snow: -1 Move]
+[Unit: Rival Warband|x6|Morale 6| Fresh|north edge]
+
+Tn1
+@Caldris moves toward central treasure, casts Leap on Voss
+d: Spellcasting Will 14 TN 12 2d6=14 -> Success
+=> [N:Voss leaps to east treasure token]
+@Voss picks up treasure
+d: None needed -> Token secured
+@(Rival Infantryman) Charges Thug A
+d: Fight 2d6+1 =9 vs 2d6+2 =7 -> Thug wins
+=> [Unit:Rival Infantryman x1 | stunned]
+
+Tn2
+@Caldris casts Elemental Bolt at Rival Apprentice
+d: Spellcasting Will 14 TN 14 2d6=11 -> Fail, -1 HP
+=> [N:Caldris | HP 13]
+@Infantry advance toward second token
+[/BATTLE]
+
+=> 2 tokens secured, warband withdrew safely.
+
+[CAMPAIGN]
+[N:Caldris|Lv4|HP 14 | 80 XP -> Lv5]
+d: Level advance 1d20=14 -> +1 Fight
+[N:Caldris | Lv5|Fight +1|80 XP]
+d: Injury Thug A 1d20=7 -> Minor wound, misses next game
+[Unit: Thug A|x1| injured | out next session]
+d: Treasure 2 tokens -> 150gc + scroll (Push)
+[Wealth: Gold 200gc+150gc] => [Wealth:Gold 350gc]
+[Inv: Scroll of Push | x1]
+[/CAMPAIGN]

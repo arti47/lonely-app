@@ -1,0 +1,7 @@
+[DUNGEON STATUS]
+[R:1|cleared, looted|entry cave|exits N:R2, E:R3]
+[R:2|cleared|guard room|exits S:R1, W:R5]
+[R:3|active|library|exits W:R1]
+[R:4|unexplored]
+[R:5|locked|heavy door|exits E:R2]
+[/DUNGEON STATUS]

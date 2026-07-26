@@ -1,0 +1,5 @@
+@Check the far wall for exits
+d: Perception d6=6 vs TN 4 -> Success
+=> A concealed door-well-disguised but not locked.
+[R:6|active|crypt|exits W:R5, N:R8, E:R9(secret)]
+(note: update map with R9)

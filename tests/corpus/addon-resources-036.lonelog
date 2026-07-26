@@ -1,0 +1,12 @@
+[Inv:9mm Round|7]
+[Inv: First Aid Kit | 1 | uses 2/3]
+[Inv: Flashlight|1| battery d4]
+@Fire at the creature
+d: Firearms d6=4 vs TN 4 -> Success
+=> Hit! [Inv:9mm Round-1]
+@Patch up the wound
+=> [Inv:First Aid Kit|1|uses 2->1] [PC:Casey | HP+3]
+@Check the flashlight
+d: Battery d4=1 -> Step down!
+=> Flickering badly. [Inv: Flashlight|1| battery d4 -> depleted]
+=> Darkness. [Clock: Panic 1/4]

@@ -1,0 +1,5 @@
+@Sell the jeweled dagger to the merchant
+d: Persuasion d6=5 vs TN 4 -> Success
+=> Good price! [Wealth: Gold+15]
+@Buy rations and a new rope
+=> [Wealth:Gold-8] [Inv: Rations|5|days] [Inv: Rope|1|50ft]

@@ -1,0 +1,13 @@
+S5 *North corridor*
+@Open the door carefully
+? Is it locked?
+d: d6=5 -> No
+=> The door swings open easily.
+[R:4|active|storage room, dusty shelves|exits S:R2, E:R5]
+@Search the shelves
+d: Investigation d6=5 vs TN 4 -> Success
+=> I find a rusty key behind a loose brick. (note: might open R5?)
+? Are there enemies?
+d: d6=6 -> No, and...
+=> The room is completely undisturbed. Years of dust.
+[R:4|cleared, looted]

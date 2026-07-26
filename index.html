@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="en" data-theme="system">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="A local-first solo RPG play assistant and session logger using Lonelog notation.">
+<meta name="theme-color" content="#1b1a17">
+<title>Lonely</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<a class="skip-link" href="#screen">Skip to content</a>
+
+<header class="app-bar">
+  <span class="app-title">Lonely</span>
+  <span class="app-sub">solo RPG log</span>
+</header>
+
+<main id="screen" class="screen" tabindex="-1" aria-live="polite"></main>
+
+<nav class="nav" aria-label="Primary">
+  <a class="nav-link" data-nav="campaigns" data-keep-id="false" href="#/campaigns">
+    <span class="nav-label">Campaigns</span>
+  </a>
+  <a class="nav-link" data-nav="log" href="#/log">
+    <span class="nav-label">Log</span>
+  </a>
+  <a class="nav-link" data-nav="state" href="#/state">
+    <span class="nav-label">State</span>
+  </a>
+  <a class="nav-link" data-nav="resolve" href="#/resolve">
+    <span class="nav-label">Resolve</span>
+  </a>
+  <a class="nav-link" data-nav="settings" data-keep-id="false" href="#/settings">
+    <span class="nav-label">Settings</span>
+  </a>
+</nav>
+
+<div id="toast" class="toast" role="status" hidden></div>
+<div id="live" class="sr-only" role="status" aria-live="polite"></div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

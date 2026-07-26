@@ -1,0 +1,4 @@
+@Cross the frozen river
+? Do I have enough rope?
+-> Yes (checking: [#Inv: Rope] 50ft - river is ~30ft wide)
+=> I anchor the rope and cross safely. [Inv: Rope|1|50ft|frayed]

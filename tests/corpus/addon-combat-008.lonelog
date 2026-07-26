@@ -1,0 +1,13 @@
+Rd1
+@Draw sword and attack Thug A
+d: d20+5=17 vs AC 12 -> Hit
+d: 1d8=5 damage
+=> [F:Thug A|HP-5|HP 1| staggered]
+@(Thug A) Wild swing back
+d: d20+3=9 vs AC 15 -> Miss
+=> He's off-balance-I press the advantage.
+Rd2
+@Strike again
+d: d20+5=14 vs AC 12 -> Hit
+d: 1d8=6 damage
+=> [F: Thug A|dead]

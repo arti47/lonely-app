@@ -1,0 +1,9 @@
+@Make camp, use supplies
+d: Supply d8=2 -> Step down!
+=> Supplies dwindling. [PC: Kael | Supply d8->d6]
+@Fire another volley
+d: Ammo d6=1 -> Step down!
+=> Running low on arrows. [PC:Kael|Ammo d6->d4]
+@Light another torch
+d: Torchlight d4=2 -> Depleted!
+=> Last torch sputters out. [PC: Kael | Torchlight depleted]

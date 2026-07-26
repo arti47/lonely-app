@@ -1,0 +1,59 @@
+[CAMPAIGN]
+[Force: Alpha Lance | Major Natasha | 4 mechs | Operational]
+[Unit:Atlas AS7-D|Pilot: Natasha (G3/P4)| Armor CT30/RT25/LT25/RA20/LA20/RL28/LL28|Heat 0|Fresh]
+[Unit:Marauder MAD-3R | Pilot: Kell (G2/P3)| Armor CT22/RT18/LT18/RA16/LA16/RL20/LL20|Heat 0|Fresh]
+[Unit:Wolverine WVR-6R|Pilot: Torres (G3/P3)| Armor CT16/RT14/LT14/RA10/LA10/RL16/LL16|Heat 0|Fresh]
+[Unit:Jenner JR7-D | Pilot: Minh (G3/P4)|Armor CT10/RT8/LT8/RA4/LA4/RL10/LL10|Heat 0|Fresh]
+[/CAMPAIGN]
+
+### S1 *Industrial wasteland, Luthien outskirts*
+[BATTLE]
+[Scenario: Breakthrough | Exit 2+ mechs off south edge | 12 turns | Heavy rubble terrain: +1 TN movement]
+[Force: Jade Falcon Scout Lance | Mechwarrior Roshak | 4 mechs]
+[Unit: Summoner Prime | Pilot: Roshak (G2/P2)| Armor CT22/RT18/LT18/RA16/LA16/RL20/LL20|Heat 0|Fresh]
+[Unit:Kit Fox A x3| Pilot: assorted (G3/P3)| Armor CT10/RT8/LT8/RA6/LA6/RL12/LL12|Heat 0| Fresh]
+
+Tn1 Move:
+d: Initiative 2d6=9 vs 2d6=6 -> Alpha Lance moves second (advantage)
+@(Summoner) Advance north through rubble
+@(Kit Fox x3) Fan out, east flank screening formation
+@Atlas advances north, uses rubble for cover
+@Wolverine and Jenner sprint south along road
+
+Tn1 Shoot:
+@Atlas fires AC/20 at Summoner
+d: Gunnery TN7 (range+movement) 2d6=9 -> Hit
+d: Location 2d6=7 -> CT, damage 20
+=> [Unit:Summoner | Armor CT22->2/RT18/LT18| Heat | Steady]
+@(Summoner) ER PPC at Atlas
+d: Gunnery TN6 2d6=5 -> Miss
+@Marauder fires PPC 2 at Kit Fox A-1
+d: Gunnery TN5 2d6=7 -> Hit
+d: Location 2d6=CT+LT -> CT 10->0 destroyed, internal structure gone
+=> [Unit:Kit Fox A-1 | Armor CT0 | destroyed]
+=> Pilot ejects, Minh moves to cover
+@(Kit Fox A-2, A-3) LRM 10 at Marauder
+d: Gunnery TN5 2d6=8, 2d6=6 -> 1 hit, 1 miss
+d: Location 2d6=RT, 6 missiles connect -> RT 18->12
+=> [Unit:Marauder | Armor CT22/RT12/LT18|Heat 0 | Steady]
+
+Tn1 Heat:
+@Atlas: 3 heat (AC/20) - dissipate 10 -> Heat 0
+@(Summoner): 15 heat (ER PPC) - dissipate 10 -> Heat 5
+=> [Unit:Summoner | Heat 5]
+
+Tn2 Move:
+@Wolverine exits south edge - breakthrough objective 1/2
+@Jenner exits south edge - breakthrough objective 2/2
+[/BATTLE]
+
+=> Breakthrough achieved. Wolverine and Jenner escaped. Atlas and Marauder provide cover; mission success.
+
+[CAMPAIGN]
+[Unit:Atlas AS7-D|Armor CT30/RT25 | Heat 0 | Intact]
+[Unit: Marauder MAD-3R | Armor CT22/RT12 | needs repair RT armor]
+[Unit: Wolverine WVR-6R | Armor CT16/RT14| Intact]
+[Unit:Kit Fox A-1 | destroyed, salvageable]
+d: Repair Marauder RT 1d6 days =2 -> back in 2 days
+[Thread: Operation Luthien | 2/4 breakthroughs complete | Open]
+[/CAMPAIGN]

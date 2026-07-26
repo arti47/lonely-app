@@ -1,0 +1,33 @@
+[CAMPAIGN]
+[Force: Reiklanders | Captain Streng|3 units | Active]
+[N: Captain Streng|WS4|Ld8|6 XP|Fresh]
+[Unit: Swordsmen|x3| Exp 0|Fresh]
+[Wealth:Gold 50gc]
+[/CAMPAIGN]
+[BATTLE]
+[Scenario: Raid | Steal the idol|5 turns | Night: -1 shooting]
+[Unit:Cultists|x6|Morale 5|Fresh]
+[N:Cult Leader | WS4|Ld7|armed | Fresh]
+Tn1
+@Streng advances to ruined altar
+@(Cultists) Move to intercept
+@(Cult Leader) Charges Streng
+d: WS4 vs WS4 2d6=9 -> Hit
+=> [N:Captain Streng|HP-1]
+Tn2
+@Streng counterattacks
+d: WS4 vs WS4 2d6=11 -> Hit, +1 wound
+=> [N:Cult Leader | knocked down]
+@Swordsmen charge cultist flank
+d: WS3 vs WS3 2d6=8 -> Hit, 2 kills
+=> [Unit:Cultists|x4|wavering]
+d: Morale 1d6=6 vs Ld 5 -> Broken
+=> [Unit:Cultists|x4|broken|fleeing]
+[/BATTLE]
+=> Victory. Idol secured.
+[CAMPAIGN]
+d: Injury Streng 1d6=4 -> No lasting effect
+[N:Captain Streng|7 XP|Fresh]
+d: Income 1d6=5 -> 15gc from the idol
+[Wealth:Gold 50gc+15gc] => [Wealth:Gold 65gc]
+[/CAMPAIGN]

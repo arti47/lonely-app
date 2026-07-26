@@ -1,0 +1,14 @@
+[DUNGEON STATUS]
+[R:1|cleared, looted|entry cave|exits N:R2, E:R3]
+[R:2|unexplored] [R:3| unexplored]
+[/DUNGEON STATUS]
+S7 *North passage*
+@Approach R2 quietly
+d: Stealth d6=4 vs TN 4 -> Success
+[R:2|active|barracks | exits S:R1, W:R4]
+? Enemies?
+d: d6=2 -> Yes
+=> Two guards, armed.
+...combat...
+[R:2|cleared, looted]
+[R:4|unexplored|marked on guard's map]

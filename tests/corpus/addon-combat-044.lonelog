@@ -1,0 +1,11 @@
+S9 *Dockside ambush* [COMBAT]
+[PC:Alex | HP 12] [N:Jordan|ally|HP 8]
+[F:Pirate Captain | HP 10 | Close] [F: Piratex2|HP 4|Medium]
+Rd1
+@Slash Captain d: 19 >= 13 Hit 7dmg => [F:Captain | HP 3| staggered]
+@(Captain) Desperate swing d: 11 >= 14 Miss
+@(Jordan) Fires at Pirate d: 16 >= 11 Hit => [F:Piratex1| dead]
+@(Pirate) Drops crossbow, flees => [F:Piratex1|fled]
+[/COMBAT]
+=> Captain fled by sea. Jordan wounded. Two pirates down.
+[N:Jordan | wounded | HP 4] [Thread: Pirate Captain's Revenge | Open]

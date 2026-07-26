@@ -1,0 +1,3 @@
+[Unit:War Wagon | Armor 12 | Move 4|Fresh]
+d: Ballista fires at war wagon, 2d6=8 -> Hit, damage 1d6=4
+=> [Unit:War Wagon | Armor 12->8|Steady]

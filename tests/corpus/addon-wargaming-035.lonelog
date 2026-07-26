@@ -1,0 +1,12 @@
+[Unit:Atlas AS7-D|Armor CT30/RT25 | Heat 0 | Fresh]
+Tn1 Shoot:
+@Atlas fires AC/20 at Summoner
+=> [Unit:Atlas | Heat 3] (3 heat generated)
+Tn1 Heat:
+@Atlas dissipates 10 heat -> Heat 3-10 -> Heat 0
+=> [Unit:Atlas | Heat 0]
+Tn2 Shoot:
+@Atlas fires AC/20 again; Summoner fires ER PPC
+=> [Unit:Atlas | Heat 3]
+@(Summoner) ER PPC return fire
+=> [Unit:Summoner | Heat 5] (accumulated)

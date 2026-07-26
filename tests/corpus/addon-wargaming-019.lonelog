@@ -1,0 +1,4 @@
+[Unit:Pikes|x16 | Morale 7 | Line|Fresh]
+[Unit:Muskets | x12 | Morale 6 | Column | Marching]
+@Form square against cavalry
+=> [Unit:Muskets | x12 | Morale 6 | Square|Fresh]

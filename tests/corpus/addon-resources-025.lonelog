@@ -1,0 +1,10 @@
+[COMBAT]
+Rd1
+@Fire bow at Orc 1
+d: Ranged d6=5 vs TN 4 -> Success
+=> Arrow hits! [F: Orc 1 | HP-3] [Inv: Arrow-1]
+Rd2
+@Throw last flask of oil
+d: Ranged d6=3 vs TN 4 -> Fail
+=> Missed! The oil splatters uselessly. [Inv:Oil Flask|depleted]
+[/COMBAT]

@@ -1,0 +1,8 @@
+[BATTLE]
+[Scenario: The Vault | Reach the chest | 5 turns| Unknown rooms]
+[R:1 | entrance | torchlit|exits: N, E]
+[Unit:Warband|x6|Morale 6|Fresh|R:1]
+Tn1
+@Move through east passage
+d: Explore 1d6=4 -> Room 2 revealed
+[R:2|collapsed hall|dark|exits: E, S|Trap: pitfall]

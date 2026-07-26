@@ -1,0 +1,29 @@
+S9 *Dockside ambush* [COMBAT]
+[PC:Alex | HP 12] [N: Jordan|ally|HP 8]
+[F:Pirate Captain | HP 10 | Close] [F: Piratex2|HP 4 | Medium] [F: Dock Rat | HP 2|Engaged]
+Rd1
+@Slash at Dock Rat
+d: d20+4=17 vs AC 10 -> Hit => [F: Dock Rat| dead]
+@(Captain) Charges, swings cutlass [Close->Engaged]
+d: d20+6=19 vs AC 14 -> Hit, 7 dmg
+=> [PC:Alex | HP 5]
+@(Jordan) Crossbow at Captain
+d: d20+3=12 vs AC 13 -> Miss
+@(Piratex2) Crossbows at Jordan
+d: d20+2=15, 9 vs AC 11 -> 1 Hit, 4 dmg => [N:Jordan | HP 4]
+Rd2
+@Power attack on Captain
+d: d20+4=20 vs AC 13 -> Hit, 8 dmg => [F:Captain | HP 2|wounded]
+@(Captain) Desperate slash
+d: d20+6=11 vs AC 14 -> Miss
+@(Jordan) Second shot at remaining Pirate
+d: d20+3=16 vs AC 11 -> Hit => [F:Piratex1| dead]
+@(Pirate) Drops crossbow, flees => [F:Piratex1|fled]
+Rd3
+@Chase the Captain
+d: Athletics d6=3 vs TN 5 -> Fail
+=> He leaps off the dock into a rowboat and vanishes into the fog.
+[/COMBAT]
+=> Two pirates dead, one fled, Captain escaped by sea.
+[N:Jordan | wounded] [PC: Alex | HP 5 | Stress+1]
+[Thread: Pirate Captain's Revenge | Open]

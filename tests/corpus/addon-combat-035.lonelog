@@ -1,0 +1,5 @@
+Rd1 Roster: [PC: Alex | HP 10] [F:Guard | HP 4| Close | armed | alert]
+@Attack Guard
+d: d20+4=15 vs AC 10 -> Hit
+=> [F:Guard|HP-6|dead]
+[/COMBAT]

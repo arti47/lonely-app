@@ -1,0 +1,4 @@
+Rd1
+[F: Thug A | Close] @(A) Slash -> d: 14 >= 15 Miss
+[PC] @ Riposte -> d: 18 >= 12 Hit => [F: Thug A | HP-6|dead]
+[F: Thug B | Close] @(B) Stab -> d: 11 >= 15 Miss

@@ -1,0 +1,10 @@
+[CAMPAIGN]
+d: Injury Streng 1d6=3 -> Leg Wound (-1 Move next battle)
+[N: Captain Streng | Leg Wound|7 XP]
+[N:Champion Aldric | 4 XP]
+d: XP advance Aldric 1d6=5 -> New skill: Step Aside
+[N:Champion Aldric | Step Aside skill|4 XP]
+d: Income 1d6+2=7 -> 7gc found
+[Wealth:Gold 50gc+7gc] => [Wealth: Gold 57gc]
+[Thread: The Haunted Quarter | Open] (Aldric spotted something in the ruins)
+[/CAMPAIGN]

@@ -1,0 +1,4 @@
+d: Lockpicking 5≥4 -> Success
+=> The door opens
+=> But the hinges squeal loudly
+=> [E:AlertClock 1/6]
