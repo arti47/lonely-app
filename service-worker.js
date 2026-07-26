@@ -9,7 +9,7 @@
  * src/ module must be added to APP_SHELL (§3, enforced by tests/invariants).
  */
 
-const CACHE_VERSION = 'lonely-v5';
+const CACHE_VERSION = 'lonely-v6';
 
 const APP_SHELL = [
   './',
@@ -29,6 +29,7 @@ const APP_SHELL = [
   'src/state.js',
   'src/compare.js',
   'src/resolve.js',
+  'src/lifecycle.js',
   'src/addons/index.js',
   'src/addons/combat.js',
   'src/addons/resources.js',

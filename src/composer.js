@@ -13,6 +13,7 @@ import { el, clear, today } from './core.js';
 import { modal, promptModal, showToast, announce } from './ui.js';
 import { serializeTag, KNOWN_TAG_TYPES, BLOCK_NAMES } from './lonelog/tags.js';
 import { elementsOfType } from './lonelog/fold.js';
+import { sceneBundle, sessionStartBundle, sessionEndBundle } from './lifecycle.js';
 
 /** Line kinds the composer can emit, in bar order. */
 export const SYMBOLS = [
@@ -96,7 +97,8 @@ export function blockOptions(state) {
  * Mount the composer.
  * @param {HTMLElement} host
  * @param {{state:object, commit:(lines:string[])=>Promise<any>, undo:()=>Promise<any>,
- *          canUndo:boolean}} ctx
+ *          canUndo:boolean, canRestore?:boolean, undoLabel?:string,
+ *          restore?:()=>Promise<any>}} ctx
  */
 export function mountComposer(host, ctx) {
   clear(host);
@@ -160,18 +162,34 @@ export function mountComposer(host, ctx) {
           title: `Scene S${nextSceneNumber(ctx.state)}`, placeholder: 'Dark alley, midnight',
         });
         if (context == null) return;
-        await ctx.commit([sceneLine(ctx.state, context)]);
+        await fire(ctx, sceneBundle(ctx.state, { context }), 'End scene');
       },
     }, ['Scene']),
     el('button', {
       class: 'btn btn-small', type: 'button',
-      onclick: async () => { await ctx.commit(sessionLines(ctx.state)); },
-    }, ['Session']),
+      onclick: async () => {
+        const choice = await modal({
+          title: 'Session',
+          body: 'Ending a session closes any open block and snapshots the add-ons your log uses.',
+          actions: [
+            { label: 'Cancel', value: null },
+            { label: 'End session', value: 'end' },
+            { label: 'Start session', value: 'start', primary: true },
+          ],
+        });
+        if (choice === 'start') await fire(ctx, sessionStartBundle(ctx.state), 'Start session');
+        if (choice === 'end') await fire(ctx, sessionEndBundle(ctx.state), 'End session');
+      },
+    }, ['Session…']),
     blockButton(ctx),
     el('button', {
-      class: 'btn btn-small btn-quiet', type: 'button', disabled: !ctx.canUndo,
+      class: 'btn btn-small btn-quiet', type: 'button', disabled: !ctx.canUndo, id: 'composer-undo',
       onclick: () => ctx.undo(),
-    }, ['Undo']),
+    }, [ctx.undoLabel ?? 'Undo']),
+    ctx.canRestore ? el('button', {
+      class: 'btn btn-small btn-quiet', type: 'button', id: 'composer-restore',
+      onclick: () => ctx.restore(),
+    }, ['Restore']) : null,
   ]);
 
   host.append(
@@ -264,4 +282,33 @@ async function tagDialog(state) {
     name,
     fields: fieldsInput.value.split('|'),
   });
+}
+
+/**
+ * Commit a lifecycle bundle, confirming first when it does more than drop a
+ * single marker (CLAUDE.md §8 Phase 6).
+ * @param {object} ctx
+ * @param {import('./lifecycle.js').Bundle} bundle
+ * @param {string} title
+ */
+async function fire(ctx, bundle, title) {
+  if (!bundle.lines.length) {
+    showToast(bundle.summary[0] ?? 'Nothing to do.');
+    return;
+  }
+  if (bundle.heavy) {
+    const ok = await modal({
+      title,
+      body: el('div', {}, [
+        el('ul', { class: 'plain-list' }, bundle.summary.map((s) => el('li', {}, [s]))),
+        el('p', { class: 'hint' }, [
+          `${bundle.lines.length} line${bundle.lines.length === 1 ? '' : 's'} will be appended. `
+          + 'Undo removes the whole bundle.',
+        ]),
+      ]),
+      actions: [{ label: 'Cancel', value: false }, { label: title, value: true, primary: true }],
+    });
+    if (ok !== true) return;
+  }
+  await ctx.commit(bundle.lines);
 }

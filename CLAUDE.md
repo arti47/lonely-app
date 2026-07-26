@@ -116,7 +116,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `addons/resources.js` | ✅ `[Inv:]`, `[Wealth:]`, `[RESOURCES]` surfaces |
 | `addons/dungeon.js` | ✅ `[R:]`, `[DUNGEON STATUS]` surfaces |
 | `addons/wargaming.js` | ✅ `[Unit:]`, `[Force:]`, `[BATTLE]`, `[CAMPAIGN]`, `Tn#` surfaces |
-| `lifecycle.js` | Scene/session/campaign boundary events + undo (§6) |
+| `lifecycle.js` | ✅ Scene/session boundary bundles + one-step undo |
 | `settings.js` | ✅ Preferences, theme, panel visibility, reference links |
 | `router.js` | ✅ Bottom-nav routing + conditional tab gating |
 | `screens.js` | ✅ Screen renderers for all five screens |
@@ -288,10 +288,12 @@ Build strictly in order. Per-feature spec format is mandatory for every item:
       *Done: panels appear from log content alone and are sticky once seen;
       hiding one is `view` state and never touches the log. Every control
       appends a tag line asserted to fold back into the intended state.*
-- [ ] **Phase 6 — Lifecycle engine.** Explicit End Scene / End Session controls
+- [x] **Phase 6 — Lifecycle engine.** Explicit End Scene / End Session controls
       firing the whole boundary bundle (scene checkpoint, session header, state
       snapshot blocks — `[RESOURCES]`, `[DUNGEON STATUS]`, `[CAMPAIGN]` — where
       those add-ons are live), with confirmation summary and one-step undo.
+      *Done: a bundle is a list of lines, so undo is truncation of exactly its
+      length. Confirmation appears when a bundle does more than drop a marker.*
 - [ ] **Phase 7 — Learned templates.** Detect repeated `d:` shapes; offer to save
       as a quick roll; template editor; group into a named pack; pack
       export/import as a file (D4).
@@ -457,6 +459,8 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 | 2026-07-26 | **Phase 3 — state pane.** `state.js`: character sheet folded from `[PC:]` tags (D5), clock/track fill meters, countdown timers, thread states, NPC/location index, and the persistent state header now shared by Log, State and Resolve. Every value links back to the line that set it (§5.7). Editing appends a tag line and never mutates state (§5.1). Thread state changes emit the transition form `[Thread:X\|Open -> Closed]` rather than a restatement, because flags accumulate — restating `Closed` would leave `Open` set too | 98 unit tests, each edit asserted by folding the emitted line back; 36 browser checks including stepping a clock from the State pane and tracing a value into the log | `lonely-v3` |
 | 2026-07-26 | **Phase 4 — resolve pane.** `compare.js` (six comparison shapes: target incl. roll-under, success pools, paired challenge dice, keep high/low, `dF` ladders, degree bands; match detection; a generic d100 oracle ladder labelled a house aid; table lookup) and `resolve.js` (roll entry, oracle, tables). Every number is entered by the player — `src/` still contains no RNG, enforced by test. Engine gained inline table definitions, filtered option sets and multi-line generator axes, so a table defined in a log is immediately usable and the log stays self-contained. **Ledger complete: 58/58** | 129 unit tests; 46 browser checks including entering a roll, an oracle answer and a table lookup through the real UI | `lonely-v4` |
 | 2026-07-26 | Fixed: an omitted numeric field parsed as `0`, so a roll with no target compared against 0 and always succeeded. Root cause: `Number('')` is `0`, and the guard only rejected `NaN`. Empty now reads as "not given" | Regression test per mode; `MODES` all evaluate safely on empty input | `lonely-v4` |
+| 2026-07-26 | **Phase 6 — lifecycle engine.** `lifecycle.js`: End Scene closes explicitly opened blocks then opens the next scene (a scene-header block is left to the marker that closes it, combat §1.1); End Session closes every open block innermost-first and snapshots each surfaced add-on. Combat gets no snapshot because its spec defines none, and an add-on holding nothing writes no empty block. A bundle is a plain list of lines, so one-step undo is truncation of exactly its length | 176 unit tests, including that truncating a bundle restores the byte-identical prior fold; 63 browser checks covering the confirmation summary, the bundle landing, one-step undo and restore | `lonely-v6` |
+| 2026-07-26 | Fixed: undo popped a single line, so a three-line session header or any multi-line insert needed three presses and left the log half-edited in between. Undo now takes back the whole of the last commit, with a separate Restore for putting it back | Browser check: an eight-line bundle undoes in one press and restores in one | `lonely-v6` |
 | 2026-07-26 | **Phase 5 — add-on surfaces.** `addons/{combat,resources,dungeon,wargaming}.js`, surfacing purely from folded log content (D6) and sticky once seen; hiding a panel is `view` state and never edits the log. Combat: rounds, rosters, damage against whatever stat the system uses, range transitions, group splitting. Resources: quantity steps, usage-die step-down chain, wealth deltas, `[RESOURCES]` snapshot. Dungeon: room status accumulation, exits, `[DUNGEON STATUS]` snapshot. Wargaming: casualties, status transitions, heat with advisory thresholds, location armor, `[BATTLE]`/`[CAMPAIGN]` snapshots. The tag-line builders live once in `state.js` and are reused by all four (§9.2) | 162 unit tests, every control asserted by folding its emitted line back; 55 browser checks including all four panels surfacing, a combat control appending, `Tn#` advancing independently of `Rd#`, a balanced snapshot block, and hiding leaving the log byte-identical | `lonely-v5` |
 | 2026-07-26 | Consolidated to a single branch: all work now commits directly to `main`. The old feature branch held no unmerged commits | `git log main..<branch>` empty before removal; local branch deleted | — |
 | 2026-07-26 | Repo prepared for GitHub Pages: `.nojekyll`, and a test asserting every asset reference is relative so the app works from a project subpath | `npm test` | `lonely-v4` |

@@ -77,8 +77,10 @@ Phases 0–5 are complete, and the 58-item spec-conformance ledger is fully
 implemented. You can log a session end to end, watch state fold out of it,
 resolve rolls, oracles and tables, and get combat, resource, dungeon and
 wargaming panels that appear on their own when your log starts using them.
-Remaining: the lifecycle engine, learned roll templates, and the searchable
-notation reference. See `CLAUDE.md` §8.
+Scene and session boundaries fire as one bundle — closing open blocks and
+snapshotting whichever add-ons are in play — with a summary first and one-step
+undo after. Remaining: learned roll templates and the searchable notation
+reference. See `CLAUDE.md` §8.
 
 ## Licensing
 

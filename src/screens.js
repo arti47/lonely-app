@@ -87,8 +87,10 @@ export async function logScreen(mount, params) {
   let campaign = await openCampaign(mount, params);
   if (!campaign) return;
 
-  /** Last truncation, kept in memory only so it can be undone once. */
+  /** Last removal, kept in memory only so it can be restored once (§5.1). */
   let removed = null;
+  /** Lines appended by the most recent commit, so undo takes the whole bundle. */
+  let lastBatch = 1;
 
   const head = el('header', { class: 'screen-head' }, []);
   const header = el('div', { class: 'state-header-slot' });
@@ -158,9 +160,10 @@ export async function logScreen(mount, params) {
       onTruncate: async (line) => {
         removed = campaign.log.slice(line);
         campaign.log = campaign.log.slice(0, line);
+        lastBatch = 1;
         await persist();
         refresh();
-        showToast(`Removed ${removed.length} line${removed.length === 1 ? '' : 's'}. Use Undo to restore.`);
+        showToast(`Removed ${removed.length} line${removed.length === 1 ? '' : 's'}. Use Restore to put them back.`);
       },
       onEdit: async (line, text) => {
         campaign.log[line] = text;
@@ -171,28 +174,38 @@ export async function logScreen(mount, params) {
 
     mountComposer(composerHost, {
       state,
-      canUndo: campaign.log.length > 0 || !!removed,
+      canUndo: campaign.log.length > 0,
+      canRestore: !!removed,
+      undoLabel: lastBatch > 1 ? `Undo ${lastBatch} lines` : 'Undo',
       commit: async (lines) => {
         removed = null;
+        lastBatch = lines.length;
         campaign.log.push(...lines);
         await persist();
         refresh();
       },
+      // Undo takes back the whole of the last commit, so a lifecycle bundle or a
+      // multi-line session header comes off in one step rather than a line at a
+      // time (§8 Phase 6).
       undo: async () => {
-        if (removed) {
-          campaign.log.push(...removed);
-          const n = removed.length;
-          removed = null;
-          await persist();
-          refresh();
-          showToast(`Restored ${n} line${n === 1 ? '' : 's'}.`);
-          return;
-        }
         if (!campaign.log.length) return;
-        campaign.log.pop();
+        const n = Math.min(Math.max(lastBatch, 1), campaign.log.length);
+        removed = campaign.log.slice(campaign.log.length - n);
+        campaign.log = campaign.log.slice(0, campaign.log.length - n);
+        lastBatch = 1;
         await persist();
         refresh();
-        announce('Last line removed.');
+        announce(`Removed ${n} line${n === 1 ? '' : 's'}.`);
+      },
+      restore: async () => {
+        if (!removed) return;
+        const n = removed.length;
+        campaign.log.push(...removed);
+        removed = null;
+        lastBatch = n;
+        await persist();
+        refresh();
+        showToast(`Restored ${n} line${n === 1 ? '' : 's'}.`);
       },
     });
   }

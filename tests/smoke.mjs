@@ -521,6 +521,65 @@ try {
   check('a hidden panel still exists, collapsed',
     (await s.evaluate(`document.querySelector('#screen .addon[data-addon="dungeon"] .btn-tiny').textContent`)) === 'Show');
 
+  // --- Phase 6: lifecycle bundles fire completely and undo in one step ---
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 300)))`);
+
+  const beforeBundle = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    return (await store.campaigns.get('${created}')).log.length;
+  })()`);
+
+  // End session -> confirmation summary -> commit the whole bundle.
+  await s.evaluate(`([...document.querySelectorAll('#screen .composer-tools .btn')]
+    .find(b => b.textContent === 'Session…')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+  await s.evaluate(`([...document.querySelectorAll('.modal-actions .btn')]
+    .find(b => b.textContent === 'End session')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+
+  check('a heavy bundle asks for confirmation with a summary',
+    await s.evaluate('document.querySelectorAll(".modal .plain-list li").length') > 0);
+
+  await s.evaluate(`([...document.querySelectorAll('.modal-actions .btn')]
+    .find(b => b.textContent === 'End session')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 400))');
+
+  const bundled = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const { lex } = await import('${base}/src/lonelog/lexer.js');
+    const { fold } = await import('${base}/src/lonelog/fold.js');
+    const c = await store.campaigns.get('${created}');
+    const st = fold(lex(c.log.join('\\n')));
+    return { n: c.log.length, open: st.blockStack.length, text: c.log.join('\\n') };
+  })()`);
+  check('the bundle appends more than one line',
+    bundled.n > beforeBundle + 1, `${beforeBundle} -> ${bundled.n}`);
+  check('the bundle closes every open block', bundled.open === 0, String(bundled.open));
+  check('the bundle snapshots the surfaced add-ons',
+    /\[RESOURCES\]/.test(bundled.text) && /\[DUNGEON STATUS\]/.test(bundled.text)
+      && /\[CAMPAIGN\]/.test(bundled.text));
+
+  const undoLabel = await s.evaluate('document.querySelector("#composer-undo")?.textContent');
+  check('undo advertises the whole bundle', /^Undo \d+ lines$/.test(undoLabel), JSON.stringify(undoLabel));
+
+  await s.evaluate('document.querySelector("#composer-undo").click()');
+  await s.evaluate('new Promise(r => setTimeout(r, 400))');
+  const afterUndo = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    return (await store.campaigns.get('${created}')).log.length;
+  })()`);
+  check('one undo removes the whole bundle', afterUndo === beforeBundle,
+    `${bundled.n} -> ${afterUndo}, expected ${beforeBundle}`);
+
+  await s.evaluate('document.querySelector("#composer-restore").click()');
+  await s.evaluate('new Promise(r => setTimeout(r, 400))');
+  const afterRestore = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    return (await store.campaigns.get('${created}')).log.length;
+  })()`);
+  check('restore puts the bundle back', afterRestore === bundled.n,
+    `${afterUndo} -> ${afterRestore}, expected ${bundled.n}`);
+
   for (const width of [360, 390]) {
     await s.send('Emulation.setDeviceMetricsOverride', { width, height: 780, deviceScaleFactor: 1, mobile: true });
     for (const route of ['campaigns', 'log', 'state', 'resolve', 'settings']) {
