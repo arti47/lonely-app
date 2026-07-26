@@ -1,4 +1,11 @@
-# lonely-app — architecture
+# lonely-app — design rationale
+
+> **Non-canonical.** `CLAUDE.md` is the project's canonical spec — file tables,
+> data model, roadmap, and conformance ledger live there. This document records
+> *why* the design is what it is. Where the two disagree, `CLAUDE.md` wins.
+>
+> Superseded here: the Vite/React/TypeScript stack, replaced by no-build vanilla
+> ES modules (`CLAUDE.md` §2) so clone-and-run keeps working without a toolchain.
 
 Goal: a solo-RPG play assistant and session logger, system-agnostic, whose
 on-disk artifact is valid Lonelog markdown.
