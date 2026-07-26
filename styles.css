@@ -326,7 +326,10 @@ p { margin: 0 0 12px; }
 }
 
 .composer {
-  position: sticky; bottom: 0;
+  /* Sticky anchors to the viewport, which the body's bottom padding does not
+     move — so bottom:0 parked the tool row underneath the fixed nav. Sit above
+     the nav instead. */
+  position: sticky; bottom: calc(var(--nav-h) + env(safe-area-inset-bottom));
   background: var(--paper);
   border-top: 1px solid var(--line);
   padding-top: 10px;
@@ -335,7 +338,10 @@ p { margin: 0 0 12px; }
 
 .symbol-bar { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
 .sym {
-  flex: 1 1 0; min-width: 0;
+  /* Grow to fill the bar while there are few buttons; once expanded, hold a
+     legible width and let the bar scroll rather than crushing "Rolled" into
+     "Rol…". The bar's own overflow-x keeps this off the document (D8). */
+  flex: 1 0 auto; min-width: 58px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
   padding: 4px 2px;
   min-height: 46px;

@@ -296,6 +296,17 @@ try {
     new Promise(r => setTimeout(r, 150)))`);
   check('More reveals every symbol',
     await s.evaluate('document.querySelectorAll("#screen .sym[data-kind]").length') === 8);
+  // Every composer control must sit above the fixed nav. Sticky anchors to the
+  // viewport, which the body's bottom padding does not move, so `bottom: 0` put
+  // the wrapped tool row underneath the nav bar.
+  const clearsNav = await s.evaluate(`(() => {
+    const composer = document.querySelector('#screen .composer').getBoundingClientRect();
+    const nav = document.querySelector('.nav').getBoundingClientRect();
+    return { composerBottom: Math.round(composer.bottom), navTop: Math.round(nav.top) };
+  })()`);
+  check('the composer sits above the nav rather than under it',
+    clearsNav.composerBottom <= clearsNav.navTop, JSON.stringify(clearsNav));
+
   await s.evaluate(`(document.querySelector('#screen .sym-more').click(),
     new Promise(r => setTimeout(r, 150)))`);
   check('Fewer collapses back to the beginner set',
