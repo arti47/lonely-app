@@ -7,7 +7,11 @@ session logs (Roberto Bisceglie, CC BY-SA 4.0). The specs are vendored under
 `docs/spec/`; they are the authoritative grammar for anything this repo parses,
 renders, or generates.
 
-Status: spec-only. No application code yet.
+Target: a **local-first PWA** — solo-RPG play assistant and session logger,
+system-agnostic, whose on-disk artifact is valid Lonelog markdown. Offline, no
+server, no account. Architecture in `docs/design.md`.
+
+Status: design agreed, no application code yet.
 
 ## Repo layout
 
@@ -18,7 +22,28 @@ docs/spec/addon-dungeon.md     Dungeon Crawling Add-on v1.1.0
 docs/spec/addon-resources.md   Resource Tracking Add-on v1.1.0
 docs/spec/addon-wargaming.md   Solo Wargaming Add-on v1.0.0
 docs/spec-review.md            Known spec defects & inconsistencies (see below)
+docs/design.md                 App architecture, system-pack format, build order
 ```
+
+Planned code layout:
+
+```
+packages/lonelog/   pure TS notation engine — lexer, tags, fold, render, lint
+packages/systems/   system packs (JSON data) + loader
+apps/pwa/           React UI, Dexie/IndexedDB, service worker
+```
+
+## Core design invariant
+
+**The log is the source of truth.** There is no separate state database.
+`CampaignState` (PCs, NPCs, clocks, inventory, rooms, units...) is derived by
+folding parsed log entries, with per-scene checkpoints for speed. Editing state
+in the UI appends a tag line to the log; it never mutates state directly. Undo is
+truncation.
+
+The parser is **tolerant in, canonical out**, and must never lose a byte —
+unrecognised lines round-trip verbatim as prose. Correctness bar: every example
+in the five vendored specs must round-trip.
 
 ## Notation summary (parser contract)
 
