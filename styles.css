@@ -281,6 +281,23 @@ p { margin: 0 0 12px; }
   font-size: 0.9rem;
 }
 .toast[data-tone="error"] { background: var(--danger); color: #fff; }
+.toast-body { display: flex; align-items: center; gap: 10px; }
+.toast-text { flex: 1 1 auto; min-width: 0; }
+.toast-action {
+  flex: 0 0 auto;
+  font: inherit; font-weight: 700;
+  padding: 6px 12px; min-height: 34px;
+  border: 1px solid currentColor; border-radius: var(--radius);
+  background: transparent; color: inherit;
+  cursor: pointer;
+}
+.toast-dismiss {
+  flex: 0 0 auto;
+  font: inherit; font-size: 1.1rem; line-height: 1;
+  padding: 4px 6px; min-height: 34px; min-width: 34px;
+  border: 0; background: transparent; color: inherit; opacity: 0.7;
+  cursor: pointer;
+}
 
 @media (prefers-reduced-motion: no-preference) {
   .toast { animation: rise 160ms ease-out; }

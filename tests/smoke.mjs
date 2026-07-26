@@ -40,6 +40,13 @@ function findChrome() {
   return null;
 }
 
+/**
+ * Set to a truthy value to serve a byte-different service worker, which is how
+ * a browser decides a new version has been deployed. This is the only honest
+ * way to test the update prompt end to end.
+ */
+let deployedBuild = 0;
+
 function serve() {
   const server = createServer(async (req, res) => {
     try {
@@ -47,7 +54,10 @@ function serve() {
       let p = normalize(join(root, decodeURIComponent(url.pathname)));
       if (!p.startsWith(root)) { res.writeHead(403).end(); return; }
       if (url.pathname === '/' || url.pathname.endsWith('/')) p = join(p, 'index.html');
-      const body = await readFile(p);
+      let body = await readFile(p);
+      if (deployedBuild && url.pathname.endsWith('/service-worker.js')) {
+        body = Buffer.concat([body, Buffer.from(`\n// deployed build ${deployedBuild}\n`)]);
+      }
       res.writeHead(200, { 'content-type': MIME[extname(p)] ?? 'application/octet-stream' });
       res.end(body);
     } catch {
@@ -1103,6 +1113,61 @@ try {
   check('F7: hiding the checklist is view state and leaves the log untouched',
     !afterHide.shown && afterHide.setting === 'hidden' && afterHide.log === '@ Push open the door',
     JSON.stringify(afterHide));
+
+  // --- A new deploy is offered as a button, and applying it reloads ---
+  const swReady = await s.evaluate(`(async () => {
+    if (!('serviceWorker' in navigator)) return 'unsupported';
+    const reg = await navigator.serviceWorker.ready;
+    for (let i = 0; i < 50 && !navigator.serviceWorker.controller; i++) {
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return reg.active ? 'active' : 'none';
+  })()`);
+  check('the service worker takes control on first load', swReady === 'active', String(swReady));
+
+  // Publish a byte-different worker: this is what a push to GitHub looks like.
+  deployedBuild = 1;
+
+  const offered = await s.evaluate(`(async () => {
+    const reg = await navigator.serviceWorker.getRegistration();
+    await reg.update();
+    for (let i = 0; i < 80; i++) {
+      const host = document.querySelector('#toast');
+      const button = host?.querySelector('.toast-action');
+      if (button && !host.hidden) {
+        return { label: button.textContent, text: host.querySelector('.toast-text')?.textContent,
+                 waiting: !!reg.waiting, dismissable: !!host.querySelector('.toast-dismiss') };
+      }
+      await new Promise(r => setTimeout(r, 150));
+    }
+    return { label: null, waiting: !!reg.waiting };
+  })()`);
+  check('a new version is offered as a button, not just a message',
+    offered.label === 'Update' && offered.waiting === true && offered.dismissable === true,
+    JSON.stringify(offered));
+
+  // The waiting worker must not take over until it is asked to.
+  check('the update waits rather than reloading the session',
+    await s.evaluate('document.body.dataset.booted === "true"'));
+
+  await s.evaluate(`(document.querySelector('#toast .toast-action').click(), true)`);
+
+  const applied = await (async () => {
+    for (let i = 0; i < 60; i++) {
+      await new Promise((r) => setTimeout(r, 250));
+      try {
+        const state = await s.evaluate(`(async () => {
+          if (document.body?.dataset.booted !== 'true') return null;
+          const reg = await navigator.serviceWorker.getRegistration();
+          return { waiting: !!reg?.waiting, controlled: !!navigator.serviceWorker.controller };
+        })()`);
+        if (state && state.waiting === false && state.controlled) return state;
+      } catch { /* the page is reloading out from under the evaluate */ }
+    }
+    return null;
+  })();
+  check('tapping Update applies the new worker and reloads the app',
+    applied !== null, JSON.stringify(applied));
 
   check('zero console errors', consoleErrors.length === 0, consoleErrors.join(' | '));
 } finally {

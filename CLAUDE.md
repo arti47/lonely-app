@@ -59,8 +59,10 @@ Recorded from user Q&A. These are settled; do not re-litigate.
   --noEmit` in `npm test`. The notation engine is where type safety pays; it does
   not justify a compiler in the ship path.
 - **Installable PWA:** `manifest.json`, `service-worker.js` (network-first,
-  caches app shell + all modules, versioned `CACHE_VERSION`), SVG icon, in-app
-  "Update available — reload" toast when the SW detects new code.
+  caches app shell + all modules, versioned `CACHE_VERSION`), SVG icon. A new
+  worker **waits**; the page offers it as a toast button and applies it only
+  when the user taps (`update.js`). An update must never reload a session
+  out from under the person writing in it.
 - **Storage:** IndexedDB for campaigns/logs/settings; zero configuration, works
   offline from first load. File System Access API where available so a campaign
   binds to a real `.md` file on disk and re-saves in place; download/upload
@@ -122,6 +124,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `addons/dungeon.js` | ✅ `[R:]`, `[DUNGEON STATUS]` surfaces |
 | `addons/wargaming.js` | ✅ `[Unit:]`, `[Force:]`, `[BATTLE]`, `[CAMPAIGN]`, `Tn#` surfaces |
 | `lifecycle.js` | ✅ Scene/session boundary bundles + one-step undo |
+| `update.js` | ✅ Service-worker update detection; the update prompt and its button |
 | `settings.js` | ✅ Preferences, theme, lint level, reference links |
 | `reference.js` | ✅ Searchable notation reference; entry per construct, cited to the spec; plain-English tag-type names for choosers |
 | `guide.js` | ✅ Step-by-step new-user guide; shares the Help tab with the reference |
@@ -584,6 +587,7 @@ re-litigate them.
 
 | Date | Change | Verification | Cache |
 |---|---|---|---|
+| 2026-07-26 | **Click-to-update.** A deploy used to reach an open page only by luck: the worker called `skipWaiting()` on install, so it seized control mid-session and the page could only say "reload to finish" — a message with nothing to press. The worker now waits; `update.js` notices it, offers *A new version is ready* with an **Update** button, and applies it by posting `SKIP_WAITING`, reloading on `controllerchange`. A long-running PWA re-checks every 30 minutes and whenever it becomes visible, since an installed app may never navigate again and nothing else would ask. `showToast` gained an optional action button (and a dismiss), Settings gained *Check for updates* | Browser check drives the whole flow: the smoke server publishes a byte-different worker — what a push to GitHub looks like — then asserts the button appears, that the session is *not* reloaded while it waits, and that tapping it applies the worker and reloads | `lonely-v16` |
 | 2026-07-26 | The tag chooser listed bare notation codes — `PC N L E Thread Clock Track Timer F R Inv Wealth Unit Force Scenario` — which is a quiz, not a menu. Types now read as words and group by where they come from: *NPC (N)* under Core, *Combatant (F)* under Combat. `TAG_TYPES` lives beside the reference entries so a type's name, its group and its explanation stay together; the option value is still the notation, so nothing downstream changed | 246 unit tests, including that the chooser offers exactly the types the engine parses and cites an entry that exists; browser check that the words appear, the groups appear, and picking one still writes `[N:Jonah]` | `lonely-v15` |
 | 2026-07-26 | **Phase 9 slices 2–3 — the flow.** The state header is a one-line strip that expands to the full chip set, and Scene/Session moved into it, which is what makes the session lifecycle visible and gets the composer's tools back to one row. Rolling is a drawer over the log — the shared `modal()` presenting as a sheet, so there is one focus trap, not two — and committing a roll closes it with the line already in the log. New `onboarding.js`: a getting-started checklist that ticks itself off by reading the fold and hides as `view` state, a sample campaign whose short log already surfaces a sheet, a clock and two add-on panels, and the rule that a first-ever launch opens the guide rather than an empty list | 243 unit tests (13 new, covering every checklist tick, the sample's round-trip, lint-cleanliness, surfaced panels and system-agnosticism, and the landing rule); 113 browser checks including the strip collapsing and expanding, the drawer opening over Play and closing on commit, the checklist ticking and hiding without touching the log, and the example opening with its panels | `lonely-v14` |
 | 2026-07-26 | Fixed: the composer was `position: sticky`, which pins to the viewport rather than to the log column — so once the column became fixed-height it pulled the composer up out of flow and painted it over the checklist's last row. The column now sizes the log area to absorb the slack and the composer is static. Root cause: sticky was solving a problem the fixed-height column had already solved, and the two disagreed about where the bottom was. Also: only the log may shrink, or a flex child quietly clips itself; and a tall dialog focused its action button by scrolling past its own contents, so the drawer opened at the bottom | Browser checks: the composer's bottom edge clears the nav, the drawer shows its roll panel on open, 360/390px overflow clean | `lonely-v14` |

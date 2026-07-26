@@ -90,16 +90,42 @@ export async function promptModal(message, { title = 'Enter a value', value = ''
 
 let toastTimer = null;
 
-/** @param {string} message @param {{tone?:'info'|'error'}} [opts] */
-export function showToast(message, { tone = 'info' } = {}) {
+/**
+ * @param {string} message
+ * @param {{tone?:'info'|'error', duration?:number,
+ *   action?:{label:string, onClick:()=>any}}} [opts]
+ *   An `action` gives the toast a button. Such a toast waits — pass
+ *   `duration: 0` — because a message that offers something and then vanishes
+ *   on a timer is worse than no offer at all; it gets a dismiss control instead.
+ */
+export function showToast(message, { tone = 'info', action = null, duration = 4000 } = {}) {
   const host = $('#toast');
   if (!host) return;
   clear(host);
   host.dataset.tone = tone;
-  host.append(el('div', { class: 'toast-body' }, [message]));
+
+  const dismiss = () => { host.hidden = true; };
+  const body = el('div', { class: 'toast-body' }, [
+    el('span', { class: 'toast-text' }, [message]),
+  ]);
+
+  if (action) {
+    body.append(
+      el('button', {
+        class: 'toast-action', type: 'button',
+        onclick: () => { dismiss(); action.onClick(); },
+      }, [action.label]),
+      el('button', {
+        class: 'toast-dismiss', type: 'button', 'aria-label': 'Dismiss',
+        onclick: dismiss,
+      }, ['×']),
+    );
+  }
+
+  host.append(body);
   host.hidden = false;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => { host.hidden = true; }, 4000);
+  if (duration > 0) toastTimer = setTimeout(dismiss, duration);
 }
 
 /** Screen-reader announcement without a visual toast. */

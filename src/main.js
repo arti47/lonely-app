@@ -9,6 +9,7 @@ import { showToast } from './ui.js';
 import { $$ } from './core.js';
 import { campaigns } from './store.js';
 import { landingRoute } from './onboarding.js';
+import { watchForUpdates } from './update.js';
 
 /** Storage may be blocked; a landing decision must not stop the app booting. */
 async function countCampaigns() {
@@ -54,30 +55,10 @@ async function boot() {
   if (landing) location.hash = `#/${landing}`;
   await start();
   document.body.dataset.booted = 'true';
-}
 
-if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  window.addEventListener('load', () => {
-    const hadController = !!navigator.serviceWorker.controller;
-
-    // A worker that takes over after the page loaded means the running modules
-    // are the old ones — the page must be reloaded, or a newly added screen
-    // simply will not exist in the code that is running.
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (hadController) showToast('Updated — reload to finish.');
-    });
-
-    navigator.serviceWorker.register('service-worker.js').then((reg) => {
-      reg.addEventListener('updatefound', () => {
-        const sw = reg.installing;
-        sw?.addEventListener('statechange', () => {
-          if (sw.state === 'installed' && navigator.serviceWorker.controller) {
-            showToast('Update available — reload to get it.');
-          }
-        });
-      });
-    }).catch(() => { /* offline install is best-effort */ });
-  });
+  // After the app is usable: a new deploy is offered as a button, never taken
+  // in the middle of a session (§2).
+  watchForUpdates();
 }
 
 boot();

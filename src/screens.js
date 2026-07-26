@@ -17,6 +17,7 @@ import { sceneBundle, sessionStartBundle, sessionEndBundle } from './lifecycle.j
 import {
   renderChecklist, shouldShowChecklist, createSample, SAMPLE_TITLE,
 } from './onboarding.js';
+import { isSupported, checkNow, promptUpdate } from './update.js';
 import * as settings from './settings.js';
 import { go, rememberCampaign, forgetCampaign } from './router.js';
 import { parse } from './lonelog/index.js';
@@ -678,6 +679,26 @@ export async function settingsScreen(mount) {
       'Import keeps every line verbatim, including lines this app does not recognise.',
     ]),
   ]));
+
+  if (isSupported()) {
+    mount.append(el('section', { class: 'group' }, [
+      el('h2', {}, ['App version']),
+      el('div', { class: 'row' }, [
+        el('button', {
+          class: 'btn', type: 'button', id: 'check-updates',
+          onclick: async () => {
+            const result = await checkNow();
+            if (result === 'ready') promptUpdate();
+            else showToast('You are on the latest version.');
+          },
+        }, ['Check for updates']),
+      ]),
+      el('p', { class: 'hint' }, [
+        'The app checks by itself while it is open. When a new version is ready '
+        + 'you get a button — it never reloads mid-session.',
+      ]),
+    ]));
+  }
 
   mount.append(el('section', { class: 'group' }, [
     el('h2', {}, ['About']),

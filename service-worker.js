@@ -9,7 +9,7 @@
  * src/ module must be added to APP_SHELL (§3, enforced by tests/invariants).
  */
 
-const CACHE_VERSION = 'lonely-v15';
+const CACHE_VERSION = 'lonely-v16';
 
 const APP_SHELL = [
   './',
@@ -33,6 +33,7 @@ const APP_SHELL = [
   'src/templates.js',
   'src/reference.js',
   'src/guide.js',
+  'src/update.js',
   'src/onboarding.js',
   'src/addons/index.js',
   'src/addons/combat.js',
@@ -48,11 +49,14 @@ const APP_SHELL = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_VERSION)
-      .then((cache) => cache.addAll(APP_SHELL))
-      .then(() => self.skipWaiting()),
-  );
+  // No skipWaiting here. A new worker waits until the page asks it to take
+  // over, so an update never reloads a session out from under the user; the
+  // page offers it as a button instead (src/update.js).
+  event.waitUntil(caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL)));
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
