@@ -246,6 +246,214 @@ Findings are numbered B1–B8 and each is closed by a check in
 
 ---
 
+## Third pass — structure, positional slots and the analog header
+
+Run 2026-07-27 as an exhaustive audit of the whole app: every notation-initial
+line in the five specs pushed through the lexer, every add-on snapshot folded
+back against the state it was taken from, the whole corpus folded for block
+balance, and every control on every screen and in every dialog clicked in a
+headless browser.
+
+Findings are C1–C15 and each is closed by a check in `tests/fidelity.test.js`,
+`tests/composer.test.js` or `tests/smoke.mjs`.
+
+### C1 — an analog block never closed under its own name · **fixed**
+
+- **Rule:** Dungeon §3 closes `--- DUNGEON STATUS ---` with `--- END STATUS ---`.
+- **Target:** `src/lonelog/lexer.js` · `lex` analog-block branch.
+- **Symptom:** the closer had to repeat the block's full name, so the spec's own
+  analog example left the block open for the rest of the log: the stack never
+  popped, the composer went on offering "End Dungeon Status", and a session-end
+  bundle would close a block that had closed pages earlier.
+- **Fix:** the lexer keeps the analog blocks it has opened and matches an
+  abbreviated closer against the innermost one whose name ends with it. A closer
+  naming nothing open is still prose.
+- **Closed by:** *C1 `--- END STATUS ---` closes `--- DUNGEON STATUS ---`*,
+  *C1 a stray `--- END X ---` naming nothing open stays prose*.
+
+### C2 — a room's description was filed as a status · **fixed**
+
+- **Rule:** Dungeon §1 `[R:ID|status|desc|exits]`; §1.3 gives the description
+  its own slot.
+- **Target:** `src/lonelog/fold.js` · `applyField` · `src/addons/dungeon.js`.
+- **Symptom:** `[R:1|cleared, looted|entry cave|exits N:R2]` folded "entry cave"
+  as a *status*, so the panel read `cleared, looted, entry cave` and the status
+  block re-emitted the description in the status slot.
+- **Fix:** documented positional slots (below). The room vocabulary moved into
+  the engine, because telling a status from a description is a notation rule
+  (§9.2), and the snapshot writes the spec's own shape back out.
+- **Closed by:** *C2 the description slot folds as a description*, *C2 two
+  statuses in separate fields are still statuses*, *C2 a dungeon snapshot
+  re-reads as the rooms it was taken from*.
+
+### C3 — a scenario objective became a stat key · **fixed**
+
+- **Rule:** Wargaming §3 `[Scenario:Name|objective|turn limit|special rules]`,
+  §2 `[Force:Name|commander|strength|objective]`.
+- **Target:** `src/lonelog/fold.js` · `positionalSlot`.
+- **Symptom:** every scenario example in the spec mangled — `Exit 2+ units
+  south` folded as a stat named `Exit` holding `2+ units south`, because the
+  space-separated stat-key rule (written for `Armor CT30/RT25`) matched any
+  phrase whose second word starts with a digit.
+- **Fix:** where a spec gives a tag a positional format, the named slots are
+  free text and keep their raw value. Only a plain field fills a slot; a delta
+  or a transition is an *update*, and updates are not positional.
+- **Closed by:** *C3 every scenario example in wargaming §3 keeps its
+  objective*, *C3 a force keeps commander, strength and objective*, *C3 an
+  update is not positional*.
+
+### C4 — a campaign snapshot dropped the whole force · **fixed**
+
+- **Rule:** Wargaming §4 — `[CAMPAIGN]` records entering and closing state.
+- **Target:** `src/addons/wargaming.js` · `snapshotLines`.
+- **Symptom:** the snapshot restated `fields` only. A `[Force:]` written the way
+  the spec writes it held commander, strength and objective as flags, so the
+  block came out `[Force:Ironclad Company]` — the force's whole description
+  gone. Same class as B4, which had been fixed for `[Wealth:]` alone.
+- **Fix:** restate the slots in order, then any other field, then flags.
+- **Closed by:** *C4 a [CAMPAIGN] snapshot folds back to the forces it
+  snapshotted*.
+
+### C5 — a resource snapshot renamed every item · **fixed**
+
+- **Rule:** Resources §1 `[Inv:Item|qty|props]`; §5 the `[RESOURCES]` block.
+- **Target:** `src/addons/resources.js` · `snapshotLines`.
+- **Symptom:** the quantity was written on the tag head — `[Inv:Torch 3|lit]` —
+  and a trailing number stays part of the name for `[Inv:]` (audit A1). Every
+  snapshot therefore created a *second* item called "Torch 3" with no quantity,
+  and the real one silently stopped being updated.
+- **Fix:** the quantity goes back in the field slot the spec puts it in, and a
+  grouped item keeps its multiplier.
+- **Why it mattered:** the most severe class of defect again — silent identity
+  loss, triggered by a control whose whole purpose is to preserve state.
+- **Closed by:** *C5 a [RESOURCES] snapshot keeps item identity and quantity*,
+  *C5 a grouped item keeps its multiplier through a snapshot*.
+
+### C6 — the analog header folded to a title and nothing else · **fixed**
+
+- **Rule:** Core §5.1 and §5.2.2 give the analog campaign and session headers a
+  `[Field]` form, with the value on the same line or the one beneath.
+- **Target:** `src/lonelog/lexer.js` · new `metaField` kind ·
+  `src/lonelog/fold.js` · `setMeta`.
+- **Symptom:** `[Date]`, `[Duration]`, `[Recap]`, `[Goals]`, `[Ruleset]`,
+  `[Genre]` and the rest fell through to prose. A digital log's YAML front
+  matter folded into `state.meta` and its `*Date: … | Duration: …*` line onto
+  the session; the analog log carrying exactly the same information folded
+  neither. T24, T25 and T27 were all only half true.
+- **Fix:** a closed vocabulary — the specs list every key — so an ordinary
+  bracketed aside is never mistaken for a header field. Campaign keys land on
+  the campaign, session keys on the session they sit under.
+- **Closed by:** *C6 an analog campaign header folds its fields*, *C6 an analog
+  session header folds onto its session*, *C6 digital and analog session
+  metadata agree*, *C6 a bracket that is not a header key is left alone*,
+  *C6 an analog header is lossless*.
+
+### C7 — a one-line narrative block swallowed the log · **fixed**
+
+- **Rule:** Core §4.4 — `\---` opens an in-fiction block, `---\` closes it.
+- **Target:** `src/lonelog/lexer.js`.
+- **Symptom:** the opening branch returned before testing for the closer, so
+  `\--- The fog rolls in. ---\` opened a block that never closed: every line
+  after it, for the rest of the log, lexed as narrative. No symbol worked again.
+- **Fix:** a line that closes what it opened is self-closing.
+- **Closed by:** *C7 a one-line narrative block does not swallow the log*,
+  *C7 a multi-line narrative block still spans its lines*.
+
+### C8 — the spec's own narrative opener was not recognised · **fixed**
+
+- **Rule:** Core §4.4's example opens `\--The diary reads:` although the prose
+  names `\---`.
+- **Target:** `src/lonelog/lexer.js` · `RE_NARRATIVE_OPEN`.
+- **Fix:** two dashes are accepted, canonical output unchanged (§5.3).
+- **Closed by:** *C8 the two-dash opener the spec writes is accepted*.
+
+### C9 — a PC named in the campaign header was not a PC · **fixed**
+
+- **Rule:** Core §5.1's front matter carries a real tag: `pcs: Alex
+  [PC:Alex|HP 8|Stress 0|Gear:Flashlight,Notebook]`.
+- **Target:** `src/lonelog/lexer.js` front-matter branch, `src/lonelog/fold.js`.
+- **Symptom:** front-matter lines carried no tags at all, so the character the
+  header introduces existed nowhere until they were tagged again in play.
+- **Closed by:** *C9 front matter establishes the tags it carries*.
+
+### C10 — importing a campaign header dropped most of it · **fixed**
+
+- **Rule:** CLAUDE.md §5.2 — never lose a byte. Core §5.1 lists more header
+  fields than this app has opinions about.
+- **Target:** `src/store.js` · `fromMarkdown`, `toMarkdown`, `normalizeCampaign`.
+- **Symptom:** import kept five keys and discarded the rest — `pcs`, `tools`,
+  `themes`, `notes` and anything an author invented were gone on the next
+  export. The app's own round trip lost the user's data.
+- **Fix:** unknown keys are kept verbatim in `meta.extra` and written back out
+  after the known ones, so import → export → import is stable.
+- **Closed by:** *C10 every campaign-header field survives import and export*,
+  *C10 a log with no header still exports without inventing one*.
+
+### C11 — the campaign header could not be seen or set · **fixed**
+
+- **Rule:** Core §5.1; CLAUDE.md §6 lists `ruleset`, `genre`, `player`, `tone`.
+- **Target:** `src/screens.js` · `logScreen` · `editHeader`.
+- **Symptom:** the fields existed in the data model and shipped in the export,
+  but no screen showed them and nothing could set them. A campaign could not
+  even be renamed after it was created.
+- **Fix:** Log details shows the header and offers **Edit header…**.
+- **Closed by:** browser checks *the log details dialog offers the campaign
+  header*, *every header field is present and labelled*, *saving the header
+  stores it and writes it into the export*.
+
+### C12 — two core constructs had no control at all · **fixed**
+
+- **Rule:** Core §4.4 — dialogue (`PC:`, `N (Name):`) and the long in-fiction
+  block.
+- **Target:** `src/composer.js` · `dialogueLine`, `excerptLines`, `Said…`,
+  `Excerpt…`.
+- **Symptom:** every other line kind had a button; these two could only be
+  written by someone who already knew the punctuation, which is the opposite of
+  what a symbol-first composer is for. Both were ticked in the ledger (T20,
+  T21) — as engine support, which is all they had.
+- **Fix:** **Said…** builds only the two forms the spec defines, with the
+  speaker autocompleting from the fold; **Excerpt…** commits the passage as one
+  balanced block, so undo takes it in a single step.
+- **Closed by:** *dialogue uses only the two forms the spec defines*, *an
+  excerpt is one bundle that opens and closes itself*, and browser checks
+  *the dialogue dialog previews and inserts a spec form*, *an excerpt lands as
+  one balanced block, undoable in one step*.
+
+### C13 — the JSON backup was not a backup · **fixed**
+
+- **Rule:** CLAUDE.md §1 mandatory scope — "markdown export/import **and** JSON
+  backup in Settings"; §6 lists `settings` as a store.
+- **Target:** `src/store.js` · `exportBackup`, `importBackup`.
+- **Symptom:** the backup omitted settings entirely, so restoring it lost theme,
+  lint level, notation view and the remembered campaign. It also carried each
+  campaign's file handle, which cannot cross JSON: the `{}` left in its place
+  read as "still bound", and every later save failed against it. The whole path
+  had no test of any kind, unit or browser.
+- **Fix:** settings are exported and restored; handles are stripped.
+- **Closed by:** browser checks *a JSON backup carries campaigns, templates,
+  tables and settings*, *a backup carries no dead file handle*, *importing the
+  backup restores the campaigns and the settings*.
+
+### C14/C15 — the compact roster forms created phantom characters · **fixed**
+
+- **Rule:** Combat §5.2 Quick Reference — `Rd3 Roster: [PC:HP 3] [F:Boss|HP 4]`;
+  §7 "Ultra-compact" — `[PC:HP 12]`, `[N: Jordan HP-4]`.
+- **Target:** `src/lonelog/fold.js` · `compactHead`.
+- **Symptom:** read literally, `[PC:HP 3]` is a character *named* "HP 3" and
+  `[N: Jordan HP-4]` is a second NPC called "Jordan HP-4". Every roster line in
+  a long fight added another phantom to the Sheet, and the real character's HP
+  never moved. Found by folding the corpus and looking for elements named after
+  their own data.
+- **Fix:** a stat expression in the name slot applies to the element it belongs
+  to. Only the PC may go unnamed — it is the one character a solo log never has
+  to introduce, and never one of a numbered group, so `[F:Pirate 1]` and
+  `[Inv:Slot 1]` are untouched (A1).
+- **Closed by:** *C14 a roster's unnamed PC is the PC*, *C14 the ultra-compact
+  log opens with a PC*, *C15 a delta written into the name slot applies to the
+  named element*, *C14/C15 numbered individuals are untouched*.
+
+---
+
 ## Verified clean
 
 Checked during this audit and found correct; no change was needed.
@@ -311,6 +519,18 @@ Checked during this audit and found correct; no change was needed.
   house aids; the app ships no publisher's oracle or table (D3, §9.8).
 - 32 spec-verbatim constructs covering the whole ledger were folded and checked
   against the state each claims to produce.
+
+**Every control, clicked** *(third pass)*
+
+- 157 controls across the six screens were clicked one at a time in a headless
+  browser: no exception, no console error, no dialog left stuck open, and every
+  screen still had its `h1` afterwards. The only controls that do nothing are
+  the ones that should — a disabled **Add to log**, a toggle already pressed,
+  the composer's **Add** with an empty box, and the two file downloads.
+- 20 dialogs were opened and swept: each has a title, traps focus, closes on
+  Escape, names every button, and labels every field.
+- Status-strip chips trace: clicking one focuses the line that set the value
+  (§5.7).
 
 **Documents present but not implemented**
 

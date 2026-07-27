@@ -10,7 +10,7 @@
 
 import { el } from '../core.js';
 import { promptModal } from '../ui.js';
-import { elementsOfType } from '../lonelog/fold.js';
+import { elementsOfType, ROOM_STATUS } from '../lonelog/fold.js';
 import { flagLine, tag, field } from '../state.js';
 import { pick } from './combat.js';
 
@@ -19,10 +19,10 @@ export const reference = 'addon-dungeon';
 export const title = 'Dungeon';
 export const types = ['R'];
 
-/** Status vocabulary (dungeon §1.1). Combinable — `cleared, looted`. */
-export const ROOM_STATUS = [
-  'unexplored', 'active', 'cleared', 'looted', 'locked', 'trapped', 'safe', 'collapsed',
-];
+// Status vocabulary (dungeon §1.1). Combinable — `cleared, looted`. It lives in
+// the engine because the fold needs it to tell a status from a description
+// (§9.2 — notation semantics belong in src/lonelog/).
+export { ROOM_STATUS };
 
 /* ----------------------------- line builders ----------------------------- */
 
@@ -60,14 +60,19 @@ export function snapshotLines(state) {
   const rooms = elementsOfType(state, 'R');
   return [
     '[DUNGEON STATUS]',
+    // `[R:ID|status|desc|exits]` — the spec's own slots (dungeon §1, §3). The
+    // statuses go back into one comma-separated field rather than one field
+    // each, or re-reading the snapshot files the second status as the room's
+    // description.
     ...rooms.map((room) => {
-      const status = [...room.flags.keys()];
+      const status = [...room.flags.keys()].join(', ');
+      const desc = room.fields.get('desc');
       const exits = room.fields.get('exits');
-      const fields = [
-        ...status.map((s) => field({ value: s })),
+      return tag(room, [
+        ...(status ? [field({ value: status })] : []),
+        ...(desc ? [field({ value: desc.value })] : []),
         ...(exits ? [field({ key: 'exits', value: exits.value })] : []),
-      ];
-      return tag(room, fields);
+      ]);
     }),
     '[/DUNGEON STATUS]',
   ];
@@ -108,13 +113,17 @@ export function render(host, state, ctx) {
 
   host.append(el('ul', { class: 'plain-list' }, rooms.map((room) => {
     const status = [...room.flags.keys()];
+    const desc = room.fields.get('desc')?.value;
     const exits = room.fields.get('exits')?.value;
     const gone = room.flags.has('collapsed');
 
     return el('li', { class: gone ? 'is-down' : null }, [
       el('span', { class: 'el-name' }, [`R${room.name}`]),
       el('span', { class: 'el-detail' }, [
-        [status.join(', ') || 'unexplored', exits ? `exits ${exits}` : null].filter(Boolean).join(' · '),
+        // The description is what the room *is*, not a state it is in — it is
+        // its own slot in the notation and reads as one here (dungeon §1.3).
+        [status.join(', ') || 'unexplored', desc, exits ? `exits ${exits}` : null]
+          .filter(Boolean).join(' · '),
       ]),
       el('div', { class: 'stat-steppers' }, [
         el('button', {

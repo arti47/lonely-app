@@ -22,6 +22,26 @@ const ADDON_BY_BLOCK = new Map([
 /** Types whose size is a model count, so a numeric change is a casualty. */
 const COUNTABLE_TYPES = new Set(['F', 'Unit']);
 
+/** Room status vocabulary (dungeon §1.1, Quick Reference). Combinable. */
+export const ROOM_STATUS = [
+  'unexplored', 'active', 'cleared', 'looted', 'locked', 'trapped', 'safe', 'collapsed',
+];
+
+/**
+ * Tags the specs give a *positional* field format for. A slot named here is
+ * free text — reading `Exit 2+ units south` as the stat `Exit` mangles the
+ * scenario's objective, and reading `entry cave` as a room status states
+ * something the log never said.
+ *
+ * `null` leaves the slot to the general rules: a room's first field is its
+ * status list (dungeon §1.1), which is flags.
+ */
+const POSITIONAL_SLOTS = {
+  R: [null, 'desc'],                                   // dungeon §1
+  Force: ['commander', 'strength', 'objective'],       // wargaming §2
+  Scenario: ['objective', 'turns'],                    // wargaming §3
+};
+
 const RE_SESSION = /^(?:={2,}\s*)?Session\s+(\d+)/i;
 const RE_CAMPAIGN = /^={2,}\s*Campaign Log:\s*(.+?)\s*={2,}$/i;
 
@@ -41,6 +61,7 @@ export function createState() {
     counts: { entries: 0, tags: 0, rolls: 0, questions: 0, consequences: 0, lookups: 0 },
     openTable: null,
     openGenerator: null,
+    pendingMeta: null,       // analog header field awaiting the value beneath it
     lastLine: -1,
   };
 }
@@ -87,10 +108,26 @@ function applyEntry(state, e) {
   state.counts.entries++;
   state.lastLine = e.line;
 
+  // An analog header field may put its value on the line beneath it (core §5.1,
+  // §5.2.2). Anything that is not that value ends the wait.
+  const pending = state.pendingMeta;
+  state.pendingMeta = null;
+  if (pending && e.kind === 'prose' && (e.text ?? '').trim()) {
+    setMeta(state, pending, e.text.trim(), e.line);
+    return;
+  }
+
   switch (e.kind) {
     case 'frontmatter':
+      // Front matter is metadata, but core §5.1 writes a real `[PC:]` tag into
+      // it — so its tags establish elements like any other line.
       if (!e.delimiter) readFrontmatter(state, e.raw);
+      break;
+    case 'metaField': {
+      if (e.text) setMeta(state, e, e.text, e.line);
+      else state.pendingMeta = e;
       return;
+    }
     case 'heading': {
       const m = RE_SESSION.exec(e.title ?? '');
       if (m) state.sessions.push({ number: Number(m[1]), title: sessionTitle(e.title), line: e.line });
@@ -238,6 +275,22 @@ function sceneContext(rest = '') {
   return m ? m[1].trim() : (rest.trim() || null);
 }
 
+/**
+ * File an analog header field where its own header keeps it: the campaign's
+ * fields on the campaign, the session's on the session it sits under. This is
+ * what makes the analog header fold like the digital one it mirrors (T24–T27).
+ */
+function setMeta(state, entry, value, line) {
+  const key = entry.metaKey.trim().toLowerCase();
+  const session = state.sessions[state.sessions.length - 1];
+  const toSession = session && (entry.scope === 'session' || (entry.scope === 'either' && session));
+  if (toSession) {
+    session.meta = { ...(session.meta ?? {}), [key]: value };
+    return;
+  }
+  state.meta[key] = { value, line };
+}
+
 function readFrontmatter(state, raw) {
   const m = /^\s*([A-Za-z_][\w-]*)\s*:\s*(.*)$/.exec(raw);
   if (m) state.meta[m[1]] = { value: m[2].trim(), line: -1 };
@@ -253,11 +306,12 @@ function applyTag(state, tag, line) {
   const addon = ADDON_BY_TYPE.get(tag.type);
   if (addon) state.addons.add(addon);
 
-  const key = elementKey(tag.type, tag.name);
+  const { name, extra } = compactHead(state, tag);
+  const key = elementKey(tag.type, name);
   let el = state.elements.get(key);
   if (!el) {
     el = {
-      type: tag.type, name: tag.name, count: null,
+      type: tag.type, name, count: null,
       fields: new Map(), flags: new Map(),
       progress: null, value: null,
       firstLine: line, lastLine: line, refs: [], history: [],
@@ -274,7 +328,54 @@ function applyTag(state, tag, line) {
   if (tag.count != null) el.count = { value: tag.count, line };
 
   applyHead(el, tag.head, line);
+  if (extra) applyField(el, extra, line, -1);
   tag.fields.forEach((f, index) => applyField(el, f, line, index));
+}
+
+const RE_HEAD_DELTA = /^(.*\S)\s+([A-Za-z][\w'-]*)\s*([+-])\s*(\d+)$/;
+const RE_HEAD_STAT = /^([A-Za-z][\w'-]*)\s+(-?\d+(?:\s*\/\s*\d+)?)$/;
+
+/**
+ * The compact forms the specs write when a pipe would be noise: `[N: Jordan
+ * HP-4]` and, in a round roster, `[PC:HP 3]` for the character whose name goes
+ * without saying (combat §5.2, §7). Read literally, both make an element named
+ * after its own stat — a phantom NPC called "Jordan HP-4", a phantom PC called
+ * "HP 3" — and the real character never changes.
+ *
+ * A bare trailing number stays part of the name for every other type, which is
+ * what keeps `[F:Pirate 1]` and `[Inv:Slot 1]` distinct (audit A1).
+ *
+ * @returns {{name:string, extra:object|null}}
+ */
+function compactHead(state, tag) {
+  const plain = tag.head == null && tag.count == null && !tag.ref;
+  if (!plain) return { name: tag.name, extra: null };
+
+  const delta = RE_HEAD_DELTA.exec(tag.name);
+  if (delta) {
+    return {
+      name: delta[1].trim(),
+      extra: { raw: `${delta[2]}${delta[3]}${delta[4]}`, op: 'set', key: delta[2], value: null,
+        count: null, delta: { sign: delta[3], amount: Number(delta[4]) },
+        progress: null, transition: null, list: null },
+    };
+  }
+
+  // Only the PC may go unnamed: it is the one character a solo log never has to
+  // introduce, and it is never one of a numbered group.
+  if (tag.type !== 'PC') return { name: tag.name, extra: null };
+  const stat = RE_HEAD_STAT.exec(tag.name);
+  if (!stat) return { name: tag.name, extra: null };
+  // A character the log has already introduced under that exact name is that
+  // character, whatever it looks like.
+  if (state.elements.has(elementKey('PC', tag.name))) return { name: tag.name, extra: null };
+
+  const pcs = [...state.elements.values()].filter((e) => e.type === 'PC');
+  return {
+    name: pcs.length === 1 ? pcs[0].name : 'PC',
+    extra: { raw: tag.name, op: 'set', key: stat[1], value: stat[2].replace(/\s+/g, ''),
+      count: null, delta: null, progress: null, transition: null, list: null },
+  };
 }
 
 function applyHead(el, head, line) {
@@ -314,6 +415,9 @@ function applyField(el, f, line, index = 0) {
     }
     return;
   }
+
+  const slot = positionalSlot(el, f, index);
+  if (slot) { el.fields.set(slot, { value: f.raw.trim(), line }); return; }
 
   if (f.op === 'add' && !f.key) { el.flags.set(f.value, line); return; }
   if (f.op === 'remove' && !f.key) {
@@ -369,6 +473,24 @@ function applyField(el, f, line, index = 0) {
   }
   if (f.list) { el.fields.set(f.key, { value: f.list.join(', '), line, list: [...f.list] }); return; }
   el.fields.set(f.key, { value: f.value, line });
+}
+
+/**
+ * The name of the documented slot this field occupies, or `null` when the
+ * general field rules apply. Only a plain field can fill a slot — a delta, a
+ * transition or an add/remove is an *update*, and updates are not positional.
+ */
+function positionalSlot(el, f, index) {
+  const name = POSITIONAL_SLOTS[el.type]?.[index];
+  if (!name) return null;
+  if (f.op !== 'set' || f.transition || f.delta || f.count != null || f.exits) return null;
+  const raw = String(f.raw ?? '').trim();
+  if (!raw) return null;
+  // `[R:1|cleared|looted]` is two statuses, not a room described as "looted".
+  if (el.type === 'R' && raw.split(',').every((p) => ROOM_STATUS.includes(p.trim().toLowerCase()))) {
+    return null;
+  }
+  return name;
 }
 
 /** `HP-2` against `HP 12/15` moves the current value, not the maximum. */

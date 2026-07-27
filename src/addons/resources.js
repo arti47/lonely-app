@@ -79,8 +79,13 @@ export function snapshotLines(state) {
   }
   for (const item of elementsOfType(state, 'Inv')) {
     if (item.flags.has('depleted')) continue;
+    // `[Inv:Item|qty|props]` — the quantity is a *field* (resources §1). Writing
+    // it on the head gives `[Inv:Torch 3]`, which re-reads as an item called
+    // "Torch 3" with no quantity: the snapshot would rename everything it was
+    // taken from.
     const props = [...item.flags.keys()].map((f) => field({ value: f }));
-    lines.push(tag(item, props, item.value ? { kind: 'value', value: item.value.value } : null));
+    const qty = item.value ? [field({ value: item.value.value })] : [];
+    lines.push(tag(item, [...qty, ...props], null, item.count?.value ?? null));
   }
 
   lines.push('[/RESOURCES]');

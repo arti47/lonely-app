@@ -133,6 +133,12 @@ async function openCampaign(mount, params, title) {
   return c;
 }
 
+/** The campaign header's fields, as core §5.1 names them. */
+const CAMPAIGN_HEADER_FIELDS = [
+  ['title', 'Title'], ['ruleset', 'Ruleset'], ['genre', 'Genre'],
+  ['player', 'Player'], ['tone', 'Tone'],
+];
+
 export async function logScreen(mount, params) {
   let campaign = await openCampaign(mount, params, 'Log');
   if (!campaign) return;
@@ -159,6 +165,31 @@ export async function logScreen(mount, params) {
     }
   }
 
+  /**
+   * Edit the campaign header (core §5.1). It is metadata, not log content, so
+   * it is stored on the campaign and written into the export's front matter —
+   * nothing here appends a line (§5.1 is about state, not the header).
+   */
+  async function editHeader() {
+    const inputs = CAMPAIGN_HEADER_FIELDS.map(([key, label]) => {
+      const id = `header-${key}`;
+      const input = /** @type {HTMLInputElement} */ (el('input', {
+        id, class: 'input', type: 'text', value: campaign.meta[key] ?? '',
+      }));
+      return { key, row: el('div', { class: 'field-row' }, [el('label', { for: id }, [label]), input]), input };
+    });
+    const ok = await modal({
+      title: 'Campaign header',
+      body: el('div', { class: 'field-rows' }, inputs.map((f) => f.row)),
+      actions: [{ label: 'Cancel', value: null }, { label: 'Save', value: true, primary: true }],
+    });
+    if (!ok) return;
+    for (const { key, input } of inputs) campaign.meta[key] = input.value.trim();
+    if (!campaign.meta.title) campaign.meta.title = 'Untitled campaign';
+    await persist();
+    refresh();
+  }
+
   /** Append lines the way the composer does, so undo still takes the batch. */
   async function commitLines(lines) {
     removed = null;
@@ -180,9 +211,16 @@ export async function logScreen(mount, params) {
           onclick: async () => {
             const text = campaign.log.join('\n');
             const findingCount = findings.length;
-            await modal({
+            const header = CAMPAIGN_HEADER_FIELDS
+              .filter(([key]) => String(campaign.meta[key] ?? '').trim())
+              .map(([key, label]) => `${label}: ${campaign.meta[key]}`);
+            const choice = await modal({
               title: 'Log details',
               body: el('div', {}, [
+                // The campaign header is a real construct (core §5.1) and it
+                // ships in the export — so it has to be visible and editable
+                // somewhere, not just present in storage.
+                el('p', {}, [header.length ? header.join(' · ') : 'No campaign header yet.']),
                 el('p', {}, [`${campaign.log.length} lines · ${entries.length} entries · ${state.elements.size} elements`]),
                 el('p', {}, [`${state.scenes.length} scenes · ${state.sessions.length} sessions · ${state.counts.rolls} rolls`]),
                 el('p', { class: 'hint' }, [findingCount
@@ -190,7 +228,9 @@ export async function logScreen(mount, params) {
                   : 'No lint findings.']),
                 el('pre', { class: 'log-preview' }, [text.slice(0, 400) + (text.length > 400 ? '…' : '')]),
               ]),
+              actions: [{ label: 'Close', value: null }, { label: 'Edit header…', value: 'edit' }],
             });
+            if (choice === 'edit') await editHeader();
           },
         }, ['Details']),
         fileBinding.supported()

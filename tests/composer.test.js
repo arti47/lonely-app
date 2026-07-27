@@ -10,6 +10,7 @@ import {
 } from '../src/composer.js';
 import { lex } from '../src/lonelog/lexer.js';
 import { fold, getElement } from '../src/lonelog/fold.js';
+import { render } from '../src/lonelog/render.js';
 
 const foldText = (t) => fold(lex(t));
 
@@ -153,4 +154,39 @@ test('fields autocomplete from the vocabulary this campaign already uses', () =>
   assert.deepEqual(suggestFields(state, 'N'), ['Grit', 'HP', 'friendly', 'wounded']);
   assert.deepEqual(suggestFields(state, 'PC'), ['HP', 'Stress']);
   assert.deepEqual(suggestFields(state, 'F'), [], 'a type with no elements suggests nothing');
+});
+
+/* ---- Core §4.4 constructs that had no control at all (audit C12) --------- */
+
+import { dialogueLine, excerptLines } from '../src/composer.js';
+
+test('dialogue uses only the two forms the spec defines (core §4.4, A.7)', () => {
+  assert.equal(dialogueLine('PC', 'Stay calm... just stay calm.'), 'PC: "Stay calm... just stay calm."');
+  assert.equal(dialogueLine('Guard', "Who's there?"), 'N (Guard): "Who\'s there?"');
+  // The speaker box defaults to PC, and an empty speaker must not invent a form.
+  assert.equal(dialogueLine('', 'Nobody.'), 'PC: "Nobody."');
+  assert.equal(dialogueLine('pc', 'Nobody.'), 'PC: "Nobody."');
+  // Quotes the user typed are not doubled.
+  assert.equal(dialogueLine('Guard', '"Show yourself!"'), 'N (Guard): "Show yourself!"');
+});
+
+test('every dialogue line the composer writes lexes as dialogue', () => {
+  for (const [who, what] of [['PC', 'Stay calm'], ['Guard', "Who's there?"], ['Captain Streng', 'Hold!']]) {
+    const line = dialogueLine(who, what);
+    const [entry] = lex(line + '\n');
+    assert.equal(entry.kind, 'dialogue', `${line} lexed as ${entry.kind}`);
+    assert.equal(entry.speaker, who === 'PC' ? null : who);
+  }
+});
+
+test('an excerpt is one bundle that opens and closes itself (core §4.4)', () => {
+  const lines = excerptLines('The diary reads:\n"Day 47: The tides no longer obey."\n');
+  assert.deepEqual(lines, ['\\---', 'The diary reads:', '"Day 47: The tides no longer obey."', '---\\']);
+  const kinds = lex(lines.join('\n') + '\n@ Close it\n').map((e) => e.kind);
+  assert.deepEqual(kinds, ['narrativeOpen', 'narrative', 'narrative', 'narrativeClose', 'action']);
+});
+
+test('an excerpt survives the round trip byte for byte', () => {
+  const text = excerptLines('Line one\n\nLine two').join('\n') + '\n';
+  assert.equal(render(lex(text)), text);
 });

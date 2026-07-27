@@ -31,6 +31,9 @@ export const ABSTRACT_SIZE = ['full', 'half', 'depleted'];
 /** Optional phase suffixes on a turn marker (wargaming §1). */
 export const PHASES = ['Move', 'Shoot', 'Combat', 'Heat', 'Morale'];
 
+/** `[Force:Name|commander|strength|objective]` slots, in order (wargaming §2). */
+const FORCE_SLOTS = ['commander', 'strength', 'objective'];
+
 /* ----------------------------- line builders ----------------------------- */
 
 /** `Tn2` or `Tn2 Move:` (wargaming §1). */
@@ -86,7 +89,17 @@ export function heatBand(value) {
 export function snapshotLines(state, block = 'CAMPAIGN') {
   const lines = [`[${block}]`];
   for (const force of elementsOfType(state, 'Force')) {
-    lines.push(tag(force, [...force.fields].map(([k, v]) => field({ key: k, value: v.value }))));
+    // `[Force:Name|commander|strength|objective]` is positional (wargaming §2),
+    // so restate the slots in their own order and then anything else the tag
+    // carries. Restating only `fields` used to write `[Force:Ironclad]` — a
+    // snapshot that dropped the whole force.
+    lines.push(tag(force, [
+      ...FORCE_SLOTS.filter((k) => force.fields.has(k))
+        .map((k) => field({ value: force.fields.get(k).value })),
+      ...[...force.fields].filter(([k]) => !FORCE_SLOTS.includes(k))
+        .map(([k, v]) => field({ key: k, value: v.value })),
+      ...[...force.flags.keys()].map((f) => field({ value: f })),
+    ]));
   }
   for (const unit of elementsOfType(state, 'Unit')) {
     const fields = [
@@ -127,10 +140,15 @@ export function render(host, state, ctx) {
   ]));
 
   if (scenario) {
+    // Objective and turn limit are slots, not stats (wargaming §3) — printing
+    // them as `objective Exit 2 units south` reads as a stat named "objective".
+    const objective = scenario.fields.get('objective')?.value;
+    const turns = scenario.fields.get('turns')?.value;
     host.append(el('p', { class: 'hint' }, [
-      `Scenario: ${scenario.name}`
-      + ([...scenario.fields].map(([k, v]) => ` · ${k} ${v.value}`).join(''))
-      + ([...scenario.flags.keys()].map((f) => ` · ${f}`).join('')),
+      [`Scenario: ${scenario.name}`, objective, turns,
+        ...[...scenario.fields].filter(([k]) => k !== 'objective' && k !== 'turns')
+          .map(([k, v]) => `${k} ${v.value}`),
+        ...scenario.flags.keys()].filter(Boolean).join(' · '),
     ]));
   }
 
@@ -139,7 +157,9 @@ export function render(host, state, ctx) {
     host.append(el('ul', { class: 'plain-list' }, forces.map((force) => el('li', {}, [
       el('span', { class: 'el-name' }, [force.name]),
       el('span', { class: 'el-detail' }, [
-        [...[...force.fields].map(([k, v]) => `${k} ${v.value}`), ...force.flags.keys()].join(' · ') || '—',
+        [...FORCE_SLOTS.map((k) => force.fields.get(k)?.value),
+          ...[...force.fields].filter(([k]) => !FORCE_SLOTS.includes(k)).map(([k, v]) => `${k} ${v.value}`),
+          ...force.flags.keys()].filter(Boolean).join(' · ') || '—',
       ]),
       ctx.traceButton(force.lastLine),
     ]))));

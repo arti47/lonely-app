@@ -106,7 +106,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 |---|---|
 | `core.js` | ✅ Constants, DOM/util helpers. No imports. **No RNG.** |
 | `ui.js` | ✅ Themed modals/toasts/confirm/prompt; theme switching |
-| `lonelog/lexer.js` | ✅ Line → `Entry{kind, raw, indent, …}`. Kinds: `action question dice resolution consequence tbl gen tableEntry genAxis note dialogue sessionMeta tag marker block prose` |
+| `lonelog/lexer.js` | ✅ Line → `Entry{kind, raw, indent, …}`. Kinds: `action question dice resolution consequence tbl gen tableEntry genAxis note dialogue sessionMeta metaField tag marker block prose` |
 | `lonelog/tags.js` | ✅ Tag parse/serialise; tolerant of whitespace, `x`/`×`, `>=`/`≥` |
 | `lonelog/fold.js` | ✅ `Entry[]` → `CampaignState`, with per-scene checkpoints; inline tables and generators |
 | `lonelog/render.js` | ✅ `Entry[]` → markdown, digital or analog form |
@@ -221,7 +221,10 @@ on old records (never crash on old data), documented here in the same change.
 ```
 campaigns/{id}
   meta:     { title, ruleset?, genre?, player?, tone?, createdAt, updatedAt,
-              fileHandle? }                       // §5.1 core campaign header
+              fileHandle?, extra: {} }            // §5.1 core campaign header;
+                                                  // `extra` keeps every header
+                                                  // field this app has no
+                                                  // opinion on, verbatim (§5.2)
   log:      string[]                              // THE artifact — raw lines, ordered
   bindings: { path?, handle?, lastSavedHash? }    // File System Access binding
   view:     { hiddenPanels[], theme?, composerMode,     // UI state ONLY — never
@@ -238,6 +241,10 @@ settings:       { theme, referenceLinks, lintLevel, notationView, lastCampaign,
                   seenGuide }
                                                   // lastCampaign: which campaign
                                                   // the gated tabs point at (D10)
+                                                  // In the JSON backup, which
+                                                  // also strips each campaign's
+                                                  // file handle — a live handle
+                                                  // cannot cross JSON
 ```
 
 `log` is the only authoritative field. `checkpoints` are a cache. `view` is
@@ -365,12 +372,12 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 - [x] T17 Roll context `d: ... [tags] ...` (§4.1.9)
 - [x] T18 `+field` / `-field` deltas and `a -> b` transitions (§4.1.1)
 - [x] T19 `[Clock:]` `[Track:]` `[Timer:]` (§4.2)
-- [x] T20 Dialogue lines `N (Name):` / `PC:` (§4.4)
-- [x] T21 `\--- ... ---\` narrative blocks (§4.4)
+- [x] T20 Dialogue lines `N (Name):` / `PC:` (§4.4) — composer **Said…**
+- [x] T21 `\--- ... ---\` narrative blocks (§4.4) — composer **Excerpt…**; a one-line block closes itself
 - [x] T22 `(note: ...)` meta notes (§4.5)
 - [x] T23 Scene markers `S#`, `S#a`, `S#.#`, `T#-S#` (§5.3)
-- [x] T24 Campaign header — YAML front matter + analog block (§5.1)
-- [x] T25 Session header — digital + analog (§5.2)
+- [x] T24 Campaign header — YAML front matter + analog `[Field]` block (§5.1); editable in Log details, unknown keys round-trip
+- [x] T25 Session header — digital + analog, both folding the same fields (§5.2)
 - [x] T26 Indentation insignificance (§2.3)
 - [x] T27 Digital ↔ analog equivalence: both forms of one log fold to the same state (§2.4, §5.2.1–2); `renderForm` converts structural blocks between forms — it does not rewrite headers
 
@@ -582,13 +589,16 @@ re-litigate them.
 - **Analog ↔ digital equivalence** in both directions for every block type.
 - Document findings as a numbered work-list (**Rule / Target / Fix / Why**),
   close each with a regression check, and record what was **verified clean** so
-  future audits don't re-litigate it. **Two passes complete — `docs/audit.md`:**
-  A1–A6 on the fold, B1–B8 on fidelity to the official documents.
+  future audits don't re-litigate it. **Three passes complete —
+  `docs/audit.md`:** A1–A6 on the fold, B1–B8 on fidelity to the official
+  documents, C1–C15 on structure, positional slots, the analog header and every
+  control in the app.
 
 ## 12. Changelog
 
 | Date | Change | Verification | Cache |
 |---|---|---|---|
+| 2026-07-27 | **Third audit pass — the whole app** (`docs/audit.md` C1–C15). Fifteen findings, all fixed and closed by regression checks. The serious ones are all one shape: notation the specs write that the app read as something else, and each one lost data quietly. `[Inv:Torch 3]` — the `[RESOURCES]` snapshot wrote the quantity on the head, where a trailing number stays part of the name, so every snapshot forked each item into a second one called "Torch 3" and stopped updating the real one. `[PC:HP 3]` in a combat roster folded as a character *named* "HP 3", so a long fight grew a phantom per round. `[CAMPAIGN]` restated only keyed fields, so a `[Force:]` written the spec's way came out as a bare name. `--- END STATUS ---` closed nothing, leaving the block open for the rest of the log. A one-line `\\--- … ---\\` never closed and swallowed everything after it. A scenario objective — `Exit 2+ units south` — folded as a stat named `Exit`, and a room description as a status. The analog header (`[Date]`, `[Recap]`, `[Ruleset]`…) folded to nothing at all, so T24/T25/T27 were half true. Import kept five header keys and discarded the rest. And three things were simply missing: the campaign header could not be seen or edited, dialogue and the in-fiction block had no composer control, and the JSON backup omitted settings while carrying a dead file handle back in | 308 unit tests (26 new, each quoting the spec form it protects); every control on every screen clicked in the browser (157, zero errors, zero stuck dialogs), 20 dialogs swept for title, focus trap, Escape and labelling; the whole 456-snippet corpus folded for block balance and for elements named after their own data; new browser checks for the header editor, both composer controls and the backup round trip | `lonely-v23` |
 | 2026-07-27 | Fixed two halves of "the field I added has no counter". A clock built through **Tag…** came out `[Clock:Suspicion\|3/6]`, and a field with no key folds as a *flag* — so the element had `progress: null` and the Sheet had nothing to step. Root cause: the tag builder treated every row as a field, but a meter and a countdown belong on the tag **head** (`[Clock:X 3/6]`, `[Timer:X 3]`, core §4.2) — the head is where the notation carries a value, and a field is where it carries a flag. `buildTag` now routes a leading `X/Y` to a progress head and a leading bare number to a value head for the two types that take one; the fold also reads a keyless `X/Y` field as the meter it plainly means, so a hand-written log is not punished for the same slip. Second half: only `[PC:]` rendered steppable stat tiles — every other tracked object printed its fields as flat text, so the NPC's new HP could not be adjusted. The tile is now one function shared by the sheet and the cast rows | 278 unit tests (4 new: every meter type off the builder folds to a meter with no stray flag, `Timer`/`Wealth` take a head value while `[N:Jonah\|3]` stays a field, and the tolerant keyless read); browser checks that the dialog previews `[Clock:Suspicion 3/6]`, and that a field added to an NPC arrives with three steppers and steps to `[N:Guard\|HP-1]` | `lonely-v22` |
 | 2026-07-27 | Any tracked object can take a new field. One Add… dialog per object replaces the old tag-only control: a value makes a stat (`Stress 2`, `Armour 12/15`, `Supply d8`), no value makes a flag. The notation is chosen from the value itself — a wordy value takes the category form `Gear: sword`, because `Gear sword` would fold as a flag and the stat would vanish. Removal emits `[PC:Alex\|-Stress]`, and the fold now reads `-Key` as dropping a keyed field when one exists, falling back to the flag of that name | 275 unit tests, every add and remove asserted by folding the emitted line back; browser checks add a field through the real dialog, see the sheet grow a steppable stat, then remove it | `lonely-v21` |
 | 2026-07-27 | The status strip offered **Scene** before **Session…**, which reads backwards: a session contains scenes, it is what the getting-started checklist tells you to start first, and the strip's own summary already reads `Session 2 · S5`. Swapped | Browser check asserts the order | `lonely-v20` |

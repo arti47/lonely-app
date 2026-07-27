@@ -54,7 +54,13 @@ export function normalizeCampaign(c) {
       title: 'Untitled campaign',
       ruleset: '', genre: '', player: '', tone: '',
       createdAt: today(), updatedAt: today(),
+      // Core §5.1 lists more header fields than this app has opinions about —
+      // `pcs`, `tools`, `themes`, `notes`, and whatever else an author wrote.
+      // They are kept verbatim and written back out, because dropping a field
+      // on import is losing the user's own bytes (§5.2).
+      extra: {},
       ...(c.meta ?? {}),
+      ...(c.meta?.extra ? { extra: { ...c.meta.extra } } : {}),
     },
     log: Array.isArray(c.log) ? c.log : [],
     bindings: { path: null, lastSavedHash: null, handle: null, ...(c.bindings ?? {}) },
@@ -119,9 +125,14 @@ export const settings = {
  */
 export function toMarkdown(campaign) {
   const c = normalizeCampaign(campaign);
-  const front = ['title', 'ruleset', 'genre', 'player', 'tone']
-    .filter((k) => c.meta[k])
-    .map((k) => `${k}: ${c.meta[k]}`);
+  const front = [
+    ...['title', 'ruleset', 'genre', 'player', 'tone']
+      .filter((k) => c.meta[k])
+      .map((k) => `${k}: ${c.meta[k]}`),
+    ...Object.entries(c.meta.extra ?? {})
+      .filter(([, v]) => String(v ?? '').trim())
+      .map(([k, v]) => `${k}: ${v}`),
+  ];
   const head = front.length
     ? ['---', ...front, `start_date: ${c.meta.createdAt}`, `last_update: ${c.meta.updatedAt}`, '---', '']
     : [];
@@ -152,12 +163,14 @@ export function fromMarkdown(text, title) {
     }
   }
 
+  const KNOWN = new Set(['title', 'ruleset', 'genre', 'player', 'tone', 'start_date', 'last_update']);
   return normalizeCampaign({
     meta: {
       title: title || meta.title || 'Imported campaign',
       ruleset: meta.ruleset ?? '', genre: meta.genre ?? '',
       player: meta.player ?? '', tone: meta.tone ?? '',
       createdAt: meta.start_date || today(),
+      extra: Object.fromEntries(Object.entries(meta).filter(([k]) => !KNOWN.has(k))),
     },
     log: body,
   });
@@ -169,9 +182,19 @@ export async function exportBackup() {
     app: 'lonely-app',
     schema: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    campaigns: await campaigns.all(),
+    // A live file handle cannot cross JSON, and an empty object left in its
+    // place reads as "still bound" — every later save would then fail against
+    // a handle that is not one.
+    campaigns: (await campaigns.all()).map((c) => ({
+      ...c, bindings: { ...c.bindings, handle: null },
+    })),
     templates: (await tx(STORES.templates, 'readonly', (s) => s.getAll())) ?? [],
     tables: (await tx(STORES.tables, 'readonly', (s) => s.getAll())) ?? [],
+    // §6 lists settings as a store, so a backup that omits them is not one.
+    settings: Object.fromEntries(
+      ((await tx(STORES.settings, 'readonly', (s) => s.getAll())) ?? [])
+        .map((row) => [row.key, row.value]),
+    ),
   };
 }
 
@@ -226,5 +249,6 @@ export async function importBackup(backup) {
   for (const c of backup.campaigns ?? []) { await campaigns.put(c); imported++; }
   for (const t of backup.templates ?? []) await tx(STORES.templates, 'readwrite', (s) => s.put(t));
   for (const t of backup.tables ?? []) await tx(STORES.tables, 'readwrite', (s) => s.put(t));
+  for (const [key, value] of Object.entries(backup.settings ?? {})) await settings.set(key, value);
   return imported;
 }

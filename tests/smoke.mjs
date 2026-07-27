@@ -1107,6 +1107,131 @@ try {
     npcStepped.last === '[N:Guard|HP-1]' && npcStepped.value === '7',
     JSON.stringify(npcStepped));
 
+  // C13: the JSON backup is mandatory scope and had no check of any kind.
+  const backup = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const settings = await import('${base}/src/settings.js');
+    await settings.set('lintLevel', 'all');
+    const dump = await store.exportBackup();
+    const text = JSON.stringify(dump);
+    const round = JSON.parse(text);
+    return {
+      keys: Object.keys(round).sort(),
+      campaigns: round.campaigns.length,
+      lint: round.settings?.lintLevel,
+      handles: round.campaigns.filter(c => c.bindings.handle != null).length,
+      logKept: round.campaigns.some(c => c.id === '${created}' && c.log.length > 0),
+      text,
+    };
+  })()`);
+  check('a JSON backup carries campaigns, templates, tables and settings',
+    ['app', 'campaigns', 'exportedAt', 'schema', 'settings', 'tables', 'templates']
+      .every((k) => backup.keys.includes(k))
+      && backup.campaigns > 0 && backup.lint === 'all' && backup.logKept,
+    JSON.stringify({ ...backup, text: undefined }));
+  check('a backup carries no dead file handle', backup.handles === 0);
+
+  const restored = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const settings = await import('${base}/src/settings.js');
+    await settings.set('lintLevel', 'off');
+    for (const c of await store.campaigns.all()) await store.campaigns.remove(c.id);
+    const n = await store.importBackup(JSON.parse(${JSON.stringify(backup.text)}));
+    await settings.load();
+    const back = await store.campaigns.get('${created}');
+    return { n, lines: back?.log.length ?? 0, lint: settings.get('lintLevel') };
+  })()`);
+  check('importing the backup restores the campaigns and the settings',
+    restored.n === backup.campaigns && restored.lines > 0 && restored.lint === 'all',
+    JSON.stringify(restored));
+
+  // C12: dialogue and the narrative block are core §4.4 and had no control.
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 400)))`);
+  await s.evaluate(`([...document.querySelectorAll('#screen .composer-tools .btn')]
+    .find(b => b.textContent === 'Said…')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 300))');
+  const saidPreview = await s.evaluate(`(async () => {
+    const set = (sel, v) => { const i = document.querySelector(sel); i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); };
+    set('#said-speaker', 'Guard');
+    set('#said-text', 'Who goes there?');
+    await new Promise(r => setTimeout(r, 150));
+    const preview = document.querySelector('#said-preview')?.textContent;
+    [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Insert').click();
+    await new Promise(r => setTimeout(r, 300));
+    const input = document.querySelector('#composer-input');
+    const value = input.value;
+    input.value = '';
+    return { preview, value };
+  })()`);
+  check('the dialogue dialog previews and inserts a spec form',
+    saidPreview.preview === 'N (Guard): "Who goes there?"'
+      && saidPreview.value === 'N (Guard): "Who goes there?"',
+    JSON.stringify(saidPreview));
+
+  const beforeExcerpt = await rowCount();
+  await s.evaluate(`([...document.querySelectorAll('#screen .composer-tools .btn')]
+    .find(b => b.textContent === 'Excerpt…')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 300))');
+  await s.evaluate(`(() => {
+    document.querySelector('#excerpt-text').value = 'The diary reads:\\n"Day 47."';
+    [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Add').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 450))');
+  const excerpt = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return { tail: c.log.slice(-4), undo: document.querySelector('#composer-undo')?.textContent };
+  })()`);
+  check('an excerpt lands as one balanced block, undoable in one step',
+    excerpt.tail[0] === '\\---' && excerpt.tail[3] === '---\\'
+      && excerpt.undo === 'Undo 4 lines'
+      && (await rowCount()) === beforeExcerpt + 4,
+    JSON.stringify(excerpt));
+
+  await s.evaluate(`document.querySelector('#composer-undo').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 400))');
+  check('undoing the excerpt leaves the log as it was',
+    (await rowCount()) === beforeExcerpt, `${await rowCount()} vs ${beforeExcerpt}`);
+
+  // C11: the campaign header is a real construct (core §5.1) and ships in the
+  // export, so it has to be reachable and editable.
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 400)))`);
+  await s.evaluate(`([...document.querySelectorAll('#screen .head-tools .btn')]
+    .find(b => b.textContent === 'Details')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 300))');
+  check('the log details dialog offers the campaign header',
+    await s.evaluate(`[...document.querySelectorAll('.modal-actions .btn')]
+      .some(b => b.textContent === 'Edit header…')`));
+
+  await s.evaluate(`([...document.querySelectorAll('.modal-actions .btn')]
+    .find(b => b.textContent === 'Edit header…')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+  const headerFields = await s.evaluate(`(() => {
+    const ids = ['title', 'ruleset', 'genre', 'player', 'tone'];
+    return ids.map(k => {
+      const input = document.querySelector('#header-' + k);
+      return { k, there: !!input, labelled: !!document.querySelector('label[for="header-' + k + '"]') };
+    });
+  })()`);
+  check('every header field is present and labelled',
+    headerFields.every((f) => f.there && f.labelled), JSON.stringify(headerFields));
+
+  await s.evaluate(`(() => {
+    document.querySelector('#header-ruleset').value = 'Loner + Mythic Oracle';
+    document.querySelector('#header-title').value = 'Smoke Campaign';
+    [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Save').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 450))');
+  const headerSaved = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return { ruleset: c.meta.ruleset, lines: c.log.length, md: store.toMarkdown(c).split('\\n')[2] };
+  })()`);
+  check('saving the header stores it and writes it into the export',
+    headerSaved.ruleset === 'Loner + Mythic Oracle'
+      && headerSaved.md === 'ruleset: Loner + Mythic Oracle',
+    JSON.stringify(headerSaved));
+
   // --- Hardening: accessibility sweep across every screen ---
   const a11y = await s.evaluate(`(async () => {
     const routes = [

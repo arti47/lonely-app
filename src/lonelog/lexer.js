@@ -18,7 +18,7 @@ export const KINDS = /** @type {const} */ ([
   'narrativeOpen', 'narrativeClose', 'narrative',
   'block', 'marker', 'action', 'question', 'dice', 'resolution',
   'consequence', 'tbl', 'gen', 'note', 'dialogue', 'sessionMeta',
-  'tableEntry', 'genAxis', 'tag', 'prose',
+  'metaField', 'tableEntry', 'genAxis', 'tag', 'prose',
 ]);
 
 const RE_SCENE = /^(T(\d+)-)?S(\d+)([a-z])?(?:\.(\d+))?\b/;
@@ -26,6 +26,25 @@ const RE_ROUND = /^Rd(\d+)\b/;
 const RE_TURN = /^Tn(\d+)\b/;
 const RE_BLOCK_BRACKET = /^\[\s*(\/?)\s*([A-Z][A-Z ]*?)\s*\]$/;
 const RE_BLOCK_ANALOG = /^---\s*(END\s+)?([A-Z][A-Z ]*?)\s*---$/;
+// Long in-fiction block (core §4.4). The prose names `\---` / `---\`, but the
+// section's own example opens with `\--`, so two dashes are accepted (§5.3).
+const RE_NARRATIVE_OPEN = /^\\-{2,}/;
+const RE_NARRATIVE_CLOSE = /-{2,}\\$/;
+/**
+ * Analog campaign and session header fields (core §5.1, §5.2.2): `[Date]` with
+ * its value on the same line or the next. A closed vocabulary — the specs list
+ * every key — so an ordinary bracketed aside is never mistaken for one.
+ */
+const RE_META_FIELD = /^\[\s*([A-Za-z][A-Za-z ]*?)\s*\]\s*(.*)$/;
+export const CAMPAIGN_META_KEYS = new Set([
+  'title', 'ruleset', 'genre', 'player', 'pcs', 'start date', 'last update',
+  'tools', 'themes', 'tone', 'setting', 'inspiration', 'safety tools',
+]);
+export const SESSION_META_KEYS = new Set([
+  'date', 'duration', 'scenes', 'recap', 'goals', 'mood', 'threads',
+]);
+// `[Notes]` is offered by both headers, so it belongs to whichever is open.
+const SHARED_META_KEYS = new Set(['notes']);
 const RE_HEADING = /^(#{1,6})\s+(.*)$/;
 const RE_DIALOGUE = /^(N|PC)\s*(\(([^)]*)\))?\s*:\s*(.*)$/;
 // `*Date: 2025-09-03 | Duration: 1h30 | Scenes: S1-S2*` under a session heading
@@ -51,6 +70,8 @@ export function lex(text) {
   let inFence = false;
   let inFrontmatter = false;
   let inNarrative = false;
+  /** Analog blocks currently open, so an abbreviated closer can find its own. */
+  const analogStack = [];
   /** @type {null|'table'|'gen'} */
   let body = null;
   let i = 0;
@@ -67,8 +88,11 @@ export function lex(text) {
       i++; continue;
     }
     if (inFrontmatter) {
-      if (s === '---') inFrontmatter = false;
-      entries.push({ ...base, kind: 'frontmatter', delimiter: s === '---' });
+      const delimiter = s === '---';
+      if (delimiter) inFrontmatter = false;
+      // Core §5.1 writes a real `[PC:]` tag into the header's `pcs:` line, so
+      // the header's tags are carried like any other line's.
+      entries.push({ ...base, kind: 'frontmatter', delimiter, ...(delimiter ? {} : tagPayload(s)) });
       i++; continue;
     }
 
@@ -81,13 +105,16 @@ export function lex(text) {
     if (s === '') { body = null; entries.push({ ...base, kind: 'blank' }); i++; continue; }
 
     // Long in-fiction block, asymmetric delimiters (core §4.4).
-    if (/^\\-{3,}/.test(s)) {
-      inNarrative = true;
-      entries.push({ ...base, kind: 'narrativeOpen' });
+    if (RE_NARRATIVE_OPEN.test(s)) {
+      // Opened and closed on one line — `\--- The fog rolls in. ---\`. Without
+      // this the block never closes and swallows the rest of the log.
+      const selfClosed = RE_NARRATIVE_CLOSE.test(s.replace(RE_NARRATIVE_OPEN, ''));
+      inNarrative = !selfClosed;
+      entries.push({ ...base, kind: 'narrativeOpen', selfClosed });
       i++; continue;
     }
     if (inNarrative) {
-      if (/-{3,}\\$/.test(s)) {
+      if (RE_NARRATIVE_CLOSE.test(s)) {
         inNarrative = false;
         entries.push({ ...base, kind: 'narrativeClose' });
       } else {
@@ -144,8 +171,30 @@ export function lex(text) {
       i++; continue;
     }
     const ba = RE_BLOCK_ANALOG.exec(s);
-    if (ba && BLOCK_NAMES.has(ba[2].trim())) {
-      entries.push({ ...base, kind: 'block', name: ba[2].trim(), closing: !!ba[1], form: 'analog' });
+    if (ba) {
+      const named = ba[2].trim();
+      // A block's analog closer may abbreviate its name: dungeon §3 closes
+      // `--- DUNGEON STATUS ---` with `--- END STATUS ---`. Match the innermost
+      // open analog block by its last word rather than demanding the full name,
+      // or the block never closes and the stack leaks for the rest of the log.
+      const closes = ba[1]
+        ? (BLOCK_NAMES.has(named) ? named : matchOpenBlock(analogStack, named))
+        : null;
+      const name = ba[1] ? closes : (BLOCK_NAMES.has(named) ? named : null);
+      if (name) {
+        if (ba[1]) analogStack.pop();
+        else analogStack.push(name);
+        entries.push({ ...base, kind: 'block', name, closing: !!ba[1], form: 'analog' });
+        i++; continue;
+      }
+    }
+
+    const mf = RE_META_FIELD.exec(s);
+    if (mf && isMetaKey(mf[1])) {
+      entries.push({
+        ...base, kind: 'metaField', metaKey: mf[1].trim(), text: mf[2].trim(),
+        scope: metaScope(mf[1]),
+      });
       i++; continue;
     }
 
@@ -160,6 +209,27 @@ export function lex(text) {
   }
 
   return entries;
+}
+
+/** The innermost open analog block whose name ends with `named`, if any. */
+function matchOpenBlock(stack, named) {
+  for (let i = stack.length - 1; i >= 0; i--) {
+    if (stack[i] === named || stack[i].endsWith(` ${named}`)) return stack[i];
+  }
+  return null;
+}
+
+function isMetaKey(key) {
+  const k = key.trim().toLowerCase();
+  return CAMPAIGN_META_KEYS.has(k) || SESSION_META_KEYS.has(k) || SHARED_META_KEYS.has(k);
+}
+
+/** @returns {'campaign'|'session'|'either'} */
+function metaScope(key) {
+  const k = key.trim().toLowerCase();
+  if (CAMPAIGN_META_KEYS.has(k)) return 'campaign';
+  if (SESSION_META_KEYS.has(k)) return 'session';
+  return 'either';
 }
 
 /** Split preserving terminators so round-trip is exact. */

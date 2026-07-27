@@ -228,7 +228,10 @@ test('A2 a comma-separated room status becomes separate flags (dungeon §1.1)', 
 test('A2 a room description keeps its commas', () => {
   const room = getElement(foldText('[R:4|active|storage room, dusty shelves]\n'), 'R', '4');
   assert.ok(room.flags.has('active'));
-  assert.ok(room.flags.has('storage room, dusty shelves'), 'only the status field splits');
+  // Only the status field splits — and the description is the room's own slot
+  // (dungeon §1.3), never a status it is in (C2).
+  assert.equal(room.fields.get('desc').value, 'storage room, dusty shelves');
+  assert.ok(!room.flags.has('storage room, dusty shelves'));
 });
 
 test('A3 a numeric transition on a group is a casualty, not a separate value', () => {

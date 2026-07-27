@@ -73,6 +73,33 @@ export function buildLine(kind, text) {
 }
 
 /**
+ * A line of dialogue (core §4.4, Appendix A.7). The spec defines exactly two
+ * forms: `PC:` for the character you play, `N (Name):` for anyone else.
+ * @param {string} speaker `'PC'` or an NPC's name
+ * @param {string} text
+ */
+export function dialogueLine(speaker, text) {
+  const said = String(text ?? '').trim().replace(/^"|"$/g, '');
+  const who = String(speaker ?? '').trim();
+  const head = !who || who.toUpperCase() === 'PC' ? 'PC:' : `N (${who}):`;
+  return said ? `${head} "${said}"` : head;
+}
+
+/**
+ * A long in-fiction block (core §4.4). The delimiters are asymmetric so they
+ * cannot be confused with a Markdown rule, and the passage keeps its own line
+ * breaks — it is the one place the notation asks for prose.
+ * @param {string} text
+ * @returns {string[]} the whole block, so undo takes it in one step
+ */
+export function excerptLines(text) {
+  const body = String(text ?? '').replace(/\r\n/g, '\n').split('\n').map((l) => l.trimEnd());
+  while (body.length && body[body.length - 1] === '') body.pop();
+  while (body.length && body[0] === '') body.shift();
+  return ['\\---', ...body, '---\\'];
+}
+
+/**
  * @param {{type:string, name:string, fields?:string[], ref?:boolean}} spec
  * @returns {string} canonical tag text
  */
@@ -258,6 +285,27 @@ export function mountComposer(host, ctx) {
         input.focus();
       },
     }, ['Tag…']),
+    // Dialogue and the long in-fiction block are core §4.4 constructs. They had
+    // no control at all, so the only way to write two thirds of §4 was to know
+    // the punctuation by heart.
+    el('button', {
+      class: 'btn btn-small', type: 'button', id: 'composer-said',
+      onclick: async () => {
+        const line = await dialogueDialog(ctx.state);
+        if (line == null) return;
+        input.value = line;
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      },
+    }, ['Said…']),
+    el('button', {
+      class: 'btn btn-small', type: 'button', id: 'composer-excerpt',
+      onclick: async () => {
+        const text = await excerptDialog();
+        if (!text?.trim()) return;
+        await ctx.commit(excerptLines(text));
+      },
+    }, ['Excerpt…']),
     blockButton(ctx),
     el('button', {
       class: 'btn btn-small btn-quiet', type: 'button', disabled: !ctx.canUndo, id: 'composer-undo',
@@ -281,6 +329,66 @@ export function mountComposer(host, ctx) {
 
   drawBar();
   setKind(kind);
+}
+
+/**
+ * Choose who is speaking. The names come from the fold, so a conversation with
+ * an established NPC does not spawn a second spelling of them.
+ * @param {object} state
+ * @returns {Promise<string|null>} the line, ready to finish typing
+ */
+async function dialogueDialog(state) {
+  const names = elementsOfType(state, 'N').map((n) => n.name);
+  const listId = 'said-names';
+  const speaker = /** @type {HTMLInputElement} */ (el('input', {
+    id: 'said-speaker', class: 'input', type: 'text', list: listId,
+    placeholder: 'PC, or an NPC’s name', value: 'PC',
+  }));
+  const said = /** @type {HTMLInputElement} */ (el('input', {
+    id: 'said-text', class: 'input', type: 'text', placeholder: 'Stay calm… just stay calm.',
+  }));
+  const preview = el('code', { class: 'preview-line', id: 'said-preview' });
+  const draw = () => { preview.textContent = dialogueLine(speaker.value, said.value); };
+  speaker.addEventListener('input', draw);
+  said.addEventListener('input', draw);
+  draw();
+
+  const ok = await modal({
+    title: 'Dialogue',
+    body: el('div', { class: 'field-rows' }, [
+      el('datalist', { id: listId }, names.map((n) => el('option', { value: n }))),
+      el('div', { class: 'field-row' }, [el('label', { for: 'said-speaker' }, ['Speaker']), speaker]),
+      el('div', { class: 'field-row' }, [el('label', { for: 'said-text' }, ['Said']), said]),
+      preview,
+    ]),
+    actions: [
+      { label: 'Cancel', value: null },
+      { label: 'Insert', value: true, primary: true },
+    ],
+  });
+  return ok ? dialogueLine(speaker.value, said.value) : null;
+}
+
+/** A passage of in-fiction text, kept with its own line breaks (core §4.4). */
+async function excerptDialog() {
+  const area = /** @type {HTMLTextAreaElement} */ (el('textarea', {
+    id: 'excerpt-text', class: 'input', rows: '6',
+    placeholder: 'The diary reads:\n"Day 47: The tides no longer obey the moon."',
+  }));
+  const ok = await modal({
+    title: 'Narrative excerpt',
+    body: el('div', { class: 'field-rows' }, [
+      el('div', { class: 'field-row' }, [
+        el('label', { for: 'excerpt-text' }, ['Passage']), area,
+      ]),
+      el('p', { class: 'hint' }, ['Written between \\--- and ---\\ so it reads as in-fiction, not as log.']),
+    ]),
+    actions: [
+      { label: 'Cancel', value: null },
+      { label: 'Add', value: true, primary: true },
+    ],
+  });
+  return ok ? area.value : null;
 }
 
 function blockButton(ctx) {
