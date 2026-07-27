@@ -418,29 +418,45 @@ export function renderState(host, state, ctx) {
   }
 }
 
-/** A character sheet folded out of `[PC:]` tags (D5). */
-function pcSheet(pc, ctx) {
-  const stats = [...pc.fields].map(([key, v]) => el('div', { class: 'stat' }, [
+/**
+ * One stat, with the controls that suit it. Used by the character sheet and by
+ * every other tracked object, so an NPC's HP steps exactly like a PC's (D5).
+ */
+function statTile(element, key, v, ctx) {
+  const steppable = /^-?\d+(\.\d+)?(\s*\/\s*\d+)?$/.test(String(v.value).trim());
+  return el('div', { class: 'stat', dataset: { stat: key } }, [
     el('span', { class: 'stat-key' }, [key]),
     traceValue(v.value, v.line, ctx),
     el('div', { class: 'stat-steppers' }, [
-      stepper('−', `Decrease ${key}`, () => ctx.commit([deltaLine(pc, key, -1)])),
-      stepper('+', `Increase ${key}`, () => ctx.commit([deltaLine(pc, key, +1)])),
+      steppable ? stepper('−', `Decrease ${key} on ${element.name}`,
+        () => ctx.commit([deltaLine(element, key, -1)])) : null,
+      steppable ? stepper('+', `Increase ${key} on ${element.name}`,
+        () => ctx.commit([deltaLine(element, key, +1)])) : null,
       el('button', {
         class: 'btn btn-tiny', type: 'button', title: `Set ${key}`,
+        'aria-label': `Set ${key} on ${element.name}`,
         onclick: async () => {
-          const next = await promptModal(`New value for ${key}`, { title: pc.name, value: v.value });
-          if (next != null && next.trim()) await ctx.commit([setLine(pc, key, next)]);
+          const next = await promptModal(`New value for ${key}`, { title: element.name, value: v.value });
+          if (next != null && next.trim()) await ctx.commit([setLine(element, key, next)]);
         },
       }, ['set']),
-    ]),
-  ]));
+    ].filter(Boolean)),
+  ]);
+}
 
-  stats.push(el('button', {
+/** The "+ field" tile that opens the shared Add… dialog. */
+function addTile(element, ctx) {
+  return el('button', {
     class: 'stat stat-add', type: 'button',
-    'aria-label': `Add a field to ${pc.name}`,
-    onclick: () => addDialog(pc, ctx),
-  }, ['+ field']));
+    'aria-label': `Add a field to ${element.name}`,
+    onclick: () => addDialog(element, ctx),
+  }, ['+ field']);
+}
+
+/** A character sheet folded out of `[PC:]` tags (D5). */
+function pcSheet(pc, ctx) {
+  const stats = [...pc.fields].map(([key, v]) => statTile(pc, key, v, ctx));
+  stats.push(addTile(pc, ctx));
 
   return el('article', { class: 'sheet' }, [
     el('h3', { class: 'sheet-name' }, [pc.name]),
@@ -495,21 +511,24 @@ function threadRow(t, ctx) {
 }
 
 function castRow(c, ctx) {
-  const parts = [];
-  if (c.count) parts.push(`x${c.count.value}`);
-  if (c.value) parts.push(c.value.value);
-  if (c.progress) parts.push(`${c.progress.current}/${c.progress.total}`);
-  for (const [k, v] of c.fields) parts.push(`${k} ${v.value}`);
-  for (const f of c.flags.keys()) parts.push(f);
+  const summary = [];
+  if (c.count) summary.push(`x${c.count.value}`);
+  if (c.value) summary.push(c.value.value);
+  if (c.progress) summary.push(`${c.progress.current}/${c.progress.total}`);
 
-  return el('li', {}, [
-    el('span', { class: 'el-name' }, [c.name]),
-    el('span', { class: 'el-detail' }, [parts.join(' · ') || '—']),
-    el('button', {
-      class: 'btn btn-tiny', type: 'button', title: `Add or remove a field or tag on ${c.name}`,
-      onclick: () => addDialog(c, ctx),
-    }, ['add…']),
-    traceLink(c.lastLine, ctx),
+  const stats = [...c.fields].map(([key, v]) => statTile(c, key, v, ctx));
+  stats.push(addTile(c, ctx));
+
+  return el('li', { class: 'cast-row' }, [
+    el('div', { class: 'cast-head' }, [
+      el('span', { class: 'el-name' }, [c.name]),
+      el('span', { class: 'el-detail' }, [summary.join(' · ')]),
+      traceLink(c.lastLine, ctx),
+    ]),
+    // Stats step here just as they do on the character sheet — an NPC's HP is
+    // no less adjustable than a PC's.
+    el('div', { class: 'stat-grid' }, stats),
+    flagRow(c, ctx, 'Tags'),
   ]);
 }
 

@@ -333,6 +333,14 @@ function applyField(el, f, line, index = 0) {
     // `[Inv:Torch|4]` then `[Inv:Torch-1]` has to land on the same value
     // (resources §1.2).
     if (/^-?\d+$/.test(String(f.value).trim())) { el.value = { value: String(f.value).trim(), line }; return; }
+    // `[Clock:Suspicion|3/6]` — the tag builder writes the fill as a field, and
+    // a reader may too. It is the meter, not a flag named "3/6".
+    if (f.progress) { el.progress = { current: f.progress.current, total: f.progress.total, line }; return; }
+    const bare = /^(\d+)\s*\/\s*(\d+)$/.exec(String(f.value ?? '').trim());
+    if (bare) {
+      el.progress = { current: Number(bare[1]), total: Number(bare[2]), line };
+      return;
+    }
     if (f.transition) {
       if (/^-?\d+$/.test(f.transition.from) && /^-?\d+$/.test(f.transition.to)) {
         el.value = { value: f.transition.to, line };
@@ -342,7 +350,6 @@ function applyField(el, f, line, index = 0) {
       el.flags.set(f.transition.to, line);
       return;
     }
-    if (f.progress) { el.progress = { current: f.progress.current, total: f.progress.total, line }; return; }
     if (f.value !== '') el.flags.set(f.value, line);
     return;
   }

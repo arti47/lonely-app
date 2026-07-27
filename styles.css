@@ -658,3 +658,9 @@ p { margin: 0 0 12px; }
   min-height: 64px;
 }
 .stat-add:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Tracked objects carry the same stat tiles as the character sheet. */
+.cast-row { display: block; padding: 10px 0; }
+.cast-head { display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; margin-bottom: 8px; }
+.cast-row .stat-grid { margin-bottom: 8px; }
+.cast-row .flag-row { margin-top: 0; }

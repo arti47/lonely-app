@@ -15,6 +15,9 @@ import { serializeTag, BLOCK_NAMES } from './lonelog/tags.js';
 import { groupedTagTypes, tagTypeLabel } from './reference.js';
 import { elementsOfType } from './lonelog/fold.js';
 
+/** Types that carry a bare number on the head rather than as a field. */
+const HEAD_VALUE_TYPES = new Set(['Wealth', 'Timer']);
+
 /**
  * Line kinds the composer can emit, in bar order.
  *
@@ -74,9 +77,24 @@ export function buildLine(kind, text) {
  * @returns {string} canonical tag text
  */
 export function buildTag({ type, name, fields = [], ref = false }) {
+  const rest = fields.filter((f) => String(f).trim());
+  // A meter belongs on the head — `[Clock:Suspicion 3/6]`, not
+  // `[Clock:Suspicion|3/6]`, which folds as a flag named "3/6" and gives the
+  // Sheet nothing to step (core §4.2).
+  let head = null;
+  const first = String(rest[0] ?? '').trim();
+  const meter = /^(\d+)\s*\/\s*(\d+)$/.exec(first);
+  if (meter) {
+    head = { kind: 'progress', current: Number(meter[1]), total: Number(meter[2]) };
+    rest.shift();
+  } else if (/^-?\d+$/.test(first) && HEAD_VALUE_TYPES.has(type)) {
+    head = { kind: 'value', value: first };
+    rest.shift();
+  }
+
   return serializeTag({
-    ref, type, name: String(name).trim(), count: null, head: null,
-    fields: fields.filter((f) => String(f).trim()).map((f) => ({
+    ref, type, name: String(name).trim(), count: null, head,
+    fields: rest.map((f) => ({
       raw: f, op: 'set', key: null, value: String(f).trim(),
       count: null, delta: null, progress: null, transition: null, list: null,
     })),

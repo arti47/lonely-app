@@ -421,6 +421,29 @@ try {
   check('inserting joins the rows into one canonical tag',
     inserted === '[N:Jonah|wounded|HP 8]', JSON.stringify(inserted));
 
+  // A meter typed as a field belongs on the tag head, or the Sheet gets a flag
+  // named "3/6" and nothing to step (core §4.2).
+  const meterTag = await s.evaluate(`(async () => {
+    [...document.querySelectorAll('#screen .composer-tools .btn')]
+      .find(b => b.textContent === 'Tag…').click();
+    await new Promise(r => setTimeout(r, 300));
+    const type = document.querySelector('#tag-type');
+    type.value = 'Clock';
+    type.dispatchEvent(new Event('change', { bubbles: true }));
+    const set = (el, v) => { el.value = v; el.dispatchEvent(new Event('input', { bubbles: true })); };
+    set(document.querySelector('#tag-name'), 'Suspicion');
+    set(document.querySelectorAll('.field-rows input')[0], '3/6');
+    await new Promise(r => setTimeout(r, 150));
+    const preview = document.querySelector('#tag-preview')?.textContent;
+    [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Cancel')?.click();
+    await new Promise(r => setTimeout(r, 250));
+    const input = document.querySelector('#composer-input');
+    if (input) input.value = '';
+    return preview;
+  })()`);
+  check('a clock built from the tag dialog carries its fill as a meter, not a flag',
+    meterTag === '[Clock:Suspicion 3/6]', JSON.stringify(meterTag));
+
   // F5: the strip is one line, and opens to the full chip set.
   const strip = await s.evaluate(`(() => {
     const summary = document.querySelector('#screen .state-summary');
@@ -1044,6 +1067,45 @@ try {
   check('removing a field appends a removal line and the stat goes',
     removed.last === '[PC:Alex|-Stress]' && removed.stats === statsBefore,
     JSON.stringify(removed));
+
+  // An NPC's stat is no less adjustable than a PC's: the cast row carries the
+  // same tiles, so a field added there arrives steppable.
+  const guardRow = `[...document.querySelectorAll('#screen .cast-row')]
+    .find(li => li.querySelector('.el-name')?.textContent === 'Guard')`;
+  await s.evaluate(`${guardRow}.querySelector('.stat-add').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+  await s.evaluate(`(() => {
+    document.querySelector('#add-name').value = 'HP';
+    document.querySelector('#add-value').value = '8';
+    [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Add').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 450))');
+
+  const npcField = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    const stat = ${guardRow}.querySelector('.stat[data-stat="HP"]');
+    return {
+      last: c.log[c.log.length - 1],
+      value: stat?.textContent,
+      steppers: stat ? stat.querySelectorAll('.stat-steppers .btn-tiny').length : 0,
+    };
+  })()`);
+  check('a field added to an NPC lands as a stat with steppers',
+    npcField.last === '[N:Guard|HP 8]' && npcField.steppers === 3,
+    JSON.stringify(npcField));
+
+  await s.evaluate(`${guardRow}.querySelector('.stat[data-stat="HP"] .stat-steppers .btn-tiny').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 450))');
+  const npcStepped = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    const stat = ${guardRow}.querySelector('.stat[data-stat="HP"]');
+    return { last: c.log[c.log.length - 1], value: stat?.querySelector('.stat-value')?.textContent };
+  })()`);
+  check('stepping an NPC stat appends a delta and re-renders from the fold',
+    npcStepped.last === '[N:Guard|HP-1]' && npcStepped.value === '7',
+    JSON.stringify(npcStepped));
 
   // --- Hardening: accessibility sweep across every screen ---
   const a11y = await s.evaluate(`(async () => {

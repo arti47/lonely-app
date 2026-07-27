@@ -9,7 +9,7 @@ import {
   BASIC_SYMBOLS, usesAdvancedSymbols, suggestFields,
 } from '../src/composer.js';
 import { lex } from '../src/lonelog/lexer.js';
-import { fold } from '../src/lonelog/fold.js';
+import { fold, getElement } from '../src/lonelog/fold.js';
 
 const foldText = (t) => fold(lex(t));
 
@@ -105,6 +105,42 @@ test('a tag is built from separate fields, and empty rows are dropped', () => {
   assert.equal(buildTag({ type: 'N', name: 'Jonah', fields: ['wounded', '', 'HP 8', '  '] }),
     '[N:Jonah|wounded|HP 8]');
   assert.equal(buildTag({ type: 'N', name: 'Jonah', fields: ['', ''] }), '[N:Jonah]');
+});
+
+test('a meter typed as a field lands on the tag head, so the fold sees a meter', () => {
+  // `[Clock:Suspicion|3/6]` folds as a flag literally named "3/6" — the Sheet
+  // then has nothing to step. The fill belongs on the head (core §4.2).
+  for (const type of ['Clock', 'Track', 'E']) {
+    const line = buildTag({ type, name: 'Suspicion', fields: ['3/6'] });
+    assert.equal(line, `[${type}:Suspicion 3/6]`);
+    const el = getElement(fold(lex(line + '\n')), type, 'Suspicion');
+    assert.deepEqual(
+      { current: el.progress?.current, total: el.progress?.total }, { current: 3, total: 6 },
+      `${line} did not fold to a meter`,
+    );
+    assert.equal(el.flags.size, 0, 'the fill must not also be a flag');
+  }
+});
+
+test('a bare number on a Timer or Wealth tag is its value, not a flag', () => {
+  const timer = buildTag({ type: 'Timer', name: 'Dawn', fields: ['3'] });
+  assert.equal(timer, '[Timer:Dawn 3]');
+  assert.equal(getElement(fold(lex(timer + '\n')), 'Timer', 'Dawn').value.value, '3');
+
+  const wealth = buildTag({ type: 'Wealth', name: 'Gold', fields: ['40'] });
+  assert.equal(wealth, '[Wealth:Gold 40]');
+  assert.equal(getElement(fold(lex(wealth + '\n')), 'Wealth', 'Gold').value.value, '40');
+
+  // A number on anything else is still a plain field — `[N:Jonah|3]` is what
+  // the writer typed and the notation has no head value there.
+  assert.equal(buildTag({ type: 'N', name: 'Jonah', fields: ['3'] }), '[N:Jonah|3]');
+});
+
+test('a hand-written [Clock:X|4/6] is read tolerantly as the meter it means', () => {
+  // §5.3: accept the irregular form, keep emitting the canonical one.
+  const el = getElement(fold(lex('[Clock:Alarm|4/6]\n')), 'Clock', 'Alarm');
+  assert.deepEqual({ c: el.progress?.current, t: el.progress?.total }, { c: 4, t: 6 });
+  assert.equal(el.flags.size, 0);
 });
 
 test('fields autocomplete from the vocabulary this campaign already uses', () => {
