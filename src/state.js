@@ -130,6 +130,53 @@ export function setLine(element, key, value) {
   return tag(element, [field({ key, value: String(value).trim() })]);
 }
 
+/**
+ * Add a named field, choosing the notation from the value itself.
+ *
+ * `Stress 0`, `HP 12/15` and `Supply d8` all read as a keyed stat because they
+ * end in something numeric; plain words do not, so those take the category form
+ * `Gear: sword` (core §4.1.7). Getting this wrong would silently file the value
+ * as a flag instead of a stat.
+ *
+ * @param {{type:string,name:string}} element
+ * @param {string} key
+ * @param {string} value  empty for a flag rather than a field
+ */
+export function addLine(element, key, value = '') {
+  const name = String(key).trim();
+  const text = String(value ?? '').trim();
+  if (!text) return flagLine(element, name, 'add');
+  return numericish(text)
+    ? tag(element, [field({ key: name, value: text })])
+    : tag(element, [field({ key: name, value: text, category: true })]);
+}
+
+/** Does this value parse back as part of a keyed field rather than a flag? */
+export function numericish(value) {
+  const v = String(value).trim();
+  return /^-?\d+(\.\d+)?$/.test(v)          // 8
+    || /^\d+\s*\/\s*\d+$/.test(v)          // 12/15
+    || /^d\d+$/i.test(v)                      // d8
+    || /\d/.test(v.split(/\s+/)[0]);         // CT30/RT25, 3 each
+}
+
+/**
+ * Remove a named field or flag: `[PC:Alex|-Stress]` (core §4.1.1).
+ * @param {{type:string,name:string}} element @param {string} key
+ */
+export function removeLine(element, key) {
+  return flagLine(element, String(key).trim(), 'remove');
+}
+
+/** Field names already in use anywhere in the campaign, for autocomplete. */
+export function knownFieldKeys(state) {
+  const keys = new Set();
+  for (const element of state.elements.values()) {
+    for (const key of element.fields.keys()) keys.add(key);
+  }
+  return [...keys].sort();
+}
+
 /** Thread states offered in the UI (core §4.1.4); custom states stay allowed. */
 export const THREAD_STATES = ['Open', 'Closed', 'Abandoned'];
 
@@ -293,7 +340,7 @@ export function renderStateHeader(state, onTrace, lifecycle = {}) {
  * @param {object} state
  * @param {{commit:(lines:string[])=>Promise<any>, trace:(line:number)=>any,
  *          traceButton?:(line:number)=>Node|null, hidden?:Set<string>,
- *          toggleHidden?:(addonId:string)=>any}} ctx
+ *          knownKeys?:string[], toggleHidden?:(addonId:string)=>any}} ctx
  */
 export function renderState(host, state, ctx) {
   clear(host);
@@ -389,9 +436,15 @@ function pcSheet(pc, ctx) {
     ]),
   ]));
 
+  stats.push(el('button', {
+    class: 'stat stat-add', type: 'button',
+    'aria-label': `Add a field to ${pc.name}`,
+    onclick: () => addDialog(pc, ctx),
+  }, ['+ field']));
+
   return el('article', { class: 'sheet' }, [
     el('h3', { class: 'sheet-name' }, [pc.name]),
-    stats.length ? el('div', { class: 'stat-grid' }, stats) : el('p', { class: 'hint' }, ['No stats recorded yet.']),
+    el('div', { class: 'stat-grid' }, stats),
     flagRow(pc, ctx, 'Conditions'),
   ]);
 }
@@ -418,6 +471,10 @@ function meterRow(m, ctx) {
     el('div', { class: 'stat-steppers' }, [
       stepper('−', `Decrease ${m.name}`, () => step(-1)),
       stepper('+', `Increase ${m.name}`, () => step(+1)),
+      el('button', {
+        class: 'btn btn-tiny', type: 'button', 'aria-label': `Add a field to ${m.name}`,
+        onclick: () => addDialog(m, ctx),
+      }, ['add…']),
     ]),
   ]);
 }
@@ -449,9 +506,9 @@ function castRow(c, ctx) {
     el('span', { class: 'el-name' }, [c.name]),
     el('span', { class: 'el-detail' }, [parts.join(' · ') || '—']),
     el('button', {
-      class: 'btn btn-tiny', type: 'button', title: `Add or remove a tag on ${c.name}`,
-      onclick: () => editFlags(c, ctx),
-    }, ['tag…']),
+      class: 'btn btn-tiny', type: 'button', title: `Add or remove a field or tag on ${c.name}`,
+      onclick: () => addDialog(c, ctx),
+    }, ['add…']),
     traceLink(c.lastLine, ctx),
   ]);
 }
@@ -466,33 +523,68 @@ function flagRow(element, ctx, label) {
     }, [f, el('span', { class: 'chip-x', 'aria-hidden': 'true' }, ['×'])])),
     el('button', {
       class: 'btn btn-tiny', type: 'button',
-      onclick: () => editFlags(element, ctx),
+      onclick: () => addDialog(element, ctx),
     }, ['+ add']),
   ]);
 }
 
-async function editFlags(element, ctx) {
-  const flags = [...element.flags.keys()];
-  const value = await modal({
+/**
+ * One dialog for everything an element can carry. A value makes it a field, no
+ * value makes it a flag — so there is one control to learn rather than two.
+ */
+async function addDialog(element, ctx) {
+  const listId = `keys-${element.type}`;
+  const datalist = el('datalist', { id: listId },
+    (ctx.knownKeys ?? []).map((key) => el('option', { value: key })));
+
+  const nameInput = /** @type {HTMLInputElement} */ (el('input', {
+    class: 'input', type: 'text', id: 'add-name', list: listId, autocomplete: 'off',
+    placeholder: 'Stress',
+  }));
+  const valueInput = /** @type {HTMLInputElement} */ (el('input', {
+    class: 'input', type: 'text', id: 'add-value', autocomplete: 'off',
+    placeholder: '0, 12/15, d8 — or leave empty',
+  }));
+
+  const existing = [
+    ...[...element.fields].map(([key, v]) => ({ key, detail: v.value, kind: 'field' })),
+    ...[...element.flags.keys()].map((key) => ({ key, detail: null, kind: 'flag' })),
+  ];
+
+  const current = existing.length
+    ? el('ul', { class: 'plain-list' }, existing.map((item) => el('li', {}, [
+      el('span', { class: 'el-name' }, [item.key]),
+      el('span', { class: 'el-detail' }, [item.detail ?? item.kind]),
+      el('button', {
+        class: 'btn btn-tiny btn-quiet', type: 'button',
+        'aria-label': `Remove ${item.key} from ${element.name}`,
+        onclick: async (e) => {
+          e.target.closest('li').remove();
+          await ctx.commit([removeLine(element, item.key)]);
+        },
+      }, ['remove']),
+    ])))
+    : el('p', { class: 'hint' }, ['Nothing recorded yet.']);
+
+  const ok = await modal({
     title: element.name,
-    body: el('div', {}, [
-      el('p', { class: 'hint' }, [flags.length ? `Current: ${flags.join(', ')}` : 'No tags yet.']),
-      el('p', { class: 'hint' }, ['Adding appends a tag line to your log; it never edits state directly.']),
+    body: el('div', { class: 'form' }, [
+      el('label', { class: 'field-label', for: 'add-name' }, ['Name']), nameInput, datalist,
+      el('label', { class: 'field-label', for: 'add-value' }, ['Value']), valueInput,
+      el('p', { class: 'hint' }, [
+        'A value makes it a stat you can step — 8, 12/15, d8. Leave it empty for a '
+        + 'plain tag like “wounded”.',
+      ]),
+      el('h3', { class: 'addon-sub' }, ['Already here']),
+      current,
     ]),
-    actions: [
-      { label: 'Cancel', value: null },
-      ...flags.slice(0, 2).map((f) => ({ label: `Remove ${f}`, value: `-${f}` })),
-      { label: 'Add a tag', value: 'add', primary: true },
-    ],
+    actions: [{ label: 'Close', value: null }, { label: 'Add', value: true, primary: true }],
   });
 
-  if (value == null) return;
-  if (value === 'add') {
-    const next = await promptModal('Tag to add', { title: element.name, placeholder: 'wounded' });
-    if (next?.trim()) await ctx.commit([flagLine(element, next.trim(), 'add')]);
-    return;
-  }
-  await ctx.commit([flagLine(element, value.slice(1), 'remove')]);
+  if (ok !== true) return;
+  const name = nameInput.value.trim();
+  if (!name) return;
+  await ctx.commit([addLine(element, name, valueInput.value)]);
 }
 
 function stepper(glyph, label, onclick) {

@@ -316,7 +316,15 @@ function applyField(el, f, line, index = 0) {
   }
 
   if (f.op === 'add' && !f.key) { el.flags.set(f.value, line); return; }
-  if (f.op === 'remove' && !f.key) { el.flags.delete(f.value); return; }
+  if (f.op === 'remove' && !f.key) {
+    // `-Stress` reads as "this no longer applies". Core §4.1.1 shows the form
+    // removing a flag; a named stat is the same idea, so whichever the element
+    // actually holds under that name is what goes. A field wins when both
+    // exist, because a stat is the more specific thing to have named.
+    if (el.fields.has(f.value)) el.fields.delete(f.value);
+    else el.flags.delete(f.value);
+    return;
+  }
 
   if (f.count != null && !f.key) { el.count = { value: f.count, line }; return; }
 

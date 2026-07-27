@@ -648,3 +648,13 @@ p { margin: 0 0 12px; }
 }
 .guide-step p { margin: 0 0 8px; }
 .guide-step .log-preview { margin-bottom: 10px; }
+
+/* --- Adding a field to a tracked object --- */
+
+.stat-add {
+  align-items: center; justify-content: center;
+  border-style: dashed; color: var(--ink-soft);
+  font: inherit; font-size: 0.85rem; cursor: pointer;
+  min-height: 64px;
+}
+.stat-add:hover { border-color: var(--accent); color: var(--accent); }

@@ -23,7 +23,7 @@ import { go, rememberCampaign, forgetCampaign } from './router.js';
 import { parse } from './lonelog/index.js';
 import { renderLog } from './logview.js';
 import { mountComposer, nextSceneNumber } from './composer.js';
-import { renderState, renderStateHeader, traceButton } from './state.js';
+import { renderState, renderStateHeader, traceButton, knownFieldKeys } from './state.js';
 import { renderResolve } from './resolve.js';
 import { templates as templateStore } from './store.js';
 import { toPack, fromPack } from './templates.js';
@@ -349,6 +349,7 @@ export async function stateScreen(mount, params) {
     header.append(renderStateHeader(state, trace));
     renderState(body, state, {
       trace,
+      knownKeys: knownFieldKeys(state),
       traceButton: (line) => traceButton(line, { trace }),
       hidden: new Set(campaign.view?.hiddenPanels ?? []),
       // Hiding a panel is presentation, stored in `view` — it must never touch

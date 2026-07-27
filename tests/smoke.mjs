@@ -987,6 +987,64 @@ try {
     (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Screen not found'
       && await s.evaluate('document.querySelectorAll("[data-nav][aria-current]").length') === 0);
 
+  // --- Adding a field to a tracked object ---
+  await s.evaluate(`(location.hash = '#/state/${created}', new Promise(r => setTimeout(r, 400)))`);
+
+  check('the character sheet offers an add-field tile',
+    await s.evaluate('!!document.querySelector("#screen .stat-add")'));
+
+  const statsBefore = await s.evaluate('document.querySelectorAll("#screen .sheet .stat").length');
+
+  await s.evaluate('document.querySelector("#screen .stat-add").click()');
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+  check('the add dialog asks for a name and a value',
+    await s.evaluate('!!document.querySelector("#add-name") && !!document.querySelector("#add-value")'));
+
+  await s.evaluate(`(() => {
+    document.querySelector('#add-name').value = 'Stress';
+    document.querySelector('#add-value').value = '2';
+    [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Add').click();
+  })()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 450))');
+
+  const added = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return { last: c.log[c.log.length - 1],
+             stats: document.querySelectorAll('#screen .sheet .stat').length };
+  })()`);
+  check('adding a field appends a tag line and the sheet grows a stat',
+    added.last === '[PC:Alex|Stress 2]' && added.stats === statsBefore + 1,
+    JSON.stringify(added));
+
+  check('the new field is steppable like any other',
+    await s.evaluate(`(() => {
+      const stat = [...document.querySelectorAll('#screen .sheet .stat')]
+        .find(el => el.querySelector('.stat-key')?.textContent === 'Stress');
+      return !!stat && stat.querySelectorAll('.btn-tiny').length >= 3;
+    })()`));
+
+  // Remove it again through the same dialog.
+  await s.evaluate('document.querySelector("#screen .stat-add").click()');
+  await s.evaluate('new Promise(r => setTimeout(r, 250))');
+  await s.evaluate(`([...document.querySelectorAll('.modal .plain-list li')]
+    .find(li => li.querySelector('.el-name')?.textContent === 'Stress')
+    .querySelector('.btn-tiny')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 400))');
+  await s.evaluate(`([...document.querySelectorAll('.modal-actions .btn')]
+    .find(b => b.textContent === 'Close')).click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 350))');
+
+  const removed = await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    const c = await store.campaigns.get('${created}');
+    return { last: c.log[c.log.length - 1],
+             stats: document.querySelectorAll('#screen .sheet .stat').length };
+  })()`);
+  check('removing a field appends a removal line and the stat goes',
+    removed.last === '[PC:Alex|-Stress]' && removed.stats === statsBefore,
+    JSON.stringify(removed));
+
   // --- Hardening: accessibility sweep across every screen ---
   const a11y = await s.evaluate(`(async () => {
     const routes = [

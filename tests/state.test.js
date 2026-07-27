@@ -144,3 +144,119 @@ test('names with spaces and punctuation survive an edit round trip', () => {
   assert.equal(element.name, 'Captain Streng');
   assert.ok(element.flags.has('wounded'));
 });
+
+/* --- Adding and removing fields on any tracked object --------------------- */
+
+import { addLine, removeLine, numericish, knownFieldKeys } from '../src/state.js';
+
+test('a numeric value becomes a steppable field', () => {
+  const { line, element } = afterEdit(
+    '[PC:Alex|HP 8]\n', (pc) => addLine(pc, 'Stress', '0'), 'PC', 'Alex',
+  );
+  assert.equal(line, '[PC:Alex|Stress 0]');
+  assert.equal(element.fields.get('Stress').value, '0');
+});
+
+test('an X/Y value becomes a track with a meter', () => {
+  const { line, element } = afterEdit(
+    '[PC:Kael|HP 10]\n', (pc) => addLine(pc, 'Armour', '12/15'), 'PC', 'Kael',
+  );
+  assert.equal(line, '[PC:Kael|Armour 12/15]');
+  assert.equal(element.fields.get('Armour').value, '12/15');
+  assert.deepEqual(element.fields.get('Armour').progress, { current: 12, total: 15 });
+});
+
+test('a die value becomes a usage die the resources panel can step', () => {
+  const { line, element } = afterEdit(
+    '[PC:Kael|HP 10]\n', (pc) => addLine(pc, 'Supply', 'd8'), 'PC', 'Kael',
+  );
+  assert.equal(line, '[PC:Kael|Supply d8]');
+  assert.equal(element.fields.get('Supply').value, 'd8');
+});
+
+test('a wordy value takes the category form so it is still a field', () => {
+  const { line, element } = afterEdit(
+    '[PC:Alex|HP 8]\n', (pc) => addLine(pc, 'Gear', 'sword and lantern'), 'PC', 'Alex',
+  );
+  assert.equal(line, '[PC:Alex|Gear: sword and lantern]');
+  assert.equal(element.fields.get('Gear').value, 'sword and lantern',
+    'a plain-word value must not be filed as a flag');
+});
+
+test('no value at all adds a flag rather than a field', () => {
+  const { line, element } = afterEdit(
+    '[N:Guard|calm]\n', (n) => addLine(n, 'alert', ''), 'N', 'Guard',
+  );
+  assert.equal(line, '[N:Guard|+alert]');
+  assert.ok(element.flags.has('alert'));
+  assert.equal(element.fields.size, 0);
+});
+
+test('fields can be added to every kind of tracked object', () => {
+  for (const [type, name, seed] of [
+    ['PC', 'Alex', '[PC:Alex|HP 8]'],
+    ['N', 'Jonah', '[N:Jonah|friendly]'],
+    ['L', 'Lighthouse', '[L:Lighthouse|ruined]'],
+    ['F', 'Thug', '[F:Thug|HP 6]'],
+    ['Inv', 'Torch', '[Inv:Torch|3]'],
+    ['R', '1', '[R:1|cleared]'],
+    ['Unit', 'Rifles', '[Unit:Rifles|x12]'],
+    ['Clock', 'Alarm', '[Clock:Alarm 1/6]'],
+  ]) {
+    const { element } = afterEdit(`${seed}\n`, (e) => addLine(e, 'Notes', '3'), type, name);
+    assert.equal(element.fields.get('Notes')?.value, '3', `${type} could not take a field`);
+  }
+});
+
+test('removing a field drops the field and leaves the rest', () => {
+  const { line, element } = afterEdit(
+    '[PC:Alex|HP 8|Stress 2]\n', (pc) => removeLine(pc, 'Stress'), 'PC', 'Alex',
+  );
+  assert.equal(line, '[PC:Alex|-Stress]');
+  assert.ok(!element.fields.has('Stress'));
+  assert.equal(element.fields.get('HP').value, '8', 'other fields survive');
+});
+
+test('the same removal still removes a flag when that is what it names', () => {
+  const { element } = afterEdit(
+    '[N:Guard|alert|watchful]\n', (n) => removeLine(n, 'alert'), 'N', 'Guard',
+  );
+  assert.ok(!element.flags.has('alert'));
+  assert.ok(element.flags.has('watchful'));
+});
+
+test('adding then removing returns the object to where it started', () => {
+  const before = foldText('[PC:Alex|HP 8]\n');
+  const alex = getElement(before, 'PC', 'Alex');
+  const log = `[PC:Alex|HP 8]\n${addLine(alex, 'Stress', '2')}\n${removeLine(alex, 'Stress')}\n`;
+  const after = getElement(foldText(log), 'PC', 'Alex');
+  assert.deepEqual([...after.fields.keys()], ['HP']);
+});
+
+test('numericish decides field shape the way the parser reads it', () => {
+  for (const value of ['8', '-3', '12/15', 'd8', 'CT30/RT25', '3 each']) {
+    assert.equal(numericish(value), true, `${value} should read as a field value`);
+  }
+  for (const value of ['sword', 'well armed', 'Ward of the Dead']) {
+    assert.equal(numericish(value), false, `${value} should take the category form`);
+  }
+});
+
+test('field-name autocomplete offers keys already used anywhere', () => {
+  const state = foldText('[PC:Alex|HP 8|Stress 0]\n[N:Guard|Morale 3]\n[Inv:Torch|3]\n');
+  assert.deepEqual(knownFieldKeys(state), ['HP', 'Morale', 'Stress']);
+});
+
+test('every emitted add or remove line lexes as a tag', () => {
+  const alex = getElement(foldText('[PC:Alex|HP 8]\n'), 'PC', 'Alex');
+  for (const line of [
+    addLine(alex, 'Stress', '0'),
+    addLine(alex, 'Armour', '12/15'),
+    addLine(alex, 'Gear', 'a sword'),
+    addLine(alex, 'wounded', ''),
+    removeLine(alex, 'Stress'),
+  ]) {
+    const [entry] = lex(line + '\n');
+    assert.equal(entry.kind, 'tag', `${line} lexed as ${entry.kind}`);
+  }
+});
