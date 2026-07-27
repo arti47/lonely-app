@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import {
   buildLine, buildTag, nextSceneNumber, nextSessionNumber,
   sceneLine, sessionLines, suggestNames, blockOptions, SYMBOLS,
-  BASIC_SYMBOLS, usesAdvancedSymbols,
+  BASIC_SYMBOLS, usesAdvancedSymbols, suggestFields,
 } from '../src/composer.js';
 import { lex } from '../src/lonelog/lexer.js';
 import { fold } from '../src/lonelog/fold.js';
@@ -98,4 +98,23 @@ test('block options reflect what is currently open', () => {
   const open = blockOptions(foldText('[COMBAT]\n@ Slash\n'));
   assert.equal(open.closable, 'COMBAT');
   assert.ok(!open.openable.includes('COMBAT'));
+});
+
+test('a tag is built from separate fields, and empty rows are dropped', () => {
+  // The dialog collects one field per row; `|` is the builder's business.
+  assert.equal(buildTag({ type: 'N', name: 'Jonah', fields: ['wounded', '', 'HP 8', '  '] }),
+    '[N:Jonah|wounded|HP 8]');
+  assert.equal(buildTag({ type: 'N', name: 'Jonah', fields: ['', ''] }), '[N:Jonah]');
+});
+
+test('fields autocomplete from the vocabulary this campaign already uses', () => {
+  const state = fold(lex([
+    '[N:Jonah|wounded|HP 8]',
+    '[N:Mara|friendly|Grit 2]',
+    '[PC:Alex|HP 10|Stress 1]',
+  ].join('\n') + '\n'));
+
+  assert.deepEqual(suggestFields(state, 'N'), ['Grit', 'HP', 'friendly', 'wounded']);
+  assert.deepEqual(suggestFields(state, 'PC'), ['HP', 'Stress']);
+  assert.deepEqual(suggestFields(state, 'F'), [], 'a type with no elements suggests nothing');
 });

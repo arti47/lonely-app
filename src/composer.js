@@ -111,6 +111,21 @@ export function suggestNames(state, type) {
   return elementsOfType(state, type).map((e) => e.name).sort();
 }
 
+/**
+ * Field text already used on this type of element — stat keys and flags — so a
+ * campaign's own vocabulary is offered rather than typed again. A stat is
+ * suggested by key alone (`HP`), since its value is what is about to change.
+ * @param {object} state @param {string} type
+ */
+export function suggestFields(state, type) {
+  const seen = new Set();
+  for (const element of elementsOfType(state, type)) {
+    for (const key of element.fields.keys()) seen.add(key);
+    for (const flag of element.flags.keys()) seen.add(flag);
+  }
+  return [...seen].filter((s) => String(s).trim()).sort();
+}
+
 /** Block names not currently open, and the one that is (combat §1, wargaming §1). */
 export function blockOptions(state) {
   const open = (state?.blockStack ?? []).map((b) => b.name);
@@ -296,24 +311,91 @@ async function tagDialog(state) {
   const nameInput = /** @type {HTMLInputElement} */ (el('input', {
     class: 'input', type: 'text', id: 'tag-name', list: listId, autocomplete: 'off',
   }));
-  const fieldsInput = /** @type {HTMLInputElement} */ (el('input', {
-    class: 'input', type: 'text', id: 'tag-fields',
-    placeholder: 'wounded | HP 8   (separate fields with |)',
-  }));
+  // One row per field. The `|` separator is the notation's business, not the
+  // writer's — it gets added when the tag is built.
+  const fieldListId = 'tag-field-options';
+  const fieldList = el('datalist', { id: fieldListId });
+  const rowsHost = el('div', { class: 'field-rows' });
+  /** @type {HTMLInputElement[]} */
+  let fieldInputs = [];
 
-  function refreshNames() {
+  const readFields = () => fieldInputs.map((input) => input.value);
+
+  const preview = el('code', { class: 'preview-line', id: 'tag-preview' });
+
+  function updatePreview() {
+    clear(preview);
+    preview.append(buildTag({
+      type: typeSelect.value,
+      name: nameInput.value.trim() || 'Name',
+      fields: readFields(),
+    }));
+  }
+
+  function drawRows(values) {
+    clear(rowsHost);
+    fieldInputs = [];
+    const list = values.length ? values : [''];
+
+    list.forEach((value, index) => {
+      const input = /** @type {HTMLInputElement} */ (el('input', {
+        class: 'input', type: 'text', value,
+        id: index === 0 ? 'tag-fields' : null,
+        list: fieldListId, autocomplete: 'off',
+        'aria-label': `Field ${index + 1}`,
+        placeholder: index === 0 ? 'wounded' : 'HP 8',
+        oninput: updatePreview,
+      }));
+      fieldInputs.push(input);
+
+      rowsHost.append(el('div', { class: 'field-row-item' }, [
+        input,
+        el('button', {
+          class: 'btn btn-tiny', type: 'button',
+          'aria-label': `Remove field ${index + 1}`,
+          disabled: list.length === 1 && !value,
+          onclick: () => {
+            const next = readFields();
+            next.splice(index, 1);
+            drawRows(next);
+            updatePreview();
+          },
+        }, ['×']),
+      ]));
+    });
+
+    rowsHost.append(el('button', {
+      class: 'btn btn-small', type: 'button', id: 'tag-add-field',
+      onclick: () => {
+        drawRows([...readFields(), '']);
+        fieldInputs[fieldInputs.length - 1]?.focus();
+        updatePreview();
+      },
+    }, ['+ Add field']));
+  }
+
+  function refreshSuggestions() {
     clear(datalist);
     for (const name of suggestNames(state, typeSelect.value)) {
       datalist.append(el('option', { value: name }));
     }
+    clear(fieldList);
+    for (const field of suggestFields(state, typeSelect.value)) {
+      fieldList.append(el('option', { value: field }));
+    }
   }
-  typeSelect.addEventListener('change', refreshNames);
-  refreshNames();
+  typeSelect.addEventListener('change', () => { refreshSuggestions(); updatePreview(); });
+  nameInput.addEventListener('input', updatePreview);
+  refreshSuggestions();
+  drawRows(['']);
+  updatePreview();
 
   const body = el('div', { class: 'form' }, [
     el('label', { class: 'field-label', for: 'tag-type' }, ['Type']), typeSelect,
     el('label', { class: 'field-label', for: 'tag-name' }, ['Name']), nameInput, datalist,
-    el('label', { class: 'field-label', for: 'tag-fields' }, ['Fields']), fieldsInput,
+    el('label', { class: 'field-label', for: 'tag-fields' }, ['Fields']), rowsHost, fieldList,
+    el('p', { class: 'hint' }, ['One field per row — a flag like “wounded”, or a stat like “HP 8”.']),
+    preview,
     el('p', { class: 'hint' }, ['Existing names autocomplete, so an element stays one element.']),
   ]);
 
@@ -327,9 +409,5 @@ async function tagDialog(state) {
   const name = nameInput.value.trim();
   if (!name) { showToast('A tag needs a name.', { tone: 'error' }); return null; }
 
-  return buildTag({
-    type: typeSelect.value,
-    name,
-    fields: fieldsInput.value.split('|'),
-  });
+  return buildTag({ type: typeSelect.value, name, fields: readFields() });
 }

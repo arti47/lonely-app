@@ -232,6 +232,12 @@ p { margin: 0 0 12px; }
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 
+/* One row per tag field, so `|` is never typed by hand. */
+.field-rows { display: grid; gap: 6px; }
+.field-row-item { display: flex; gap: 6px; align-items: center; }
+.field-row-item .input { flex: 1 1 auto; min-width: 0; }
+.field-row-item .btn-tiny { flex: 0 0 auto; }
+
 /* The roll drawer is the shared modal presenting as a bottom sheet (F6). */
 .modal-sheet { width: min(560px, 100%); max-height: 88dvh; }
 .chip {

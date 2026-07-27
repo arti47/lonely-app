@@ -375,9 +375,42 @@ try {
     tagChooser.values.includes('N') && tagChooser.values.includes('Inv'),
     JSON.stringify(tagChooser.values));
 
+  // Fields are separate rows: the `|` separator is never typed by hand.
+  const fieldRows = await s.evaluate(`(async () => {
+    const type = (v) => { const el = document.querySelector('#tag-type'); el.value = v; el.dispatchEvent(new Event('change', { bubbles: true })); };
+    const set = (input, value) => { input.value = value; input.dispatchEvent(new Event('input', { bubbles: true })); };
+    type('N');
+    set(document.querySelector('#tag-name'), 'Jonah');
+
+    const rows = () => [...document.querySelectorAll('.field-rows input')];
+    set(rows()[0], 'wounded');
+    document.querySelector('#tag-add-field').click();
+    await new Promise(r => setTimeout(r, 120));
+    set(rows()[1], 'HP 8');
+    document.querySelector('#tag-add-field').click();
+    await new Promise(r => setTimeout(r, 120));
+
+    const before = { count: rows().length, preview: document.querySelector('#tag-preview')?.textContent };
+    // A row dropped again must leave the others alone.
+    [...document.querySelectorAll('.field-row-item .btn-tiny')][2].click();
+    await new Promise(r => setTimeout(r, 120));
+
+    return {
+      ...before,
+      after: rows().length,
+      preview2: document.querySelector('#tag-preview')?.textContent,
+      values: rows().map(i => i.value),
+      typed: rows().some(i => i.value.includes('|')),
+    };
+  })()`);
+  check('each field gets its own row, with a live preview of the tag',
+    fieldRows.count === 3 && fieldRows.after === 2
+      && fieldRows.preview === '[N:Jonah|wounded|HP 8]'
+      && fieldRows.preview2 === '[N:Jonah|wounded|HP 8]'
+      && fieldRows.typed === false,
+    JSON.stringify(fieldRows));
+
   const inserted = await s.evaluate(`(async () => {
-    document.querySelector('#tag-type').value = 'N';
-    document.querySelector('#tag-name').value = 'Jonah';
     [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Insert').click();
     await new Promise(r => setTimeout(r, 300));
     const input = document.querySelector('#composer-input');
@@ -385,8 +418,8 @@ try {
     input.value = '';
     return value;
   })()`);
-  check('choosing a type by its word still writes the notation',
-    inserted === '[N:Jonah]', JSON.stringify(inserted));
+  check('inserting joins the rows into one canonical tag',
+    inserted === '[N:Jonah|wounded|HP 8]', JSON.stringify(inserted));
 
   // F5: the strip is one line, and opens to the full chip set.
   const strip = await s.evaluate(`(() => {
