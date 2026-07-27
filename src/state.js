@@ -256,13 +256,17 @@ export function renderStateHeader(state, onTrace, lifecycle = {}) {
 
   // Scene and session are the spine of a session and belong with the state they
   // move, not buried in a row of six equal-weight composer tools (D12).
+  //
+  // Session first, then Scene: a session contains scenes, it is the thing you
+  // start before anything else — the getting-started checklist opens by saying
+  // so — and the strip's own summary already reads `Session 2 · S5`.
   const controls = el('div', { class: 'state-lifecycle' }, [
-    lifecycle.onScene ? el('button', {
-      class: 'btn btn-tiny', type: 'button', onclick: () => lifecycle.onScene(),
-    }, ['Scene']) : null,
     lifecycle.onSession ? el('button', {
       class: 'btn btn-tiny', type: 'button', onclick: () => lifecycle.onSession(),
     }, ['Session…']) : null,
+    lifecycle.onScene ? el('button', {
+      class: 'btn btn-tiny', type: 'button', onclick: () => lifecycle.onScene(),
+    }, ['Scene']) : null,
   ].filter(Boolean));
 
   function draw() {

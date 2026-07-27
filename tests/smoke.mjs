@@ -437,8 +437,9 @@ try {
   check('the status strip is one line and starts collapsed',
     strip.height <= 44 && strip.chips === 0 && strip.expanded === 'false' && !!strip.text.trim(),
     JSON.stringify(strip));
-  check('scene and session live in the strip, not the composer tools',
-    strip.lifecycle.join(',') === 'Scene,Session…', JSON.stringify(strip.lifecycle));
+  // Session first: a session contains scenes, and it is what you start first.
+  check('the strip carries session then scene, in that order',
+    strip.lifecycle.join(',') === 'Session…,Scene', JSON.stringify(strip.lifecycle));
 
   await s.evaluate(`(document.querySelector('#screen .state-summary').click(),
     new Promise(r => setTimeout(r, 200)))`);
