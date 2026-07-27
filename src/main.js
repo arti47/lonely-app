@@ -1,6 +1,8 @@
 /** Entry point (CLAUDE.md §3.1). */
 
-import { register, start, go, parseHash, rememberCampaign, currentCampaign } from './router.js';
+import {
+  register, start, go, parseHash, hashFor, rememberCampaign, currentCampaign,
+} from './router.js';
 import {
   campaignsScreen, logScreen, stateScreen, resolveScreen, referenceScreen, settingsScreen,
 } from './screens.js';
@@ -30,8 +32,13 @@ for (const link of $$('[data-nav]')) {
   link.addEventListener('click', (e) => {
     e.preventDefault();
     const { params } = parseHash();
-    if (link.dataset.keepId === 'false') { go(link.dataset.nav, {}); return; }
-    go(link.dataset.nav, { id: params.id ?? currentCampaign() });
+    const target = link.dataset.keepId === 'false'
+      ? {}
+      : { id: params.id ?? currentCampaign() };
+    // Tapping the tab you are already on must not re-render: it would throw
+    // away whatever is half-typed in the composer.
+    if (location.hash === hashFor(link.dataset.nav, target)) return;
+    go(link.dataset.nav, target);
   });
 }
 

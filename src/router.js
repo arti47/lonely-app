@@ -57,10 +57,25 @@ export function parseHash(hash = location.hash) {
   };
 }
 
-export function go(name, params = {}) {
+/** The hash a `go()` with these arguments would produce. */
+export function hashFor(name, params = {}) {
   let suffix = params.id ? `/${params.id}` : '';
   if (params.id && params.line != null) suffix += `/${params.line}`;
-  location.hash = `#/${name}${suffix}`;
+  return `#/${name}${suffix}`;
+}
+
+/**
+ * Navigate, or re-render if we are already there.
+ *
+ * Setting `location.hash` to its current value fires no `hashchange`, so a
+ * screen that acted on its own data and then sent you "back" to itself — delete
+ * a campaign from the campaign list — left the stale render on screen until you
+ * visited another tab and came back.
+ */
+export function go(name, params = {}) {
+  const next = hashFor(name, params);
+  if (location.hash === next) { render(); return; }
+  location.hash = next;
 }
 
 export async function render() {

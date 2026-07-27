@@ -1070,6 +1070,45 @@ try {
     }
   }
 
+  // --- A screen that acts on its own data re-renders in place ---
+  await s.evaluate(`(async () => {
+    const store = await import('${base}/src/store.js');
+    await store.campaigns.create('Doomed Campaign');
+  })()`);
+  await s.evaluate(`(location.hash = '#/campaigns', new Promise(r => setTimeout(r, 400)))`);
+  const beforeDelete = await s.evaluate('document.querySelectorAll("#screen .card").length');
+
+  const afterDelete = await s.evaluate(`(async () => {
+    const card = [...document.querySelectorAll('#screen .card')]
+      .find(c => c.textContent.includes('Doomed Campaign'));
+    [...card.querySelectorAll('button')].find(b => b.textContent === 'Delete').click();
+    await new Promise(r => setTimeout(r, 250));
+    [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Delete').click();
+    await new Promise(r => setTimeout(r, 600));
+    return {
+      cards: document.querySelectorAll('#screen .card').length,
+      names: [...document.querySelectorAll('#screen .card-title')].map(t => t.textContent),
+      hash: location.hash,
+    };
+  })()`);
+  check('deleting a campaign updates the list without leaving the screen',
+    afterDelete.cards === beforeDelete - 1
+      && !afterDelete.names.includes('Doomed Campaign')
+      && afterDelete.hash === '#/campaigns',
+    JSON.stringify({ beforeDelete, ...afterDelete }));
+
+  // Tapping the tab you are already on must not throw away a half-typed line.
+  await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 400)))`);
+  const keptDraft = await s.evaluate(`(async () => {
+    const input = document.querySelector('#composer-input');
+    input.value = 'half a thought';
+    document.querySelector('[data-nav="log"]').click();
+    await new Promise(r => setTimeout(r, 350));
+    return document.querySelector('#composer-input')?.value;
+  })()`);
+  check('re-tapping the current tab keeps what you were typing',
+    keptDraft === 'half a thought', JSON.stringify(keptDraft));
+
   // --- Phase 9 slice 3: what a first launch meets. Runs last: it empties the
   // campaign store to get the app back to its opening state.
   await s.send('Emulation.setDeviceMetricsOverride', { width: 360, height: 780, deviceScaleFactor: 1, mobile: true });
