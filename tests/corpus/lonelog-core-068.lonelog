@@ -1,1 +1,1 @@
-gen: Stars Without Number NPC d8=3,d10=7 ->
+[N:Guard|role:watchful|status:armed,alert]

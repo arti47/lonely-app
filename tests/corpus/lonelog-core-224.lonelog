@@ -1,2 +1,3 @@
-S3 @Pick lock d:15≥14 S => door opens quietly
-[N:Guard|alert]
+@ Slip out while distracted
+d: Stealth d6=6 vs TN 4 -> Success
+=> I escape into the night safely.

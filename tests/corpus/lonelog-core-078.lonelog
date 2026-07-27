@@ -1,4 +1,2 @@
-tbl: Mood -> Uncanny
-tbl: Weather [Clear, Fog, Rain, Storm]
-tbl: Weather d4=2 -> Fog
-=> A thick fog rolls in from the coast.
+[Track:Escape 3/8]
+[Track:Investigation 6/10]

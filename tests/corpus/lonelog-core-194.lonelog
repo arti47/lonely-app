@@ -1,2 +1,3 @@
-d: d20=15+Mod=2=17 vs AC 16 -> Hit
-d: d20=8+Mod=-1=7 vs DC 10 -> Fail
+@ Sneak inside to check the archives
+d: Stealth d6=5 vs TN 4 -> Success
+=> I slip inside unnoticed. [L:Library|dark|

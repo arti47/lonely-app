@@ -20,5 +20,14 @@ export function surfaced(state) {
   return ADDONS.filter((a) => state.addons?.has(a.id));
 }
 
-/** Every tag type owned by some add-on surface. */
-export const OWNED_TYPES = new Set(ADDONS.flatMap((a) => a.types));
+/**
+ * Every tag type owned by some add-on surface.
+ *
+ * A function, not a constant: the add-ons import back through `state.js` to this
+ * barrel, and reading `a.types` while the module graph is still initialising
+ * throws on whichever add-on is mid-evaluation. Deferring to call time makes the
+ * import order irrelevant.
+ */
+export function ownedTypes() {
+  return new Set(ADDONS.flatMap((a) => a.types));
+}

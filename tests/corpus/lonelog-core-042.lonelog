@@ -1,3 +1,2 @@
-[N:Jonah|friendly|injured]
-[N:Guard|watchful|armed]
-[N:Merchant|suspicious]
+? What does the oracle reveal about my enemy?
+gen: Mythic Event d100=78+d100=34 -> NPC

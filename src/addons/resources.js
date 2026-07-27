@@ -71,7 +71,11 @@ export function snapshotLines(state) {
     if (stats.length) lines.push(tag(pc, stats));
   }
   for (const w of elementsOfType(state, 'Wealth')) {
-    lines.push(tag(w, [], w.value ? { kind: 'value', value: w.value.value } : null));
+    // One tag may hold several currencies — `[Wealth:Gold 52|Silver 8]`
+    // (resources §5). Restating only the head would quietly drop every currency
+    // after the first, which is the one thing a snapshot must not do.
+    const others = [...w.fields].map(([k, v]) => field({ key: k, value: v.value }));
+    lines.push(tag(w, others, w.value ? { kind: 'value', value: w.value.value } : null));
   }
   for (const item of elementsOfType(state, 'Inv')) {
     if (item.flags.has('depleted')) continue;

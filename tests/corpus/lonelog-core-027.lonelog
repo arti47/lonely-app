@@ -1,4 +1,2 @@
-? Do they see Phoebe?
-d: d100=60 vs 35 (Unlikely) -> No
-=> Distracted, but one guard lingers.
-[N:Guard|watchful]
+d: Stealth d6=5 vs TN 4 -> Success
+=> We're inside without raising the alarm.

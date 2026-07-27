@@ -90,6 +90,7 @@ Recorded from user Q&A. These are settled; do not re-litigate.
 | `jsconfig.json` | `tsc --checkJs` config for the JSDoc typecheck |
 | `tests/` + `package.json` | Dev-only regression harness (`npm test`): `*.test.js` unit tests, `corpus/` spec examples, `smoke.mjs` headless-browser run, `typecheck.mjs`, `extract-corpus.mjs`. The only devDependency is `typescript`, and it is optional. `node_modules` gitignored; not in the SW app shell |
 | `docs/spec/*.md` | Vendored Lonelog specs — upstream copies, never edited (§10) |
+| `lonelog/*.md` | Upstream drop as received. The five files matching `docs/spec/` are byte-identical; `cards-addon.md`, `dice-notation-addon.md` and `addon-guidelines.md` are further official documents this app does **not** implement (out of scope until vendored and balloted through §8.1) |
 | `docs/spec-review.md` | Catalogued spec defects; source of the lint rules |
 | `docs/audit.md` | §11 conformance audit: findings, fixes, verified-clean list |
 | `docs/design.md` | Rationale and reasoning. Non-canonical — this file wins |
@@ -116,7 +117,7 @@ One module per responsibility; explicit `import`/`export`, nothing through
 | `store.js` | ✅ IndexedDB persistence, markdown + JSON export/import, File System Access binding |
 | `composer.js` | ✅ Symbol-first entry: line kinds, tag builder (one row per field), autocomplete |
 | `logview.js` | ✅ Transcript rendering, editing, truncation-undo |
-| `state.js` | ✅ State pane: folded PC sheet, NPC/location index, threads, clocks; persistent state header; shared tag-line builders reused by the add-on surfaces |
+| `state.js` | ✅ State pane: folded PC sheet, NPC/location index, threads, clocks; persistent status strip; shared tag-line builders and `currentFlag` reused by the add-on surfaces |
 | `addons/index.js` | ✅ Add-on barrel; `surfaced(state)` decides which panels appear |
 | `resolve.js` | ✅ Roll entry, oracle lookup, user tables |
 | `addons/combat.js` | ✅ `[COMBAT]`, `Rd#`, `[F:]` surfaces |
@@ -371,7 +372,7 @@ reading and add a lint rule; do not edit the vendored spec (§10).
 - [x] T24 Campaign header — YAML front matter + analog block (§5.1)
 - [x] T25 Session header — digital + analog (§5.2)
 - [x] T26 Indentation insignificance (§2.3)
-- [x] T27 Digital ↔ analog equivalence round-trip (§2.4)
+- [x] T27 Digital ↔ analog equivalence: both forms of one log fold to the same state (§2.4, §5.2.1–2); `renderForm` converts structural blocks between forms — it does not rewrite headers
 
 **Combat** (`docs/spec/addon-combat.md`)
 
@@ -581,12 +582,14 @@ re-litigate them.
 - **Analog ↔ digital equivalence** in both directions for every block type.
 - Document findings as a numbered work-list (**Rule / Target / Fix / Why**),
   close each with a regression check, and record what was **verified clean** so
-  future audits don't re-litigate it. **First pass complete — `docs/audit.md`.**
+  future audits don't re-litigate it. **Two passes complete — `docs/audit.md`:**
+  A1–A6 on the fold, B1–B8 on fidelity to the official documents.
 
 ## 12. Changelog
 
 | Date | Change | Verification | Cache |
 |---|---|---|---|
+| 2026-07-27 | **Second audit pass — fidelity to the official documents** (`docs/audit.md` B1–B8). Eight findings, all fixed and closed by `tests/fidelity.test.js`, which quotes the specs' own examples. The serious one: core §5.3's *digital* scene marker is a markdown heading (`### S1 *…*`), and the heading rule claimed the line first — so a log written the way the specs write them folded with **no scenes at all**, no checkpoints, the composer stuck re-emitting `S1`, and combat §1.1's in-header block never opening. Also: roll context without a category prefix read as stage direction (§4.1.9); unit and position vocabularies matched case-sensitively, so the specs' own lowercase `wavering` accumulated instead of transitioning; the `[RESOURCES]` snapshot dropped every currency after the first; the reference taught a `PC (Name):` dialogue form no spec defines; digital and analog session titles folded differently, so T27's equivalence was false; and the add-on barrel threw if an add-on was imported before it | 263 unit tests (15 new); corpus rebuilt 377 → 456 snippets after finding the harvester read only fenced and blockquoted examples — the plain-text forms where B1 had been hiding since Phase 1; browser run green | `lonely-v18` |
 | 2026-07-26 | The tag builder had one Fields box and asked the writer to type `|` between fields — the separator is the notation's business, not theirs, and on a phone that pipe is two keyboard layers down. Fields are now one row each, with **+ Add field**, a `×` per row, and a live preview of the tag being built. Field text autocompletes from the vocabulary the campaign already uses: stat keys and flags already folded onto that type of element | 248 unit tests (empty rows dropped, suggestions drawn from the fold); browser check builds `[N:Jonah\|wounded\|HP 8]` through the rows, drops a row without disturbing the others, and asserts no input ever contains a `\|` | `lonely-v17` |
 | 2026-07-26 | **Click-to-update.** A deploy used to reach an open page only by luck: the worker called `skipWaiting()` on install, so it seized control mid-session and the page could only say "reload to finish" — a message with nothing to press. The worker now waits; `update.js` notices it, offers *A new version is ready* with an **Update** button, and applies it by posting `SKIP_WAITING`, reloading on `controllerchange`. A long-running PWA re-checks every 30 minutes and whenever it becomes visible, since an installed app may never navigate again and nothing else would ask. `showToast` gained an optional action button (and a dismiss), Settings gained *Check for updates* | Browser check drives the whole flow: the smoke server publishes a byte-different worker — what a push to GitHub looks like — then asserts the button appears, that the session is *not* reloaded while it waits, and that tapping it applies the worker and reloads | `lonely-v16` |
 | 2026-07-26 | The tag chooser listed bare notation codes — `PC N L E Thread Clock Track Timer F R Inv Wealth Unit Force Scenario` — which is a quiz, not a menu. Types now read as words and group by where they come from: *NPC (N)* under Core, *Combatant (F)* under Combat. `TAG_TYPES` lives beside the reference entries so a type's name, its group and its explanation stay together; the option value is still the notation, so nothing downstream changed | 246 unit tests, including that the chooser offers exactly the types the engine parses and cites an entry that exists; browser check that the words appear, the groups appear, and picking one still writes `[N:Jonah]` | `lonely-v15` |

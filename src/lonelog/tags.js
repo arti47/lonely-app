@@ -65,7 +65,12 @@ export function classifyBracket(inner, ctx = {}) {
   if (!s) return 'annotation';
   const m = /^#?\s*([^:|]+?)\s*:/.exec(s);
   if (!m) {
-    // No colon: movement `[Far->Close]`, stage direction `[whispers]`.
+    // No colon. Inside a `d:` line this is roll context — the spec's own first
+    // examples carry no category prefix at all (core §4.1.9:
+    // `d: Investigate 2d6 [Be kind to others, Naive] = 8 -> Mixed`). Anywhere
+    // else it is an annotation: movement `[Far->Close]`, stage direction
+    // `[whispers]`.
+    if (ctx.diceLine && ctx.beforeArrow) return 'rollContext';
     return 'annotation';
   }
   if (KNOWN_TAG_TYPES.has(m[1].trim().toLowerCase())) return 'tag';

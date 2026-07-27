@@ -1,10 +1,1 @@
-[Track:Ritual Components 0/3]
-S12.1 *Herb shop, morning*
-@ Buy sacred herbs
-d: Persuasion d6=5 vs TN 4 -> Success
-=> The herbalist gives me a discount.
-[Track:Ritual Components 1/3]
-[PC:Gold-5]
-S12.2 *Blacksmith, afternoon*
-@ Obtain silver dagger
-? Is it in stock?
+=> She mentioned it once, briefly, then

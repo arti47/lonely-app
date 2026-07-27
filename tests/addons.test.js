@@ -11,7 +11,7 @@ import assert from 'node:assert/strict';
 
 import { lex } from '../src/lonelog/lexer.js';
 import { fold, getElement } from '../src/lonelog/fold.js';
-import { ADDONS, surfaced, OWNED_TYPES } from '../src/addons/index.js';
+import { ADDONS, surfaced, ownedTypes } from '../src/addons/index.js';
 import * as combat from '../src/addons/combat.js';
 import * as resources from '../src/addons/resources.js';
 import * as dungeon from '../src/addons/dungeon.js';
@@ -58,7 +58,7 @@ test('every owned type belongs to exactly one surface', () => {
       seen.add(type);
     }
   }
-  assert.deepEqual([...seen].sort(), [...OWNED_TYPES].sort());
+  assert.deepEqual([...seen].sort(), [...ownedTypes()].sort());
 });
 
 /* -------------------------------- combat --------------------------------- */

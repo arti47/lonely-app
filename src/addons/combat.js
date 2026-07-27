@@ -9,7 +9,7 @@
 import { el, clear } from '../core.js';
 import { promptModal } from '../ui.js';
 import { elementsOfType } from '../lonelog/fold.js';
-import { deltaLine, flagLine, transitionLine, countLine, tag, field } from '../state.js';
+import { deltaLine, flagLine, transitionLine, countLine, tag, field, currentFlag } from '../state.js';
 
 export const id = 'combat';
 export const reference = 'addon-combat';
@@ -68,7 +68,7 @@ function hpKey(foe) {
 
 /** `[F:Thug A|Far -> Close]` (combat §3.3). */
 export function moveLine(foe, to) {
-  const from = POSITIONS.find((p) => foe.flags.has(p));
+  const from = currentFlag(foe, POSITIONS);
   return from ? transitionLine(foe, from, to) : flagLine(foe, to, 'add');
 }
 
@@ -120,9 +120,9 @@ export function render(host, state, ctx) {
 
 function foeRow(foe, ctx) {
   const down = foe.flags.has('dead') || foe.flags.has('fled');
-  const position = POSITIONS.find((p) => foe.flags.has(p));
+  const position = currentFlag(foe, POSITIONS);
   const stats = [...foe.fields].map(([k, v]) => `${k} ${v.value}`);
-  const other = [...foe.flags.keys()].filter((f) => !POSITIONS.includes(f));
+  const other = [...foe.flags.keys()].filter((f) => f !== position);
 
   const detail = [
     foe.count ? `x${foe.count.value}` : null,

@@ -12,7 +12,7 @@
 import { el } from '../core.js';
 import { promptModal } from '../ui.js';
 import { elementsOfType } from '../lonelog/fold.js';
-import { flagLine, transitionLine, countLine, tag, field } from '../state.js';
+import { flagLine, transitionLine, countLine, tag, field, currentFlag } from '../state.js';
 import { pick } from './combat.js';
 
 export const id = 'wargaming';
@@ -52,13 +52,13 @@ export function casualtyLine(unit, size) {
 
 /** `[Unit:Orc Mob|full -> half]` for abstract sizes. */
 export function sizeLine(unit, to) {
-  const from = ABSTRACT_SIZE.find((s) => unit.flags.has(s));
+  const from = currentFlag(unit, ABSTRACT_SIZE);
   return from ? transitionLine(unit, from, to) : flagLine(unit, to, 'add');
 }
 
 /** `[Unit:Rifles|Steady -> Broken]` (wargaming §2). */
 export function statusLine(unit, to) {
-  const from = UNIT_STATUS.find((s) => unit.flags.has(s));
+  const from = currentFlag(unit, UNIT_STATUS);
   return from ? transitionLine(unit, from, to) : flagLine(unit, to, 'add');
 }
 
@@ -157,9 +157,9 @@ export function render(host, state, ctx) {
 }
 
 function unitRow(unit, ctx) {
-  const out = unit.flags.has('Routed') || unit.flags.has('destroyed');
-  const status = UNIT_STATUS.find((s) => unit.flags.has(s));
-  const size = ABSTRACT_SIZE.find((s) => unit.flags.has(s));
+  const out = !!currentFlag(unit, ['Routed', 'destroyed']);
+  const status = currentFlag(unit, UNIT_STATUS);
+  const size = currentFlag(unit, ABSTRACT_SIZE);
   const heat = unit.fields.get('Heat')?.value;
   const band = heatBand(heat);
 

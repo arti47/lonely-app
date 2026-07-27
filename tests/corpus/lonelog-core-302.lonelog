@@ -1,0 +1,2 @@
+S3 @Pick lock d:15≥14 S => door opens quietly
+[N:Guard|alert]

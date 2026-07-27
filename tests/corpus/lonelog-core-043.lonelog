@@ -1,3 +1,1 @@
-[L:Lighthouse|ruined|stormy]
-[L:Library|dark|quiet]
-[L:Tavern|crowded|noisy]
+tbl: and gen: handle table-based and generator-based oracle resolution respectively.

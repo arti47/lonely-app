@@ -1,1 +1,4 @@
-d: 4d6=6,5,4,2 (take highest=6) -> Critical
+@ Sneak past the guards
+d: Stealth d6=2 vs TN 4 -> Fail
+=> My foot kicks a barrel. [E:AlertClock 2/6]
+? Do they see me?

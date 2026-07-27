@@ -1,1 +1,4 @@
-[PC:Alex|HP+3|Stress-1] (multiple changes)
+@ Sneak past the guards
+d: Stealth 2≤4 -> Fail
+=> My foot kicks a barrel. [E:AlertClock 2/6]
+? Do they see me?

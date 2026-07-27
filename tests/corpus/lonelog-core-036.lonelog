@@ -1,4 +1,4 @@
-d: Lockpicking 5≥4 -> Success
-=> The door opens
-=> But the hinges squeal loudly
-=> [E:AlertClock 1/6]
+? Do they see Phoebe?
+d: d100=60 vs 35 (Unlikely) -> No
+=> Distracted, but one guard lingers.
+[N:Guard|watchful]

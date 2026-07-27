@@ -110,9 +110,25 @@ examples.
 
 ## 9. Core §10.4 add-on table is stale
 
-Lists three add-ons (combat, dungeon, resources). The Solo Wargaming Add-on
-v1.0.0 exists and its credits cite the Combat Add-on's scope note as its mandate,
-but core never lists it. Core is v1.5.0; §10.4 has not been updated since v1.2.0.
+Lists three add-ons (combat, dungeon, resources). Core is v1.5.0; §10.4 has not
+been updated since v1.2.0, and at least three further official add-ons now exist
+that it never mentions:
+
+- **Solo Wargaming Add-on v1.0.0** — its credits cite the Combat Add-on's scope
+  note as its mandate.
+- **Card Notation Add-on v1.0.0** — compact identities for playing cards, tarot
+  and oracle decks.
+- **Dice Notation Add-on v1.0.0** — a grammar for what goes inside `d:`.
+
+§10.4 also points at `addons/combat.md`-style paths that do not match how the
+add-ons are actually distributed.
+
+**Fix:** regenerate the table from the published add-on set, or drop the table
+and link the community library, which §10.4 already does in its closing line.
+
+*This repository vendors and implements the first four (core plus combat,
+dungeon, resources, wargaming). Cards and Dice Notation are present under
+`lonelog/` but unimplemented — see CLAUDE.md §3.*
 
 ## 10. Minor
 

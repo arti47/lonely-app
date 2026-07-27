@@ -1,2 +1,1 @@
-@ Knock him out
-d: 6≥5 S => [N:Guard|unconscious]
+S1 @Sneak d:4≥5 F => noise [E:Alert 1/6] ?

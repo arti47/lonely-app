@@ -1,2 +1,3 @@
-? Does the guard notice me? (Unlikely)
-d: d100=60 vs 35 -> No
+d: d20+Lockpicking=17 vs DC 15 -> Success
+d: 2d6=8 vs TN 7 -> Success
+d: d100=42 -> Partial success (using result

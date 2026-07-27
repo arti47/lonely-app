@@ -133,6 +133,34 @@ export function setLine(element, key, value) {
 /** Thread states offered in the UI (core §4.1.4); custom states stay allowed. */
 export const THREAD_STATES = ['Open', 'Closed', 'Abandoned'];
 
+/**
+ * Which of a vocabulary's states this element is currently in.
+ *
+ * Two things matter and both bit us. The specs write their own vocabularies in
+ * mixed case — wargaming §2 tabulates `Wavering` and `Broken`, then its examples
+ * write `[Unit:Rifles|x8|wavering]` — so matching must ignore case. And an
+ * element may carry several of them at once (a log that added `half` while
+ * `full` was still set), so the answer is the one set *last*, not the first in
+ * the vocabulary.
+ *
+ * Returns the flag exactly as the log spells it, because that is what a
+ * transition has to name in order to clear it.
+ *
+ * @param {object} element folded element
+ * @param {string[]} vocabulary
+ * @returns {string|null}
+ */
+export function currentFlag(element, vocabulary) {
+  const known = new Map(vocabulary.map((v) => [v.toLowerCase(), v]));
+  let best = null;
+  let bestLine = -Infinity;
+  for (const [flag, line] of element.flags ?? []) {
+    if (!known.has(String(flag).trim().toLowerCase())) continue;
+    if (line >= bestLine) { best = flag; bestLine = line; }
+  }
+  return best;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Rendering                                                                   */
 /* -------------------------------------------------------------------------- */

@@ -1,1 +1,4 @@
-S14 *Lighthouse entrance, both reunited*
+S8 *Lighthouse keeper's quarters*
+@ Search the desk for clues
+d: Investigation d6=6 vs TN 4 -> Success
+=> I find a faded photograph. It's... my

@@ -1,1 +1,4 @@
-[PC:Alex|HP 8|Stress 0|
+d: Lockpicking 5≥4 -> Success
+=> The door opens
+=> But the hinges squeal loudly
+=> [E:AlertClock 1/6]

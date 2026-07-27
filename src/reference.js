@@ -92,8 +92,8 @@ export const ENTRIES = [
   {
     id: 'dialogue', title: 'Dialogue', group: 'Narrative', syntax: 'N (Name): "..."',
     summary: 'Spoken lines worth keeping. `PC:` for you, `N (Name):` for anyone else.',
-    spec: 'core §4.4',
-    examples: ['N (Guard): "Who\'s there?"', 'PC (Alex): "He\'ll be back."'],
+    spec: 'core §4.4, Appendix A.7',
+    examples: ['N (Guard): "Who\'s there?"', 'PC: "Stay calm... just stay calm."'],
     keywords: ['speech', 'talk', 'said'],
   },
   {

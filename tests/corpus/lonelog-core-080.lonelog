@@ -1,2 +1,2 @@
-tbl: Theme -> Sacrifice
-=> The scene will center on what someone is
+tbl: d100=42 -> "A broken sword"
+tbl: d20=15 -> "The merchant is nervous"

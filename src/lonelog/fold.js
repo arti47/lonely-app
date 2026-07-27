@@ -93,7 +93,7 @@ function applyEntry(state, e) {
       return;
     case 'heading': {
       const m = RE_SESSION.exec(e.title ?? '');
-      if (m) state.sessions.push({ number: Number(m[1]), title: e.title, line: e.line });
+      if (m) state.sessions.push({ number: Number(m[1]), title: sessionTitle(e.title), line: e.line });
       return;
     }
     case 'tbl': {
@@ -150,7 +150,7 @@ function applyEntry(state, e) {
       const c = RE_CAMPAIGN.exec(e.text ?? '');
       if (c) { state.meta.title = { value: c[1], line: e.line }; return; }
       const s = RE_SESSION.exec(e.text ?? '');
-      if (s) state.sessions.push({ number: Number(s[1]), title: e.text, line: e.line });
+      if (s) state.sessions.push({ number: Number(s[1]), title: sessionTitle(e.text), line: e.line });
       break;
     }
     default: break;
@@ -221,6 +221,16 @@ function applyMarker(state, e) {
     state.marker.turn = m;
     state.addons.add('wargaming');
   }
+}
+
+/**
+ * The session's name without the decoration of whichever form wrote it — the
+ * digital `## Session 1` and the analog `=== Session 1 ===` are the same
+ * session (core §5.2.1 vs §5.2.2), so they must fold to the same title.
+ * @param {string} raw
+ */
+function sessionTitle(raw = '') {
+  return String(raw).replace(/^\s*=+\s*/, '').replace(/\s*=+\s*$/, '').trim();
 }
 
 function sceneContext(rest = '') {

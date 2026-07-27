@@ -1,0 +1,6 @@
+d: Lockpicking 5≥4 -> Success
+=> The door opens
+=> But the hinges squeal loudly
+=> Guards in the next room hear it
+[E:AlertClock 1/6]
+=> One starts walking this way [N:Guard|

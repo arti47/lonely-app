@@ -1,6 +1,5 @@
-=> Light flickers in tower window.
-[L:Lighthouse|ruined|haunted]
-S4 *Inside lighthouse foyer*
-@ Search floor for signs
-d: Investigation d6=6 vs TN 4 -> Success
-=> Fresh footprints in dust. [Thread:Who uses
+=> Blizzard hits. The pass is blocked!
+[Clock:Supplies Dwindle 2/4]
+@ Find shelter
+d: Survival d6=5 vs TN 5 -> Success
+=> I locate a cave. [L:Mountain Cave|shelter|

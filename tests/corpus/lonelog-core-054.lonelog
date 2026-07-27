@@ -1,1 +1,3 @@
-[N:Guard|role:watchful|status:armed,alert]
+[N:Jonah|friendly|injured]
+[N:Guard|watchful|armed]
+[N:Merchant|suspicious]

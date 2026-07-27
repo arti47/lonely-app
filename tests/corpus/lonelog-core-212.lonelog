@@ -1,6 +1,6 @@
-d: Lockpicking 5≥4 -> Success
-=> The door opens
-=> But the hinges squeal loudly
-=> Guards in the next room hear it
-[E:AlertClock 1/6]
-=> One starts walking this way [N:Guard|
+d: Investigation d6=6 vs TN 4 -> Success
+=> I find fresh footprints in the dust.
+[Thread:Who is using the lighthouse?|Open]
+tbl: d100=42 -> "A broken lantern"
+=> A cracked lantern lies near the stairs.
+[E:LighthouseClue 2/6]

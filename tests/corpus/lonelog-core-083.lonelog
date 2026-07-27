@@ -1,1 +1,3 @@
-[Thread:Torn Letter|Open]
+? What do I find in the chest?
+tbl: d100=42 -> "A broken sword"
+=> An ancient blade, snapped in two, with

@@ -121,6 +121,18 @@ export function lex(text) {
     if (!inFence) {
       const h = RE_HEADING.exec(s);
       if (h) {
+        // The digital form of a scene, round or turn marker is a markdown
+        // heading — `### S1 *School library after hours*` (core §5.3, and every
+        // digital example in §2.4 and §6). Read the marker out of the heading,
+        // or a log written the way the spec writes them folds with no scenes at
+        // all, and a block opened in a scene header never opens (combat §1.1).
+        const inner = /** @type {Record<string, any>} */ (classify(h[2], body));
+        if (inner.kind === 'marker') {
+          entries.push(/** @type {Entry} */ (
+            /** @type {unknown} */ ({ ...base, ...inner, level: h[1].length, heading: true })));
+          body = null;
+          i++; continue;
+        }
         entries.push({ ...base, kind: 'heading', level: h[1].length, title: h[2] });
         i++; continue;
       }

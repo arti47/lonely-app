@@ -1,3 +1,6 @@
-tbl: d100=42 -> "A broken lantern"
-=> Cracked lantern near stairs.
-[E:LighthouseClue 2/6]
+S8.3 *Week 3: Descending into wastes*
+@ Navigate the frozen terrain
+d: Survival d6=4 vs TN 6 -> Fail
+=> I'm lost for two days.
+[Clock:Supplies Dwindle 4/4]
+[PC:Rations depleted]
