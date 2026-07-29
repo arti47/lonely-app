@@ -628,26 +628,40 @@ p { margin: 0 0 12px; }
   color: var(--accent-ink); font-weight: 600;
 }
 
-.guide-list { list-style: none; margin: 0; padding: 0; counter-reset: guide; }
-.guide-step {
+/* One accordion per part of the app; same affordance as the Notation list. */
+.guide-list { list-style: none; margin: 0; padding: 0; }
+.guide-section {
   background: var(--paper-raised);
   border: 1px solid var(--line); border-radius: var(--radius);
-  padding: var(--pad); margin-bottom: var(--gap);
+  padding: 10px var(--pad); margin-bottom: 8px;
 }
-.guide-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
-.guide-num {
-  flex: 0 0 auto;
-  width: 26px; height: 26px; border-radius: 50%;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: var(--accent); color: var(--accent-ink);
-  font-size: 0.8rem; font-weight: 700; font-variant-numeric: tabular-nums;
+.guide-head {
+  display: flex; gap: 8px; align-items: baseline;
+  cursor: pointer; list-style: none;
 }
+.guide-head::-webkit-details-marker { display: none; }
+.guide-head::before {
+  content: '+';
+  flex: 0 0 auto; width: 1em;
+  font-family: var(--mono); color: var(--ink-soft);
+}
+.guide-section[open] > .guide-head::before { content: '−'; }
+.guide-section[open] > .guide-head { border-bottom: 1px dashed var(--line); padding-bottom: 8px; }
+.guide-head:hover .guide-title { color: var(--accent); }
 .guide-title {
-  margin: 0; font-size: 1rem; text-transform: none; letter-spacing: 0;
+  margin: 0; font-size: 0.95rem; font-weight: 600;
+  text-transform: none; letter-spacing: 0;
   color: var(--ink); flex: 1 1 auto; min-width: 0;
 }
-.guide-step p { margin: 0 0 8px; }
-.guide-step .log-preview { margin-bottom: 10px; }
+.guide-body { padding-top: 10px; }
+.guide-body p { margin: 0 0 8px; }
+.guide-steps { margin: 0 0 10px; padding-left: 1.4em; list-style: decimal; }
+.guide-steps li {
+  display: list-item; font-size: 0.9rem; line-height: 1.45;
+  padding: 0; border: 0; margin-bottom: 6px;
+}
+.guide-steps li::marker { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.guide-body .log-preview { margin-bottom: 10px; }
 
 /* --- Adding a field to a tracked object --- */
 

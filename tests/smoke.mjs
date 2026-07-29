@@ -878,15 +878,45 @@ try {
     (await s.evaluate('document.querySelector("#screen h1")?.textContent')) === 'Help');
 
   // The Guide is the default view for a newcomer.
-  check('the guide is shown first and walks through the app',
-    await s.evaluate('document.querySelectorAll("#screen .guide-step").length') >= 10,
-    String(await s.evaluate('document.querySelectorAll("#screen .guide-step").length')));
+  const guide = await s.evaluate(`(() => ({
+    sections: document.querySelectorAll('#screen .guide-section').length,
+    open: document.querySelectorAll('#screen .guide-section[open]').length,
+    first: document.querySelector('#screen .guide-title')?.textContent,
+    steps: document.querySelectorAll('#screen .guide-steps li').length,
+  }))()`);
+  check('the guide is one collapsed accordion per part of the app',
+    guide.sections >= 8 && guide.open === 0 && guide.first === 'How to play a solo session',
+    JSON.stringify(guide));
 
-  const firstStep = await s.evaluate('document.querySelector("#screen .guide-title")?.textContent');
-  check('the guide starts by making a campaign', firstStep === 'Start a campaign', JSON.stringify(firstStep));
+  // Opening a section reveals its numbered steps.
+  const opened = await s.evaluate(`(async () => {
+    const section = document.querySelector('#screen .guide-section[data-section="play"]');
+    section.querySelector('summary').click();
+    await new Promise(r => setTimeout(r, 200));
+    return { open: section.open, steps: section.querySelectorAll('.guide-steps li').length };
+  })()`);
+  check('opening a section shows its step-by-step bullets',
+    opened.open === true && opened.steps >= 3, JSON.stringify(opened));
 
-  // A step deep-links to the screen it describes.
-  await s.evaluate(`([...document.querySelectorAll('#screen .guide-step .btn')]
+  const guideToggled = await s.evaluate(`(async () => {
+    document.querySelector('#guide-toggle').click();
+    await new Promise(r => setTimeout(r, 200));
+    const all = document.querySelectorAll('#screen .guide-section').length;
+    const open = document.querySelectorAll('#screen .guide-section[open]').length;
+    document.querySelector('#guide-toggle').click();
+    await new Promise(r => setTimeout(r, 200));
+    return { all, open, after: document.querySelectorAll('#screen .guide-section[open]').length };
+  })()`);
+  check('expand all opens every section, collapse all closes them',
+    guideToggled.open === guideToggled.all && guideToggled.after === 0,
+    JSON.stringify(guideToggled));
+
+  // A section deep-links to the screen it describes.
+  await s.evaluate(`(async () => {
+    document.querySelector('#screen .guide-section[data-section="play"] summary').click();
+    await new Promise(r => setTimeout(r, 200));
+  })()`);
+  await s.evaluate(`([...document.querySelectorAll('#screen .guide-section .btn')]
     .find(b => b.textContent === 'Open Play')).click()`);
   await s.evaluate('new Promise(r => setTimeout(r, 300))');
   check('a guide step opens the screen it describes',
@@ -903,7 +933,7 @@ try {
   await s.evaluate(`(location.hash = '#/reference', new Promise(r => setTimeout(r, 350)))`);
   check('the chosen view is remembered',
     await s.evaluate('!!document.querySelector("#ref-search")')
-      && await s.evaluate('document.querySelectorAll("#screen .guide-step").length') === 0);
+      && await s.evaluate('document.querySelectorAll("#screen .guide-section").length') === 0);
 
   const allEntries = await s.evaluate('document.querySelectorAll("#screen .ref-list li").length');
   check('the reference lists every entry', allEntries > 20, String(allEntries));

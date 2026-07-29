@@ -1,74 +1,93 @@
-/** New-user guide (CLAUDE.md §8). */
+/** How-to guide (CLAUDE.md §8). One accordion section per part of the app. */
 
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { STEPS } from '../src/guide.js';
+import { SECTIONS } from '../src/guide.js';
 import { entryFor } from '../src/reference.js';
 import { lex } from '../src/lonelog/lexer.js';
 
 const ROUTES = new Set(['campaigns', 'log', 'state', 'resolve', 'reference', 'settings']);
 
-test('every step is complete and uniquely identified', () => {
+test('every section is complete and uniquely identified', () => {
   const ids = new Set();
-  for (const step of STEPS) {
-    assert.ok(!ids.has(step.id), `duplicate step ${step.id}`);
-    ids.add(step.id);
-    assert.ok(step.title?.trim(), `${step.id} has no title`);
-    assert.ok(step.body.length && step.body.every((p) => p.trim()), `${step.id} has an empty paragraph`);
+  for (const section of SECTIONS) {
+    assert.ok(!ids.has(section.id), `duplicate section ${section.id}`);
+    ids.add(section.id);
+    assert.ok(section.title?.trim(), `${section.id} has no title`);
+    assert.ok(section.blurb?.trim(), `${section.id} has no blurb`);
+    assert.ok(section.steps.length >= 3, `${section.id} has too few steps to be a how-to`);
+    assert.ok(section.steps.every((s) => s.trim()), `${section.id} has an empty step`);
   }
 });
 
-test('the guide covers the app in the order a new user meets it', () => {
-  const order = STEPS.map((s) => s.id);
-  assert.equal(order[0], 'start', 'the first step must be making a campaign');
-  for (const id of ['first-line', 'tags', 'state', 'roll', 'oracle', 'scenes', 'addons', 'keeping']) {
-    assert.ok(order.includes(id), `the guide never covers ${id}`);
+test('the guide covers every part of the app', () => {
+  const ids = SECTIONS.map((s) => s.id);
+  for (const id of ['play-loop', 'campaigns', 'play', 'sheet', 'roll', 'addons', 'keeping', 'warnings', 'install']) {
+    assert.ok(ids.includes(id), `the guide never covers ${id}`);
   }
-  assert.ok(order.indexOf('first-line') < order.indexOf('state'),
-    'you write a line before state can appear');
-  assert.ok(order.indexOf('roll') < order.indexOf('quick-rolls'),
-    'quick rolls are learned from rolls, so rolling comes first');
-});
+  assert.equal(ids[0], 'play-loop', 'how to play comes before how to drive the app');
 
-test('every step that links somewhere links to a real screen', () => {
-  for (const step of STEPS) {
-    if (!step.route) continue;
-    assert.ok(ROUTES.has(step.route), `${step.id} points at unknown route ${step.route}`);
-    assert.ok(step.routeLabel?.trim(), `${step.id} has a route with no label`);
+  // Every tab and every route with a screen behind it is explained somewhere.
+  const routes = new Set(SECTIONS.map((s) => s.route).filter(Boolean));
+  for (const route of ['campaigns', 'log', 'state', 'resolve', 'settings']) {
+    assert.ok(routes.has(route), `no section links to ${route}`);
   }
 });
 
-test('every step that cites the reference cites one that exists', () => {
-  for (const step of STEPS) {
-    if (!step.reference) continue;
-    assert.ok(entryFor(step.reference), `${step.id} points at missing entry ${step.reference}`);
+test('every section that links somewhere links to a real screen', () => {
+  for (const section of SECTIONS) {
+    if (!section.route) continue;
+    assert.ok(ROUTES.has(section.route), `${section.id} points at unknown route ${section.route}`);
+    assert.ok(section.routeLabel?.trim(), `${section.id} has a route with no label`);
+  }
+});
+
+test('every section that cites the reference cites one that exists', () => {
+  for (const section of SECTIONS) {
+    if (!section.reference) continue;
+    assert.ok(entryFor(section.reference), `${section.id} points at missing entry ${section.reference}`);
   }
 });
 
 test('every example in the guide is notation the app can read', () => {
-  for (const step of STEPS) {
-    for (const example of step.examples ?? []) {
+  for (const section of SECTIONS) {
+    for (const example of section.examples ?? []) {
       const [entry] = lex(example + '\n');
-      assert.notEqual(entry.kind, 'prose', `${step.id}: "${example}" lexed as prose`);
+      assert.notEqual(entry.kind, 'prose', `${section.id}: "${example}" lexed as prose`);
     }
   }
 });
 
-test('steps needing a campaign are exactly those pointing into one', () => {
-  for (const step of STEPS) {
-    const inCampaign = ['log', 'state', 'resolve'].includes(step.route ?? '');
-    assert.equal(!!step.needsCampaign, inCampaign,
-      `${step.id} disagrees about whether it needs a campaign`);
+test('sections needing a campaign are exactly those pointing into one', () => {
+  for (const section of SECTIONS) {
+    const inCampaign = ['log', 'state', 'resolve'].includes(section.route ?? '');
+    assert.equal(!!section.needsCampaign, inCampaign,
+      `${section.id} disagrees about whether it needs a campaign`);
   }
 });
 
+test('the play loop names the controls it tells you to tap', () => {
+  const loop = SECTIONS.find((s) => s.id === 'play-loop');
+  const text = loop.steps.join(' ');
+  for (const control of ['Scene', '@ Did', '🎲 Roll', '? Asked', '=> So', 'Tag…', 'Session…']) {
+    assert.ok(text.includes(control), `the loop never mentions ${control}`);
+  }
+  assert.ok(loop.examples.length >= 4, 'the loop needs a worked example to land');
+});
+
 test('the guide promises nothing the app does not do', () => {
-  const text = STEPS.flatMap((s) => s.body).join(' ').toLowerCase();
-  for (const claim of ['rolls for you', 'sign in', 'account', 'upload', 'cloud sync']) {
-    if (claim === 'account' || claim === 'upload') continue; // used in the negative
+  const text = SECTIONS.flatMap((s) => [s.blurb, ...s.steps]).join(' ').toLowerCase();
+  for (const claim of ['rolls for you', 'sign in', 'cloud sync']) {
     assert.ok(!text.includes(claim), `the guide claims "${claim}"`);
   }
   assert.ok(text.includes('never rolls'), 'the guide must be clear the app does not roll');
   assert.ok(text.includes('no server'), 'the guide must be clear there is no server');
+});
+
+test('the guide names no game system (D3, §9.8)', () => {
+  const text = SECTIONS.flatMap((s) => [s.blurb, ...s.steps, ...(s.examples ?? [])]).join(' ').toLowerCase();
+  for (const system of ['ironsworn', 'mythic', 'd&d', 'dungeons', 'pathfinder', 'blades in the dark']) {
+    assert.ok(!text.includes(system), `the guide names ${system}`);
+  }
 });

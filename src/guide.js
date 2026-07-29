@@ -1,48 +1,85 @@
 /**
- * Step-by-step guide for a new user (CLAUDE.md §8).
+ * How-to guide for the whole app (CLAUDE.md §8).
  *
- * Lives beside the notation reference: the Guide teaches the app in order, the
- * Reference answers "what does this symbol mean" out of order.
+ * Lives beside the notation reference: the Guide teaches what to *do*, section
+ * by section; the Reference answers "what does this symbol mean" out of order.
  *
- * Steps link to the screen they describe rather than acting for you — a guide
- * that quietly creates a campaign teaches nothing and leaves data behind.
+ * One accordion per part of the app, each opening to numbered steps. Sections
+ * link to the screen they describe rather than acting for you — a guide that
+ * quietly creates a campaign teaches nothing and leaves data behind.
+ *
+ * No per-game rules content (§9.8): the play section describes the loop this
+ * notation is built around, not any publisher's system.
  */
 
 import { el, clear } from './core.js';
 import { referenceButton } from './ui.js';
 
 /**
- * @typedef {{id:string, title:string, body:string[], examples?:string[],
- *   route?:string, routeLabel?:string, reference?:string, needsCampaign?:boolean}} Step
+ * @typedef {{id:string, title:string, blurb:string, steps:string[],
+ *   examples?:string[], route?:string, routeLabel?:string, reference?:string,
+ *   needsCampaign?:boolean}} Section
  */
 
-/** @type {Step[]} */
-export const STEPS = [
+/** @type {Section[]} */
+export const SECTIONS = [
   {
-    id: 'start',
-    title: 'Start a campaign',
-    body: [
-      'Everything lives in a campaign — one per game you are playing. Open Campaigns and tap New campaign.',
-      'Nothing else needs setting up. There is no system to choose, no character sheet to fill in, and no account. '
-      + 'The app works the same whether you are playing Ironsworn, a d20 dungeon crawl or something you invented last night.',
+    id: 'play-loop',
+    title: 'How to play a solo session',
+    blurb: 'The loop this notation is built around. It works the same whatever '
+      + 'rules you are playing, and with no rules at all.',
+    steps: [
+      'Frame the scene: where you are, when it is, and what is at stake. Tap Scene in the status strip and type that context.',
+      'Say what your character does — tap @ Did and write it. One action at a time.',
+      'If the outcome depends on your rules, roll your dice and enter them: tap 🎲 Roll, pick the shape of the comparison, type the numbers, and the app labels the result.',
+      'If instead it depends on what the world does — is anyone home, does the guard notice — tap ? Asked and answer it with the oracle or with a table.',
+      'Read the answer back into the fiction and write it down with => So. This is the part that matters; the dice are only there to surprise you.',
+      'Record what stuck: a person, a place, a clock ticking up. Tap Tag… and name it.',
+      'When the stakes are settled, tap Scene again to open the next one. When you stop for the night, tap Session… → End session.',
+    ],
+    examples: [
+      'S1 *Rooftops, before dawn*',
+      '@ Sneak past the watchman',
+      '? Is he still awake',
+      'd: d100=22 vs 50 -> Yes, but...',
+      '=> He is dozing, but the tiles are loose underfoot. [N:Watchman|dozing]',
+      '[Clock:Suspicion 1/6]',
+    ],
+    reference: 'action',
+  },
+  {
+    id: 'campaigns',
+    title: 'Campaigns — starting and keeping games',
+    blurb: 'One campaign per game you are playing. Nothing needs setting up: no '
+      + 'system to choose, no character sheet to fill in, no account.',
+    steps: [
+      'Tap New campaign and give it a name. That is the whole of the setup.',
+      'Tap a campaign to open it. Play and Sheet then appear in the bottom bar and stay pointed at it.',
+      'Never used the notation before? Tap Look at an example on the empty list — it opens a short played log you can poke at and delete.',
+      'Delete removes a campaign and its log for good; there is a confirmation first.',
+      'Settings lives here too — backups, import and export, spec warnings, theme.',
     ],
     route: 'campaigns',
     routeLabel: 'Open Campaigns',
   },
   {
-    id: 'first-line',
-    title: 'Write your first line',
-    body: [
-      'The Play screen has a row of symbols along the bottom, each labelled with what it does — '
-      + '@ Did, ? Asked, d: Rolled, => So. Tap one, type the rest of the line, and press Enter.',
-      'Those four carry a whole session. Tap ⋯ More for the rest: -> is how something turned out '
-      + 'when the dice are not worth writing down, and tbl: and gen: are tables and generators.',
-      'The “?” beside the input explains whichever symbol you have selected.',
+    id: 'play',
+    title: 'Play — writing your log',
+    blurb: 'The screen you spend the session on. Everything you write lands in '
+      + 'one plain-text file you own.',
+    steps: [
+      'Tap Session… → Start session to open a session, and Scene to open a scene inside it.',
+      'Pick a symbol, type the rest of the line, press Enter. @ Did is something you do, ? Asked is a question for the world, d: Rolled is dice, => So is what changed.',
+      'Tap ⋯ More for the other four: -> Result when the dice are not worth writing down, tbl: Table, gen: Generate, and ( ) Note for an aside to yourself.',
+      'Tap Tag… to name anything that sticks around. Fields go one per row — the app writes the notation.',
+      'The strip along the top is your live state. Tap it to open every value; tap a value to jump to the line that set it.',
+      'Undo takes back the whole of your last entry, and Restore puts it back. Tap any line to edit it or delete from there down.',
+      'Tap a row to read it, edit it, or delete from that line on. Close is the safe default.',
     ],
     examples: [
-      '@ Sneak past the guard',
-      'd: Stealth d6=5 vs TN 4 -> Success',
-      '=> I slip by unnoticed.',
+      '@ Search the shelves',
+      'd: d20+4=17 vs DC 15 -> Success',
+      '=> A loose page falls out. [N:Librarian|watchful]',
     ],
     route: 'log',
     routeLabel: 'Open Play',
@@ -50,33 +87,19 @@ export const STEPS = [
     needsCampaign: true,
   },
   {
-    id: 'tags',
-    title: 'Name the things that stick around',
-    body: [
-      'People, places, clocks and characters get a tag. Use the Tag… button rather than typing brackets — '
-      + 'it autocompletes names you have already used, so one guard stays one guard.',
-      'You only ever write what changed. A later tag merges with the earlier one.',
+    id: 'sheet',
+    title: 'Sheet — what the app tracks for you',
+    blurb: 'Your log, read back to you. Nothing here was configured: every value '
+      + 'is folded out of the tags you wrote.',
+    steps: [
+      'Write [PC:Name|HP 10] once and a character sheet grows itself. Every stat you invent becomes a row.',
+      'Use − and + to step a value, or set to type a new one. Each writes a new line to your log — it never edits state behind your back, which is why undo always works.',
+      'Clocks, tracks and timers show as meters. Step them the same way.',
+      'Threads show their state; tap Open, Closed or Abandoned to move one.',
+      'Tap the line number beside any value to jump to the line that set it.',
+      'Add a field to anything with + field, and drop one with its ×.',
     ],
-    examples: [
-      '[N:Guard|watchful]',
-      '[PC:Alex|HP 8]',
-      '[Clock:Suspicion 1/6]',
-    ],
-    reference: 'tag-n',
-    route: 'log',
-    routeLabel: 'Open Play',
-    needsCampaign: true,
-  },
-  {
-    id: 'state',
-    title: 'Watch the Sheet fill itself in',
-    body: [
-      'Open Sheet. Everything you tagged is there — a character sheet built from your [PC:] lines, '
-      + 'your NPCs and places, and meters for any clocks or timers.',
-      'You never configured that sheet. It is your log, read back to you. Tap any value to jump to the line that set it.',
-      'The steppers here write a new line to your log; they never edit state behind your back. '
-      + 'That is why undo always works.',
-    ],
+    examples: ['[PC:Alex|HP 8|Stress 0]', '[Clock:Suspicion 3/6]', '[Thread:Find the sister|Open]'],
     route: 'state',
     routeLabel: 'Open the Sheet',
     reference: 'tag-pc',
@@ -84,120 +107,88 @@ export const STEPS = [
   },
   {
     id: 'roll',
-    title: 'Roll your own dice',
-    body: [
-      'The app never rolls. You roll real dice, then enter the numbers on the Resolve screen and it works out what they mean.',
-      'Pick the shape of the comparison — against a target, counting successes, paired challenge dice, and so on — '
-      + 'type what you rolled, and it shows the outcome before you commit it.',
+    title: 'Roll — dice, oracle and tables',
+    blurb: 'The app never rolls. You roll real dice; it captures the numbers and '
+      + 'says what they mean.',
+    steps: [
+      'On Play, tap 🎲 Roll. The panel opens over your log, so the line you were writing is still there afterwards.',
+      'Pick the shape of the comparison — against a target, counting successes, paired challenge dice, keep highest, a Fudge ladder, or degree bands.',
+      'Type what you rolled. The outcome and the exact line appear before you commit anything.',
+      'For a yes/no question, use the Oracle: type the question, pick how likely it is, roll a d100 and enter it. That ladder is a house aid — if your game has its own oracle, read that and type the answer instead.',
+      'Define a table once and it lives in your log, so the log still makes sense to someone who does not own your books. Enter the number you rolled and it writes the lookup line.',
+      'Roll the same shape a few times and the app offers to save it as a one-tap quick roll. Nothing is saved unless you say so, and a saved roll never fills in the dice.',
     ],
-    examples: ['d: Stealth 5=5 vs TN 4 -> Success'],
+    examples: [
+      'd: Stealth d6=5 vs TN 4 -> Success',
+      'tbl: Mood [Tense, Melancholic, Hopeful, Uncanny]',
+      'tbl: Mood d4=2 -> Melancholic',
+    ],
     route: 'resolve',
     routeLabel: 'Open Roll',
     reference: 'dice',
     needsCampaign: true,
   },
   {
-    id: 'oracle',
-    title: 'Ask the oracle',
-    body: [
-      'Same screen. Type the question, pick how likely you think it is, roll a d100 and enter it.',
-      'The odds ladder is a plain house aid so the app is usable with nothing set up. '
-      + 'If your game has its own oracle, read that table and type the answer instead — both land in the log the same way.',
-    ],
-    examples: ['? Does the guard notice me? (Unlikely)', 'd: d100=12 vs 25 -> Yes, but...'],
-    route: 'resolve',
-    routeLabel: 'Open Roll',
-    reference: 'question',
-    needsCampaign: true,
-  },
-  {
-    id: 'tables',
-    title: 'Keep your tables in the log',
-    body: [
-      'Define a table once and it lives in the campaign file itself, so the log still makes sense to someone '
-      + 'who does not own your books.',
-      'Roll on it from the Resolve screen: enter the number you rolled and it writes the lookup line for you.',
-    ],
-    examples: [
-      'tbl: Mood [Tense, Melancholic, Hopeful, Uncanny]',
-      'tbl: Mood d4=2 -> Melancholic',
-    ],
-    route: 'resolve',
-    routeLabel: 'Open Roll',
-    reference: 'tbl-options',
-    needsCampaign: true,
-  },
-  {
-    id: 'scenes',
-    title: 'End a scene, end a session',
-    body: [
-      'Use Scene and Session… in the composer rather than typing markers. Ending a session closes anything you '
-      + 'left open and writes a snapshot of whatever you are tracking, all in one go.',
-      'It shows you what it is about to write first. Afterwards, Undo takes the whole thing back in one press, '
-      + 'and Restore puts it back.',
-    ],
-    examples: ['S2 *Rooftops, before dawn*', '## Session 2'],
-    route: 'log',
-    routeLabel: 'Open Play',
-    reference: 'scene',
-    needsCampaign: true,
-  },
-  {
     id: 'addons',
-    title: 'Panels appear when you need them',
-    body: [
-      'Write your first [F:] tag and a combat panel appears on the State screen. First [Inv:] and resources appear. '
-      + 'Rooms, units and battles work the same way.',
-      'There is nothing to switch on. The log decides what you see, so a campaign that never fights never grows a combat tracker. '
-      + 'You can hide a panel you are done with — that only hides it, your log keeps every line.',
+    title: 'Add-on panels — combat, resources, rooms, battles',
+    blurb: 'There is nothing to switch on. A panel appears on the Sheet the first '
+      + 'time its tags appear in your log.',
+    steps: [
+      'Write your first [F:] tag, or an Rd1 round marker, and a Combat panel appears with damage, position and status controls.',
+      'Write [Inv:] or [Wealth:] and Resources appears — quantities, usage dice, spending and earning.',
+      'Write [R:] and Dungeon appears: room status, exits, and a status block you can snapshot.',
+      'Write [Unit:] or a Tn1 turn marker and Battle appears, with casualties, morale, heat and armour.',
+      'Every control writes a line to your log, exactly as if you had typed it.',
+      'Done with a panel? Hide it. That hides the panel only — your log keeps every line.',
     ],
-    examples: ['[F:Thug|HP 6|Close]', '[Inv:Torch|3]', '[R:1|active|entry cave]'],
+    examples: ['[F:Thug|HP 6|Close]', '[Inv:Torch|3]', '[R:1|active|entry cave]', '[Unit:Rifles|x12|Morale 8|Fresh]'],
     route: 'state',
     routeLabel: 'Open the Sheet',
     reference: 'addon-combat',
     needsCampaign: true,
   },
   {
-    id: 'quick-rolls',
-    title: 'Let quick rolls learn themselves',
-    body: [
-      'Roll the same thing a few times and Resolve offers to save it as a one-tap quick roll. Nothing is saved unless you say so.',
-      'A saved roll fills in the label and the target but never the dice — you still roll those. '
-      + 'Group them into a pack and you can export it to a file.',
-    ],
-    route: 'resolve',
-    routeLabel: 'Open Roll',
-    needsCampaign: true,
-  },
-  {
-    id: 'warnings',
-    title: 'Gentle warnings, never blocking',
-    body: [
-      'If a line breaks a notation rule, its row is flagged. Tap the row to see why, with a link to the explanation.',
-      'It is advice, not a gate — the line is written either way. You can turn warnings down or off in Settings.',
+    id: 'keeping',
+    title: 'Keeping your log — export, import, backup',
+    blurb: 'What you write is a plain Lonelog markdown file. You can read it in '
+      + 'any text editor, with or without this app.',
+    steps: [
+      'Settings → Export all as markdown writes each campaign out as a .md file.',
+      'Settings → Export JSON backup saves everything at once — campaigns, quick rolls, tables.',
+      'Import markdown brings a log back, keeping every line verbatim including lines this app does not recognise.',
+      'On a browser that supports it, Bind to file on Play ties a campaign to a real .md on disk and re-saves as you play.',
+      'Nothing is ever uploaded. There is no server and no account, so take a backup now and then.',
     ],
     route: 'settings',
     routeLabel: 'Open Settings',
   },
   {
-    id: 'keeping',
-    title: 'Your log is a file you own',
-    body: [
-      'Settings exports any campaign as plain Lonelog markdown — readable in any text editor, with or without this app. '
-      + 'A JSON backup saves everything at once.',
-      'On a browser that supports it, Bind to file on the Log screen ties a campaign to a real .md on disk and re-saves as you play.',
-      'Nothing is ever uploaded. There is no server.',
+    id: 'warnings',
+    title: 'Spec warnings and the notation reference',
+    blurb: 'The app checks your lines against the Lonelog specs, and never blocks '
+      + 'you on what it finds.',
+    steps: [
+      'A line that breaks a notation rule is flagged in the margin. Tap the row to read why, with a link to the explanation.',
+      'It is advice, not a gate — the line is written either way.',
+      'Turn warnings down or off in Settings → Spec warnings.',
+      'The Notation view beside this one explains every symbol, tag and block, with the section of the spec it comes from.',
     ],
     route: 'settings',
     routeLabel: 'Open Settings',
   },
   {
     id: 'install',
-    title: 'Install it on your phone',
-    body: [
-      'Use your browser’s Install or Add to Home Screen. It then opens like any other app and works with no connection at all.',
-      'Everything is stored on that device, so take a backup now and then.',
+    title: 'Install it, and staying up to date',
+    blurb: 'It is a web app that installs like a native one and works with no '
+      + 'connection at all.',
+    steps: [
+      'Use your browser’s Install or Add to Home Screen. It then opens like any other app.',
+      'Everything is stored on that device, so keep a backup.',
+      'When a new version is published you get a toast with an Update button. It waits for you — an update never reloads a session you are writing in.',
+      'You can also check by hand: Settings → Check for updates.',
     ],
+    route: 'settings',
+    routeLabel: 'Open Settings',
   },
 ];
 
@@ -208,13 +199,8 @@ export const STEPS = [
 export function renderGuide(host, ctx) {
   clear(host);
 
-  host.append(el('p', { class: 'hint' }, [
-    'Thirteen steps, in the order you will meet them. Nothing here changes your log — '
-    + 'each step just points at the screen it describes.',
-  ]));
-
-  // A first-ever launch lands here (F9), so the first thing on the page is the
-  // thing that first launch needs.
+  // A first-ever launch lands here (§8.2 F9), so the first thing on the page is
+  // the thing that first launch needs.
   if (!ctx.hasCampaign) {
     host.append(el('div', { class: 'row' }, [
       el('button', {
@@ -224,30 +210,55 @@ export function renderGuide(host, ctx) {
     ]));
   }
 
-  host.append(el('ol', { class: 'guide-list' }, STEPS.map((step, index) => {
-    const body = [
-      el('div', { class: 'guide-head' }, [
-        el('span', { class: 'guide-num', 'aria-hidden': 'true' }, [String(index + 1)]),
-        el('h2', { class: 'guide-title' }, [step.title]),
-        step.reference ? referenceButton(step.reference, { label: step.title }) : null,
+  host.append(el('p', { class: 'hint' }, [
+    'One section per part of the app. Open the one you need — nothing here '
+    + 'changes your log.',
+  ]));
+
+  const list = el('ul', { class: 'guide-list' });
+
+  const toggle = el('button', {
+    class: 'btn btn-small', type: 'button', id: 'guide-toggle',
+    onclick: () => {
+      const sections = [...list.querySelectorAll('details')];
+      const expand = sections.some((d) => !d.open);
+      for (const d of sections) d.open = expand;
+      toggle.textContent = expand ? 'Collapse all' : 'Expand all';
+      toggle.setAttribute('aria-pressed', expand ? 'true' : 'false');
+    },
+  }, ['Expand all']);
+  toggle.setAttribute('aria-pressed', 'false');
+
+  host.append(el('div', { class: 'group ref-controls' }, [toggle]));
+
+  for (const section of SECTIONS) {
+    const body = el('div', { class: 'guide-body' }, [
+      el('p', { class: 'el-detail' }, [section.blurb]),
+      el('ol', { class: 'guide-steps' }, section.steps.map((step) => el('li', {}, [step]))),
+    ]);
+
+    if (section.examples?.length) {
+      body.append(el('pre', { class: 'log-preview' }, [section.examples.join('\n')]));
+    }
+
+    const blocked = section.needsCampaign && !ctx.hasCampaign;
+    body.append(el('div', { class: 'row' }, [
+      section.route ? el('button', {
+        class: 'btn btn-small', type: 'button',
+        onclick: () => ctx.go(blocked ? 'campaigns' : section.route),
+      }, [blocked ? 'Start a campaign first' : section.routeLabel ?? 'Open']) : null,
+      section.reference ? referenceButton(section.reference, { label: section.title }) : null,
+    ].filter(Boolean)));
+
+    list.append(el('li', {}, [
+      el('details', { class: 'guide-section', dataset: { section: section.id } }, [
+        el('summary', { class: 'guide-head' }, [
+          el('span', { class: 'guide-title' }, [section.title]),
+        ]),
+        body,
       ]),
-      ...step.body.map((paragraph) => el('p', {}, [paragraph])),
-    ];
+    ]));
+  }
 
-    if (step.examples?.length) {
-      body.push(el('pre', { class: 'log-preview' }, [step.examples.join('\n')]));
-    }
-
-    if (step.route) {
-      const blocked = step.needsCampaign && !ctx.hasCampaign;
-      body.push(el('div', { class: 'row' }, [
-        el('button', {
-          class: 'btn btn-small', type: 'button',
-          onclick: () => ctx.go(blocked ? 'campaigns' : step.route),
-        }, [blocked ? 'Start a campaign first' : step.routeLabel ?? 'Open']),
-      ]));
-    }
-
-    return el('li', { class: 'guide-step' }, body);
-  })));
+  host.append(list);
 }
