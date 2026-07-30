@@ -276,3 +276,49 @@ test('lookup is safe on a table with neither entries nor options', () => {
   assert.deepEqual(lookup({ name: 'Empty', entries: [], options: [] }, 3), { result: null, line: null });
   assert.deepEqual(lookup(null, 3), { result: null, line: null });
 });
+
+/* ---- A roll with nothing to compare has no verdict of its own (flow) ----- */
+
+test('a target roll with no target offers no outcome to invent', () => {
+  // Core §3.2.1 asks every roll for an outcome. `d: 17 -> 17` is not one.
+  const spec = { mode: 'target', dice: ['17'] };
+  const result = evaluate(spec);
+  assert.equal(result.outcome, null);
+  assert.equal(result.total, 17);
+  assert.equal(rollLine(spec, result), 'd: 17');
+});
+
+test("the player's own word becomes the outcome", () => {
+  // The specs write `d: 19 >= 13 Hit` as readily as `-> Success`.
+  const spec = { mode: 'target', label: 'Slash', dice: ['19'], target: '13', outcome: 'Hit' };
+  assert.equal(rollLine(spec, evaluate(spec)), 'd: Slash 19=19 vs TN 13 -> Hit');
+
+  const bare = { mode: 'target', dice: ['42'], outcome: 'Partial success' };
+  assert.equal(rollLine(bare, evaluate(bare)), 'd: 42 -> Partial success');
+});
+
+test('keep mode with no target says nothing about the total either', () => {
+  const spec = { mode: 'keep', dice: ['17', '3'], keep: '1', keepWhich: 'high' };
+  assert.equal(evaluate(spec).outcome, null);
+  assert.ok(!rollLine(spec, evaluate(spec)).includes('->'));
+});
+
+test('a mode that has a verdict without a target keeps it', () => {
+  // A Fate ladder rung is the result; a success pool counts its own hits.
+  assert.equal(evaluate({ mode: 'fudge', plus: 3, minus: 0 }).outcome, '+3');
+  assert.equal(evaluate({ mode: 'pool', dice: ['6', '2'], threshold: '5' }).outcome, '1 success');
+  assert.equal(evaluate({ mode: 'paired', dice: ['7'], challenge: ['3', '9'] }).outcome, 'Weak Hit');
+});
+
+test('every line the comparator writes still lexes as a dice line', () => {
+  for (const spec of [
+    { mode: 'target', dice: ['17'], outcome: 'Hit' },
+    { mode: 'target', dice: ['17'] },
+    { mode: 'keep', dice: ['17', '3'], keep: '1' },
+    { mode: 'fudge', plus: 2, minus: 1 },
+  ]) {
+    const line = rollLine(spec, evaluate(spec));
+    const [entry] = lex(line + '\n');
+    assert.equal(entry.kind, 'dice', `${line} lexed as ${entry.kind}`);
+  }
+});

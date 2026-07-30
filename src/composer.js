@@ -59,6 +59,14 @@ export function usesAdvancedSymbols(entries = []) {
 let expanded = false;
 
 /**
+ * The line kind last chosen. Held here for the same reason as `expanded`: every
+ * commit re-mounts the composer, and resetting to `@` after each line both cost
+ * a tap and — worse — silently re-armed the *wrong symbol*, so the next line a
+ * player typed landed as an action when they meant a consequence.
+ */
+let lastKind = 'action';
+
+/**
  * Compose one log line.
  * @param {string} kind one of SYMBOLS[].kind, or 'prose'
  * @param {string} text
@@ -191,7 +199,7 @@ export function blockOptions(state) {
 export function mountComposer(host, ctx) {
   clear(host);
 
-  let kind = 'action';
+  let kind = lastKind;
 
   const explain = el('span', { class: 'composer-explain' });
 
@@ -204,8 +212,11 @@ export function mountComposer(host, ctx) {
     'aria-label': 'Line text',
   }));
 
-  // A log that already uses the advanced symbols opens expanded (D9).
+  // A log that already uses the advanced symbols opens expanded (D9) — and so
+  // does a bar whose selected kind is one of them, or it would show nothing
+  // pressed while the input still expected that kind.
   if (usesAdvancedSymbols(ctx.entries ?? [])) expanded = true;
+  if (!SYMBOLS.find((sym) => sym.kind === kind)?.basic) expanded = true;
 
   const bar = el('div', { class: 'symbol-bar', role: 'group', 'aria-label': 'Line type' });
 
@@ -247,6 +258,7 @@ export function mountComposer(host, ctx) {
 
   function setKind(next) {
     kind = next;
+    lastKind = next;
     for (const b of bar.querySelectorAll('.sym[data-kind]')) {
       b.setAttribute('aria-pressed', b.getAttribute('data-kind') === kind ? 'true' : 'false');
     }

@@ -59,9 +59,15 @@ export function modal({ title, body, actions = [{ label: 'Close', value: null, p
     document.addEventListener('keydown', onKey, true);
     document.body.append(backdrop);
     openModal = { done };
-    // Focus the action without scrolling to it: a tall dialog — the roll drawer
-    // — would otherwise open scrolled past its own contents to the button.
-    (buttons.find((b) => b.classList.contains('btn-primary')) ?? buttons[0])?.focus({ preventScroll: true });
+    // A dialog whose body names the field it is really asking for gets the caret
+    // there — the roll drawer's whole job is one number, and landing on a button
+    // costs a tap before anything can be typed. Otherwise focus the action, and
+    // never scroll to it: a tall dialog would open past its own contents.
+    const wanted = /** @type {HTMLElement|null} */ (
+      dialog.querySelector('.modal-body [autofocus]')
+      ?? buttons.find((b) => b.classList.contains('btn-primary'))
+      ?? buttons[0] ?? null);
+    wanted?.focus({ preventScroll: true });
   });
 }
 

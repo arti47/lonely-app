@@ -268,13 +268,28 @@ p { margin: 0 0 12px; }
 }
 .modal {
   width: min(440px, 100%);
-  max-height: 85dvh; overflow-y: auto;
+  /* A column with only the body scrolling: a tall dialog used to scroll its own
+     actions off the screen, so the button you opened it to press was below the
+     fold on a phone. */
+  display: flex; flex-direction: column;
+  max-height: 85dvh; overflow: hidden;
   background: var(--paper-raised);
   border: 1px solid var(--line); border-radius: var(--radius);
   padding: var(--pad);
 }
-.modal-title { font-size: 1.05rem; margin: 0 0 10px; text-transform: none; letter-spacing: 0; color: var(--ink); }
-.modal-body { margin-bottom: var(--gap); }
+.modal-title { font-size: 1.05rem; margin: 0 0 10px; text-transform: none; letter-spacing: 0; color: var(--ink); flex: none; }
+.modal-body { margin-bottom: var(--gap); overflow-y: auto; min-height: 0; }
+.modal-actions { flex: none; }
+
+/* The roll drawer's own commit stays in reach while its details scroll: this is
+   the app's most-used control and it is one number away from being done. */
+.modal .resolve-commit {
+  position: sticky; bottom: 0;
+  display: flex; gap: 8px; align-items: center; justify-content: flex-end;
+  padding: 8px 0 2px;
+  background: var(--paper-raised);
+  border-top: 1px solid var(--line);
+}
 .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
 
 .toast {

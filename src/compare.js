@@ -118,12 +118,14 @@ function leftValue(s) {
  * @property {number|string} [plus] fudge mode: count of + faces
  * @property {number|string} [minus] fudge mode: count of − faces
  * @property {{min?:number,max?:number,label:string}[]} [bands]
+ * @property {string} [outcome] the player's own word for what happened; wins
+ *   over the computed one, and is the only outcome when nothing was compared
  */
 
 /**
  * Compare entered numbers and label the result.
  * @param {RollSpec} spec
- * @returns {{total:number|null, outcome:string, detail:string, notes:string[]}}
+ * @returns {{total:number|null, outcome:string|null, detail:string, notes:string[]}}
  */
 export function evaluate(spec) {
   const dice = (spec.dice ?? []).map(num).filter((n) => n != null);
@@ -169,7 +171,7 @@ export function evaluate(spec) {
       const target = num(spec.target);
       return {
         total,
-        outcome: target == null ? String(total) : (total >= target ? 'Success' : 'Fail'),
+        outcome: target == null ? null : (total >= target ? 'Success' : 'Fail'),
         detail: `${dice.join(',')} keep ${which === 'high' ? 'highest' : 'lowest'} ${keep} = ${kept.join('+')}`
           + `${mod ? (mod > 0 ? `+${mod}` : String(mod)) : ''}=${total}`
           + (target == null ? '' : ` vs ${spec.targetLabel ?? 'TN'} ${target}`),
@@ -185,6 +187,8 @@ export function evaluate(spec) {
       const target = num(spec.target);
       return {
         total,
+        // A ladder rung *is* the result here — `+3` is what a Fate roll says,
+        // not an echo of the dice, so this mode has a verdict without a target.
         outcome: target == null
           ? (total > 0 ? `+${total}` : String(total))
           : (total >= target ? 'Success' : 'Fail'),
@@ -214,7 +218,10 @@ export function evaluate(spec) {
       const target = num(spec.target);
       const op = spec.compare === '<=' ? '<=' : '>=';
       matchNote(dice, notes);
-      if (target == null) return { total, outcome: String(total), detail: String(total), notes };
+      // Nothing to compare against is not a result. Core §3.2.1 asks for an
+      // outcome on every roll; inventing `-> 17` records a roll that resolved
+      // to nothing, so the pane asks the player what it meant instead.
+      if (target == null) return { total, outcome: null, detail: String(total), notes };
       const ok = op === '<=' ? total <= target : total >= target;
       return {
         total,
@@ -245,7 +252,12 @@ function matchNote(dice, notes) {
 export function rollLine(spec, result) {
   const label = String(spec.label ?? '').trim();
   const notes = result.notes.length ? `, ${result.notes.join(', ')}` : '';
-  return `d: ${label ? `${label} ` : ''}${result.detail} -> ${result.outcome}${notes}`;
+  // The player's own word wins: the specs write `d: 19 >= 13 Hit` as readily as
+  // `-> Success`, and a comparison with nothing to compare against has no
+  // verdict of its own to offer (core §3.2.1).
+  const outcome = String(spec.outcome ?? '').trim() || result.outcome;
+  if (!outcome) return `d: ${label ? `${label} ` : ''}${result.detail}${notes}`;
+  return `d: ${label ? `${label} ` : ''}${result.detail} -> ${outcome}${notes}`;
 }
 
 /* -------------------------------------------------------------------------- */

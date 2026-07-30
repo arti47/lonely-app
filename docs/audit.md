@@ -454,6 +454,102 @@ Findings are C1–C15 and each is closed by a check in `tests/fidelity.test.js`,
 
 ---
 
+## Fourth pass — the play loop
+
+Run 2026-07-30, asking one question: does a solo session flow? Measured by
+driving real beats through the UI — `@` → `?` → `d:` → `=>`, then three rolls in
+a row — and counting what a thumb has to do between them.
+
+Findings are D1–D4, closed by checks in `tests/smoke.mjs` and
+`tests/compare.test.js`.
+
+### D1 — the composer silently re-armed the wrong symbol · **fixed**
+
+- **Rule:** CLAUDE.md §1, D9 — the composer is symbol-first, so the symbol is
+  the control.
+- **Target:** `src/composer.js` · `mountComposer`, `setKind`.
+- **Symptom:** every commit re-mounts the composer, and `kind` was a local
+  starting at `'action'`. So after each line the bar reset to `@ Did` — costing
+  a tap on every run of consequences, and worse, *silently*: a player typing
+  their next line found it filed as an action when they meant a consequence.
+  Measured before the fix: five beats, five symbol taps, and the wrong symbol
+  armed after four of them.
+- **Fix:** the chosen kind persists across re-mounts, exactly as the bar's
+  expanded state already did. A bar whose kind is an advanced one opens
+  expanded, so nothing is ever pressed-but-hidden.
+- **Measured after:** two consecutive consequences cost **zero** taps beyond
+  typing.
+- **Closed by:** *the composer keeps the symbol it was on after a line lands*.
+
+### D2 — the roll drawer forgot the roll you had just made · **fixed**
+
+- **Rule:** §8.2 F6 — rolling happens over the log so play does not stop.
+- **Target:** `src/resolve.js` · `lastRoll`, `remember`.
+- **Symptom:** a fight is the same roll every round, and the drawer came back
+  blank each time: label, target and mode all re-typed. Three fields per roll,
+  measured, every round.
+- **Fix:** the *shape* of the last committed roll is remembered for the life of
+  the page — mode, label, target, threshold, comparison, dice count — and never
+  the dice, which the player rolls (D2). A fresh page starts empty.
+- **Measured after:** roll one costs three fields, rolls two and three cost
+  **one**.
+- **Closed by:** *reopening the drawer carries the roll back but never the
+  dice*.
+
+### D3 — the drawer opened on a button, and its commit was below the fold · **fixed**
+
+- **Rule:** D8 — phone-first, 360px.
+- **Target:** `src/ui.js` · `modal` focus · `styles.css` `.modal`,
+  `.modal-body`, `.resolve-commit`.
+- **Symptom:** two compounding problems. The dialog focused its primary action,
+  so tapping 🎲 left the caret on a button and typing a number took an extra tap.
+  And `.modal` was itself the scroller, so on a 667px phone **Add to log sat
+  below the viewport** — as did the dialog's own actions, in every tall dialog.
+  The most-used control in the app could not be seen when it opened.
+- **Fix:** `modal()` honours an `[autofocus]` in the body, and the first die
+  input claims it. The dialog is a column whose body scrolls, so its title and
+  actions stay pinned; the roll panel's preview and commit stay in reach on a
+  sticky footer. The Outcome field is only asked for when it is needed, which
+  keeps the common roll two fields deep.
+- **Measured after:** on 360×667 the die, the preview, the commit and the
+  dialog's actions are all on screen the moment the drawer opens.
+- **Closed by:** *the roll drawer opens with the die focused*, *the roll drawer
+  needs no scrolling to enter a roll and commit it*.
+
+### D4 — a roll with nothing to compare wrote a non-outcome · **fixed**
+
+- **Rule:** Core §3.2.1 — "Always include the outcome (Success/Fail or narrative
+  result)."
+- **Target:** `src/compare.js` · `evaluate`, `rollLine` · `src/resolve.js` ·
+  `update`.
+- **Symptom:** with no target, `target` and `keep` modes echoed the total as the
+  outcome, committing `d: 17 -> 17` — a roll recorded as having resolved to
+  nothing. The Add button was enabled for it.
+- **Fix:** those modes report no verdict, and the pane asks the player what it
+  meant — `d: 17 -> Partial success` — or to set a target. The player's word also
+  *wins* over the computed one, because the specs write `d: 19 >= 13 Hit` as
+  readily as `-> Success`. A mode with a verdict of its own keeps it: a Fate
+  ladder rung and a success count are results, not echoes.
+- **Closed by:** *a target roll with no target offers no outcome to invent*,
+  *the player's own word becomes the outcome*, *keep mode with no target says
+  nothing about the total either*, *a mode that has a verdict without a target
+  keeps it*, and browser check *a roll with no target asks what it meant instead
+  of inventing a result*.
+
+### Verified clean — flow
+
+- Focus returns to the composer after every commit, including after a roll
+  lands from the drawer, so the keyboard never has to be summoned twice.
+- The log scrolls to the newest line after every commit.
+- Compact single-line shorthand (core §6.1) can be typed straight into the
+  composer and lands verbatim: `@ Force the door d: 14 vs 12 -> Success => it
+  gives way`.
+- The oracle writes both the question and its roll, so `?` + `d:` is one action.
+- Scene and Session sit in the status strip, one tap from the composer (D12).
+- The symbol bar and the tool row both fit 360px with nothing off-screen.
+
+---
+
 ## Verified clean
 
 Checked during this audit and found correct; no change was needed.

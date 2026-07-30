@@ -491,10 +491,36 @@ try {
     drawer.open && drawer.labelled && drawer.hasRollPanel && /^#\/log\//.test(drawer.hash),
     JSON.stringify(drawer));
 
-  await s.evaluate(`(async () => {
+  // The drawer's caret lands on the number, not on a button: one tap, one field.
+  check('the roll drawer opens with the die focused',
+    await s.evaluate(`document.activeElement === document.querySelector('.modal-sheet .die-input')`));
+
+  // A roll with nothing to compare against has no outcome to offer, so the pane
+  // asks for one rather than writing `-> 5` and calling it a result.
+  const noVerdict = await s.evaluate(`(async () => {
     const die = document.querySelector('.modal-sheet .die-input');
     die.value = '5';
     die.dispatchEvent(new Event('input', { bubbles: true }));
+    await new Promise(r => setTimeout(r, 250));
+    return {
+      disabled: document.querySelector('.modal-sheet #roll-add').disabled,
+      hint: document.querySelector('.modal-sheet .preview')?.textContent,
+    };
+  })()`);
+  check('a roll with no target asks what it meant instead of inventing a result',
+    noVerdict.disabled === true && /say what it meant/i.test(noVerdict.hint ?? ''),
+    JSON.stringify(noVerdict));
+
+  await s.evaluate(`(async () => {
+    const target = document.querySelector('.modal-sheet #roll-target')
+      ?? [...document.querySelectorAll('.modal-sheet input')]
+        .find(i => document.querySelector('label[for="' + i.id + '"]')?.textContent === 'Target');
+    target.value = '4';
+    target.dispatchEvent(new Event('input', { bubbles: true }));
+    const labelInput = [...document.querySelectorAll('.modal-sheet input')]
+      .find(i => document.querySelector('label[for="' + i.id + '"]')?.textContent === 'Label');
+    labelInput.value = 'Stealth';
+    labelInput.dispatchEvent(new Event('input', { bubbles: true }));
     await new Promise(r => setTimeout(r, 200));
     document.querySelector('.modal-sheet #roll-add').click();
   })()`);
@@ -508,6 +534,79 @@ try {
     !afterRoll.open && afterRoll.rows === beforeRoll + 1 && /^#\/log\//.test(afterRoll.hash),
     JSON.stringify({ beforeRoll, ...afterRoll }));
 
+  // A fight is the same roll over and over: reopening the drawer offers the last
+  // roll's shape back, with the dice empty because the player rolls them (D2).
+  const reopened = await s.evaluate(`(async () => {
+    document.querySelector('#composer-roll').click();
+    await new Promise(r => setTimeout(r, 400));
+    const byLabel = (text) => [...document.querySelectorAll('.modal-sheet input')]
+      .find(i => document.querySelector('label[for="' + i.id + '"]')?.textContent === text);
+    const out = {
+      label: byLabel('Label')?.value,
+      target: byLabel('Target')?.value,
+      dice: [...document.querySelectorAll('.modal-sheet .die-input')].map(d => d.value),
+      addDisabled: document.querySelector('.modal-sheet #roll-add').disabled,
+    };
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise(r => setTimeout(r, 350));
+    return out;
+  })()`);
+  check('reopening the drawer carries the roll back but never the dice',
+    reopened.label === 'Stealth' && reopened.target === '4'
+      && reopened.dice.every((d) => d === '') && reopened.addDisabled === true,
+    JSON.stringify(reopened));
+
+  // The control you opened the drawer to press must be on screen when it opens,
+  // on the small phone the app is built for (D8).
+  await s.send('Emulation.setDeviceMetricsOverride', {
+    width: 360, height: 667, deviceScaleFactor: 1, mobile: true,
+  });
+  const reach = await s.evaluate(`(async () => {
+    document.querySelector('#composer-roll').click();
+    await new Promise(r => setTimeout(r, 450));
+    const inView = (sel) => {
+      const n = document.querySelector(sel);
+      if (!n) return null;
+      const r = n.getBoundingClientRect();
+      return r.top >= 0 && r.bottom <= window.innerHeight;
+    };
+    const out = {
+      die: inView('.modal-sheet .die-input'),
+      add: inView('.modal-sheet #roll-add'),
+      preview: inView('.modal-sheet .preview'),
+      done: inView('.modal-sheet .modal-actions .btn'),
+      bodyScrolls: (() => {
+        const b = document.querySelector('.modal-sheet .modal-body');
+        return b.scrollHeight > b.clientHeight + 1;
+      })(),
+    };
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    await new Promise(r => setTimeout(r, 350));
+    return out;
+  })()`);
+  check('the roll drawer needs no scrolling to enter a roll and commit it',
+    reach.die && reach.add && reach.preview && reach.done && reach.bodyScrolls,
+    JSON.stringify(reach));
+  await s.send('Emulation.setDeviceMetricsOverride', {
+    width: 360, height: 780, deviceScaleFactor: 1, mobile: true,
+  });
+
+  // The composer must not silently re-arm a different symbol under the caret.
+  const kindKept = await s.evaluate(`(async () => {
+    const input = document.querySelector('#composer-input');
+    document.querySelector('#screen .sym[data-kind="consequence"]').click();
+    input.value = 'the door gives way';
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    await new Promise(r => setTimeout(r, 450));
+    const pressed = [...document.querySelectorAll('#screen .sym[data-kind]')]
+      .filter(b => b.getAttribute('aria-pressed') === 'true').map(b => b.dataset.kind);
+    const focused = document.activeElement === document.querySelector('#composer-input');
+    const rows = [...document.querySelectorAll('#screen .log-row')].map(r => r.textContent);
+    return { pressed, focused, last: rows[rows.length - 1] };
+  })()`);
+  check('the composer keeps the symbol it was on after a line lands',
+    kindKept.pressed.length === 1 && kindKept.pressed[0] === 'consequence' && kindKept.focused,
+    JSON.stringify(kindKept));
 
   // Export and reimport must fold identically (First Session Logged).
   const identical = await s.evaluate(`(async () => {
@@ -968,8 +1067,11 @@ try {
   check('search results open so the answer is visible',
     await s.evaluate('document.querySelectorAll("#screen .ref-entry[open]").length') === narrowed);
 
-  // A composer symbol explains the notation it writes.
+  // A composer symbol explains the notation it writes. Pick the symbol first:
+  // the bar keeps whatever kind was last chosen, so the default is not assumed.
   await s.evaluate(`(location.hash = '#/log/${created}', new Promise(r => setTimeout(r, 350)))`);
+  await s.evaluate(`document.querySelector('#screen .sym[data-kind="action"]').click()`);
+  await s.evaluate('new Promise(r => setTimeout(r, 150))');
   check('the composer links to the reference entry for the selected symbol',
     await s.evaluate('!!document.querySelector("#screen .composer-explain .ref-btn")'));
 

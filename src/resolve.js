@@ -18,6 +18,30 @@ import {
 import { tablesOf } from './lonelog/fold.js';
 import { detectRepeats, templateFromShape, applyTemplate, REPEAT_THRESHOLD } from './templates.js';
 
+/**
+ * The shape of the last roll committed — mode, label, target, never the dice
+ * (D2). Held for the life of the page so the second roll of a fight costs one
+ * number, not three fields. Not a preference (§7 does not apply): it is the
+ * working state of a session, and a fresh page starts empty.
+ */
+const lastRoll = {
+  mode: 'target', label: '', target: '', threshold: '', keep: '1',
+  keepWhich: 'high', compare: '>=', diceCount: 1,
+};
+
+function remember(spec, { keepWhich, diceCount }) {
+  Object.assign(lastRoll, {
+    mode: spec.mode,
+    label: String(spec.label ?? '').trim(),
+    target: String(spec.target ?? ''),
+    threshold: String(spec.threshold ?? ''),
+    keep: String(spec.keep ?? '1'),
+    keepWhich,
+    compare: spec.compare ?? '>=',
+    diceCount: Math.max(1, diceCount),
+  });
+}
+
 /** Fields each mode asks for, beyond the dice themselves. */
 const MODE_FIELDS = {
   target: ['modifier', 'target', 'compare'],
@@ -45,13 +69,17 @@ export function renderResolve(host, state, ctx) {
 /* ------------------------------ roll entry ------------------------------- */
 
 function rollPanel(ctx) {
-  let mode = 'target';
-  let dice = [''];
-  let keepWhich = 'high';
-  let compare = '>=';
+  let mode = lastRoll.mode;
+  let dice = Array.from({ length: Math.max(1, lastRoll.diceCount) }, () => '');
+  let keepWhich = lastRoll.keepWhich;
+  let compare = lastRoll.compare;
 
-  const values = { modifier: '', target: '', threshold: '', keep: '1', plus: '', minus: '', challenge: ['', ''] };
+  const values = {
+    modifier: '', target: lastRoll.target, threshold: lastRoll.threshold,
+    keep: lastRoll.keep, plus: '', minus: '', challenge: ['', ''], outcome: '',
+  };
   const label = numberish('text', 'What are you rolling?', 'Stealth');
+  label.value = lastRoll.label;
   const body = el('div', { class: 'resolve-body' });
   const preview = el('div', { class: 'preview', role: 'status', 'aria-live': 'polite' });
 
@@ -74,13 +102,21 @@ function rollPanel(ctx) {
       challenge: values.challenge,
       plus: values.plus,
       minus: values.minus,
+      outcome: values.outcome,
       bands: DEFAULT_BANDS,
     };
   }
 
-  function ready() {
+  function entered() {
     if (mode === 'fudge') return values.plus !== '' || values.minus !== '';
     return dice.some((d) => String(d).trim() !== '');
+  }
+
+  /** Whether there is a line worth writing: numbers, and something they meant. */
+  function ready() {
+    if (!entered()) return false;
+    const s = spec();
+    return !!(evaluate(s).outcome || String(values.outcome).trim());
   }
 
   function draw() {
@@ -105,6 +141,13 @@ function rollPanel(ctx) {
     }
     if (row.childElementCount) body.append(row);
 
+    // The player's own word for what happened — asked for only when the
+    // comparison has no verdict of its own, so the common roll stays two fields
+    // deep. The specs write `Hit` as readily as `Success` (core §3.2.1).
+    if (!evaluate(spec()).outcome || String(values.outcome).trim()) {
+      body.append(el('div', { class: 'field-row' }, [field('Outcome', outcomeInput())]));
+    }
+
     if (fields.includes('bands')) {
       body.append(el('p', { class: 'hint' }, [
         `House aid: bands are ${DEFAULT_BANDS.map((b) => b.label).join(' / ')} at 10+ / 7–9 / 6−.`,
@@ -116,16 +159,27 @@ function rollPanel(ctx) {
 
   function update() {
     clear(preview);
-    if (!ready()) {
+    if (!entered()) {
       preview.append(el('span', { class: 'hint' }, ['Enter what you rolled.']));
       addButton.disabled = true;
       return;
     }
     const s = spec();
     const result = evaluate(s);
+    const said = String(values.outcome).trim();
+    if (!result.outcome && !said) {
+      // Core §3.2.1 asks every roll for an outcome. With no target there is
+      // nothing to compare, so the player says what it meant — the app will not
+      // write `-> 17` and call it a result.
+      addButton.disabled = true;
+      preview.append(el('span', { class: 'hint' }, [
+        `Rolled ${result.total}. Set a target to compare, or say what it meant.`,
+      ]));
+      return;
+    }
     addButton.disabled = false;
     preview.append(
-      el('span', { class: 'preview-outcome' }, [result.outcome]),
+      el('span', { class: 'preview-outcome' }, [said || result.outcome]),
       el('code', { class: 'preview-line' }, [rollLine(s, result)]),
     );
   }
@@ -136,6 +190,9 @@ function rollPanel(ctx) {
       const input = /** @type {HTMLInputElement} */ (el('input', {
         class: 'input die-input', type: 'text', inputmode: 'numeric', value,
         'aria-label': `Die ${i + 1}`,
+        // The one field every roll needs. `modal()` honours this, so opening the
+        // drawer puts the caret where the number goes instead of on a button.
+        ...(i === 0 ? { autofocus: 'autofocus' } : {}),
         oninput: () => { dice[i] = input.value; update(); },
       }));
       row.append(input);
@@ -158,6 +215,15 @@ function rollPanel(ctx) {
     const input = /** @type {HTMLInputElement} */ (el('input', {
       class: 'input', type: 'text', inputmode: 'numeric', value: values[key],
       oninput: () => { values[key] = input.value; update(); },
+    }));
+    return input;
+  }
+
+  function outcomeInput() {
+    const input = /** @type {HTMLInputElement} */ (el('input', {
+      class: 'input', id: 'roll-outcome', type: 'text', value: values.outcome,
+      placeholder: 'Success, Hit, Yes, but…',
+      oninput: () => { values.outcome = input.value; update(); },
     }));
     return input;
   }
@@ -194,10 +260,14 @@ function rollPanel(ctx) {
     class: 'btn btn-primary', type: 'button', id: 'roll-add', disabled: true,
     onclick: async () => {
       const s = spec();
+      // Remember the shape of the roll, never the dice (D2). A fight is the same
+      // roll over and over; retyping "Stealth" and "13" every round is the flow
+      // cost the drawer exists to avoid.
+      remember(s, { keepWhich, diceCount: dice.length });
       await ctx.commit([rollLine(s, evaluate(s))]);
       dice = dice.map(() => '');
       values.challenge = ['', ''];
-      values.plus = ''; values.minus = '';
+      values.plus = ''; values.minus = ''; values.outcome = '';
       announce('Roll added to the log.');
       draw();
     },
@@ -232,8 +302,9 @@ function rollPanel(ctx) {
       field('Label', label),
     ]),
     body,
-    preview,
-    el('div', { class: 'row' }, [addButton]),
+    // Outcome and commit travel together: the preview says what the line will be
+    // and the button writes it, and in the drawer the pair stays in reach.
+    el('div', { class: 'resolve-commit' }, [preview, addButton]),
   ]);
 
   return { node, applyPreset };
