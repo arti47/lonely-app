@@ -1288,22 +1288,30 @@ try {
     set('#said-text', 'Who goes there?');
     await new Promise(r => setTimeout(r, 150));
     const preview = document.querySelector('#said-preview')?.textContent;
+    const linked = !!document.querySelector('.modal .ref-btn');
+    const caret = document.activeElement === document.querySelector('#said-speaker');
     [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Insert').click();
     await new Promise(r => setTimeout(r, 300));
     const input = document.querySelector('#composer-input');
     const value = input.value;
     input.value = '';
-    return { preview, value };
+    return { preview, value, linked, caret };
   })()`);
   check('the dialogue dialog previews and inserts a spec form',
     saidPreview.preview === 'N (Guard): "Who goes there?"'
       && saidPreview.value === 'N (Guard): "Who goes there?"',
+    JSON.stringify(saidPreview));
+  check('the dialogue dialog opens on the speaker and links to its entry',
+    saidPreview.caret === true && saidPreview.linked === true,
     JSON.stringify(saidPreview));
 
   const beforeExcerpt = await rowCount();
   await s.evaluate(`([...document.querySelectorAll('#screen .composer-tools .btn')]
     .find(b => b.textContent === 'Excerpt…')).click()`);
   await s.evaluate('new Promise(r => setTimeout(r, 300))');
+  check('the excerpt dialog puts the caret in the passage and links out',
+    await s.evaluate(`document.activeElement === document.querySelector('#excerpt-text')
+      && !!document.querySelector('.modal .ref-btn')`));
   await s.evaluate(`(() => {
     document.querySelector('#excerpt-text').value = 'The diary reads:\\n"Day 47."';
     [...document.querySelectorAll('.modal-actions .btn')].find(b => b.textContent === 'Add').click();

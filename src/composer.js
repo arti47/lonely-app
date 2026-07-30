@@ -354,7 +354,7 @@ async function dialogueDialog(state) {
   const listId = 'said-names';
   const speaker = /** @type {HTMLInputElement} */ (el('input', {
     id: 'said-speaker', class: 'input', type: 'text', list: listId,
-    placeholder: 'PC, or an NPC’s name', value: 'PC',
+    placeholder: 'PC, or an NPC’s name', value: 'PC', autofocus: 'autofocus',
   }));
   const said = /** @type {HTMLInputElement} */ (el('input', {
     id: 'said-text', class: 'input', type: 'text', placeholder: 'Stay calm… just stay calm.',
@@ -372,6 +372,9 @@ async function dialogueDialog(state) {
       el('div', { class: 'field-row' }, [el('label', { for: 'said-speaker' }, ['Speaker']), speaker]),
       el('div', { class: 'field-row' }, [el('label', { for: 'said-text' }, ['Said']), said]),
       preview,
+      // Every automated surface links to the entry for the notation it writes
+      // (§8 Phase 8).
+      referenceButton('dialogue', { label: 'Dialogue' }),
     ]),
     actions: [
       { label: 'Cancel', value: null },
@@ -384,7 +387,7 @@ async function dialogueDialog(state) {
 /** A passage of in-fiction text, kept with its own line breaks (core §4.4). */
 async function excerptDialog() {
   const area = /** @type {HTMLTextAreaElement} */ (el('textarea', {
-    id: 'excerpt-text', class: 'input', rows: '6',
+    id: 'excerpt-text', class: 'input', rows: '6', autofocus: 'autofocus',
     placeholder: 'The diary reads:\n"Day 47: The tides no longer obey the moon."',
   }));
   const ok = await modal({
@@ -394,6 +397,7 @@ async function excerptDialog() {
         el('label', { for: 'excerpt-text' }, ['Passage']), area,
       ]),
       el('p', { class: 'hint' }, ['Written between \\--- and ---\\ so it reads as in-fiction, not as log.']),
+      referenceButton('narrative-block', { label: 'Narrative excerpt' }),
     ]),
     actions: [
       { label: 'Cancel', value: null },

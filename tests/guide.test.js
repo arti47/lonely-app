@@ -5,6 +5,7 @@ import assert from 'node:assert/strict';
 
 import { SECTIONS } from '../src/guide.js';
 import { entryFor } from '../src/reference.js';
+import { SYMBOLS } from '../src/composer.js';
 import { lex } from '../src/lonelog/lexer.js';
 
 const ROUTES = new Set(['campaigns', 'log', 'state', 'resolve', 'reference', 'settings']);
@@ -90,4 +91,22 @@ test('the guide names no game system (D3, §9.8)', () => {
   for (const system of ['ironsworn', 'mythic', 'd&d', 'dungeons', 'pathfinder', 'blades in the dark']) {
     assert.ok(!text.includes(system), `the guide names ${system}`);
   }
+});
+
+test('the guide teaches every control the composer offers', () => {
+  // The guide drifted once already: two controls shipped and it never mentioned
+  // them, so the app could write notation the guide could not teach.
+  const play = SECTIONS.find((s) => s.id === 'play');
+  const text = play.steps.join(' ');
+  for (const control of ['Tag…', 'Said…', 'Excerpt…', '⋯ More', 'Session…', 'Scene', 'Undo', 'Restore']) {
+    assert.ok(text.includes(control), `Play never mentions ${control}`);
+  }
+  for (const symbol of SYMBOLS) {
+    assert.ok(text.includes(symbol.glyph), `Play never shows ${symbol.glyph}`);
+  }
+});
+
+test('the guide teaches the campaign header, which ships in the export', () => {
+  const text = SECTIONS.flatMap((s) => s.steps).join(' ');
+  assert.ok(/Edit header/.test(text), 'nothing tells you the header exists');
 });

@@ -530,3 +530,31 @@ test('C14/C15 numbered individuals are untouched (audit A1 still holds)', () => 
   assert.deepEqual(elementsOfType(state, 'F').map((f) => f.name), ['Pirate 1', 'Pirate 2']);
   assert.equal(elementsOfType(state, 'Inv')[0].name, 'Slot 1');
 });
+
+/* ---- C16 — the analog header is the same construct as the digital one ----- */
+
+test('C16 an analog session header lexes as the heading it mirrors (T27)', () => {
+  const { entries } = read(['=== Session 1 ===', '[Date] 2025-09-03']);
+  assert.equal(entries[0].kind, 'heading', 'the analog header must not be prose');
+  assert.equal(entries[0].title, 'Session 1');
+  assert.equal(entries[0].form, 'analog');
+  assert.equal(entries[1].kind, 'metaField');
+});
+
+test('C16 the analog campaign header names the campaign (core §5.1)', () => {
+  const { entries, state } = read(['=== Campaign Log: Clearview Mystery ===', '[Ruleset] Loner']);
+  assert.equal(entries[0].kind, 'heading');
+  assert.equal(state.meta.title.value, 'Clearview Mystery');
+  assert.equal(state.meta.ruleset.value, 'Loner');
+});
+
+test('C16 a row of equals signs is not a header', () => {
+  for (const line of ['=====', '== ==', 'a === b === c']) {
+    assert.equal(read([line]).entries[0].kind, 'prose', `${line} read as a heading`);
+  }
+});
+
+test('C16 both header forms are lossless', () => {
+  const text = '=== Campaign Log: X ===\n[Tone]\nEerie\n\n=== Session 1 ===\n[Date] 2025-09-03\n';
+  assert.equal(render(lex(text)), text);
+});

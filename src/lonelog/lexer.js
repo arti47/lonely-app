@@ -46,6 +46,10 @@ export const SESSION_META_KEYS = new Set([
 // `[Notes]` is offered by both headers, so it belongs to whichever is open.
 const SHARED_META_KEYS = new Set(['notes']);
 const RE_HEADING = /^(#{1,6})\s+(.*)$/;
+// The analog session and campaign headers (core §5.1, §5.2.2). The digital forms
+// are markdown headings, so these are read as headings too — that is what makes
+// T27's equivalence true of the lexer and not just of the fold.
+const RE_HEADING_ANALOG = /^={2,}\s*([^=\s].*?)\s*={2,}$/;
 const RE_DIALOGUE = /^(N|PC)\s*(\(([^)]*)\))?\s*:\s*(.*)$/;
 // `*Date: 2025-09-03 | Duration: 1h30 | Scenes: S1-S2*` under a session heading
 // (core §5.2.1). Requires a `Key: value` opener so ordinary italic prose is not
@@ -161,6 +165,12 @@ export function lex(text) {
           i++; continue;
         }
         entries.push({ ...base, kind: 'heading', level: h[1].length, title: h[2] });
+        i++; continue;
+      }
+
+      const ha = RE_HEADING_ANALOG.exec(s);
+      if (ha) {
+        entries.push({ ...base, kind: 'heading', level: 2, title: ha[1], form: 'analog' });
         i++; continue;
       }
     }

@@ -179,17 +179,20 @@ export const ENTRIES = [
   },
   {
     id: 'session', title: 'Session', group: 'Structure', syntax: '## Session N',
-    summary: 'A play session, optionally followed by an italic line of date and duration.',
-    spec: 'core §5.2',
-    examples: ['## Session 1', '*Date: 2026-07-26 | Duration: 1h30*'],
-    keywords: ['session', 'date'],
+    summary: 'A play session, optionally followed by an italic line of date and duration. '
+      + 'The analog form writes `=== Session 1 ===` and one `[Field]` per line; both fold the same.',
+    spec: 'core §5.2, §5.2.1–2',
+    examples: ['## Session 1', '*Date: 2026-07-26 | Duration: 1h30*', '=== Session 2 ===', '[Date] 2026-07-27'],
+    keywords: ['session', 'date', 'analog', 'recap', 'duration'],
   },
   {
     id: 'campaign-header', title: 'Campaign header', group: 'Structure', syntax: 'YAML front matter',
-    summary: 'Title, ruleset, genre and so on at the top of the file. Optional, and useful mostly when sharing.',
+    summary: 'Title, ruleset, genre and so on at the top of the file. Optional, and useful mostly '
+      + 'when sharing. On paper it is a written block instead — `=== Campaign Log: Name ===` '
+      + 'followed by one `[Field]` per line, with the value beside it or beneath it.',
     spec: 'core §5.1',
     examples: ['---', 'title: Clearview Mystery', 'ruleset: Loner + Mythic Oracle', '---'],
-    keywords: ['campaign', 'front matter', 'title'],
+    keywords: ['campaign', 'front matter', 'title', 'analog', 'ruleset', 'genre'],
   },
   {
     id: 'blocks', title: 'Structural blocks', group: 'Structure', syntax: '[COMBAT] … [/COMBAT]',

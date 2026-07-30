@@ -536,6 +536,42 @@ Findings are D1–D4, closed by checks in `tests/smoke.mjs` and
   keeps it*, and browser check *a roll with no target asks what it meant instead
   of inventing a result*.
 
+### C16 — the analog header was a different construct from the digital one · **fixed**
+
+- **Rule:** Core §5.1, §5.2.2; ledger T27 claims the two forms are equivalent.
+- **Target:** `src/lonelog/lexer.js` · `RE_HEADING_ANALOG` ·
+  `src/lonelog/fold.js` heading branch · `src/reference.js`.
+- **Symptom:** C6 taught the fold to read the analog header's `[Field]` lines,
+  but the header line itself — `=== Session 1 ===`, `=== Campaign Log: Name ===`
+  — was still only *prose that the fold pattern-matched*. Two branches read one
+  construct, the log view classed the line as prose, and the reference taught
+  the digital form alone for a construct the app reads in both.
+- **Fix:** the analog delimiters make a `heading`, exactly as `##` does, so the
+  fold has one branch for both; a row of equals signs is still prose. Both
+  reference entries now document the written form beside the digital one.
+- **Closed by:** *C16 an analog session header lexes as the heading it mirrors*,
+  *C16 the analog campaign header names the campaign*, *C16 a row of equals
+  signs is not a header*, *C16 both header forms are lossless*.
+
+### D5 — the app could write notation the guide could not teach · **fixed**
+
+- **Rule:** §8 Phase 8 — "every automated surface links to its reference entry";
+  D11 — the guide teaches the app.
+- **Target:** `src/composer.js` · `dialogueDialog`, `excerptDialog` ·
+  `src/guide.js`.
+- **Symptom:** the two §4.4 controls added in the third pass had no reference
+  link and no mention in the guide, which had been rewritten in between. The
+  campaign-header editor and the roll drawer's two new behaviours were untaught
+  too. Nothing was broken; the app simply did things it never explained.
+- **Fix:** both dialogs link to their entry and open on the field they are
+  asking for; the guide's Play, Campaigns and Roll sections cover every control
+  they offer. `tests/guide.test.js` now asserts the *converse* invariant —
+  every symbol and every tool button is taught — which is what drifted.
+- **Closed by:** *the guide teaches every control the composer offers*, *the
+  guide teaches the campaign header*, and browser checks *the dialogue dialog
+  opens on the speaker and links to its entry*, *the excerpt dialog puts the
+  caret in the passage and links out*.
+
 ### Verified clean — flow
 
 - Focus returns to the composer after every commit, including after a roll

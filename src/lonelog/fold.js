@@ -44,6 +44,8 @@ const POSITIONAL_SLOTS = {
 
 const RE_SESSION = /^(?:={2,}\s*)?Session\s+(\d+)/i;
 const RE_CAMPAIGN = /^={2,}\s*Campaign Log:\s*(.+?)\s*={2,}$/i;
+// The same header once its heading delimiters have been read off (core §5.1).
+const RE_CAMPAIGN_TITLE = /^Campaign Log:\s*(.+?)\s*$/i;
 
 /** @returns {object} an empty CampaignState */
 export function createState() {
@@ -129,8 +131,15 @@ function applyEntry(state, e) {
       return;
     }
     case 'heading': {
+      // `## Session 1` and `=== Session 1 ===` are the same construct, and the
+      // lexer now says so — the fold reads one branch for both (T25, T27).
       const m = RE_SESSION.exec(e.title ?? '');
-      if (m) state.sessions.push({ number: Number(m[1]), title: sessionTitle(e.title), line: e.line });
+      if (m) {
+        state.sessions.push({ number: Number(m[1]), title: sessionTitle(e.title), line: e.line });
+        return;
+      }
+      const c = RE_CAMPAIGN_TITLE.exec(e.title ?? '');
+      if (c) state.meta.title = { value: c[1], line: e.line };
       return;
     }
     case 'tbl': {
