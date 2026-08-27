@@ -599,12 +599,49 @@ re-litigate them.
   read nothing can find each feature and tell what it is. That pass is permanent:
   `tests/reachability.mjs`, run by `npm run audit` and by `npm test`.
 
+### 11.1 How to ask for an audit — and have it terminate
+
+Five passes have each found real faults the pass before it was not looking for.
+That is not a failure of diligence; it is what an audit *is*. A check only
+reports what it was built to see, so "zero findings" always means **zero against
+the checks that exist**, and asking again in the same words buys nothing.
+
+Two different jobs hide inside "audit until there are no more errors", and they
+terminate differently. Ask for them separately.
+
+**Job A — converge (terminates, mechanical).**
+> Run `npm test`. Fix everything it reports. Re-run. Repeat until it is green
+> twice in a row with no source change in between. Do not add new checks.
+
+This finishes, every time, because the checks are fixed. `npm run audit` prints
+every finding in one run for exactly this loop, and prints what it did *not*
+look at when it comes back clean.
+
+**Job B — widen (does not terminate; scope it).**
+> Audit for X. X is a lens the suite does not have yet. Add a permanent check
+> for X, run Job A to zero, and record the lens in §11 so the next pass starts
+> from a wider base.
+
+Lenses used so far, each of which found faults the previous ones could not see:
+the fold (A) · fidelity to the vendored specs (B) · structure and every control
+on every screen (C) · the play loop, measured in taps (D) · reachability for
+someone who has read nothing (E, now `npm run audit`).
+
+Lenses not yet built, if you want the next pass to find something: does the app
+survive a hostile log (a 50 000-line file, a tag nested in a tag, an unclosed
+block at EOF)? · what happens when IndexedDB is full, blocked, or wiped
+mid-session? · is a two-year-old campaign record still readable after every
+schema change? · does a screen reader convey the *log* rather than only its
+controls? Naming one of those is a Job B request; asking to "audit carefully"
+again is not.
+
 ## 12. Changelog
 
 | Date | Change | Verification | Cache |
 |---|---|---|---|
 | 2026-07-30 | Closed the loose ends the last two passes left (`docs/audit.md` C16, D5). C16: the third pass taught the fold to read the analog header's `[Field]` lines, but the header line itself — `=== Session 1 ===` — was still prose the fold pattern-matched, so one construct had two branches and the reference taught the digital form alone. The analog delimiters now make a `heading` exactly as `##` does, and a row of equals signs is still prose. D5: the app could write notation the guide could not teach — the two §4.4 controls added in the third pass had no reference link and no mention in the guide, which had been rewritten in between, and neither had the header editor or the drawer's remembered roll. Both dialogs now link out and open on the field they ask for, the guide covers every control, and the guide test asserts the *converse* — every symbol and tool button is taught — which is what drifted. Also corrected two facts in this file: the reference has 29 entries, not 30, and the two stale `claude/…` refs are gone from the remote | 321 unit tests (7 new, including the converse guide invariant); browser checks that both dialogs link out and focus their field; 160 controls and 20 dialogs re-swept clean, all four engine probes re-run | `lonely-v25` |
 | 2026-07-30 | **Fourth audit pass — the play loop** (`docs/audit.md` D1–D4). One question: does a solo session flow? Measured by driving real beats through the UI and counting what a thumb does between them. Four findings. The composer reset its symbol after every line — a tap per line, and *silently* the wrong one, so a player typing their next line found it filed as an action when they meant a consequence; the kind now persists like the bar's expanded state. The roll drawer came back blank every round, so a fight re-typed label and target each time; it now remembers the *shape* of the last roll and never the dice (D2) — roll one costs three fields, rolls two and three cost one. The drawer opened with the caret on a button and, because `.modal` was itself the scroller, **Add to log sat below the viewport on a 667px phone** — as did every tall dialog's own actions; dialogs are now a column whose body scrolls, `modal()` honours an `[autofocus]`, and the roll panel's preview and commit ride a sticky footer. And a roll with no target committed `d: 17 -> 17`: core §3.2.1 asks every roll for an outcome, so those modes now report no verdict and the pane asks what it meant — the player's word also wins over the computed one, since the specs write `d: 19 >= 13 Hit` as readily as `-> Success` | 313 unit tests (5 new on the comparator); 6 new browser checks — the die focused on open, nothing below the fold at 360×667, the roll carried back with empty dice, the symbol kept after a line lands, and a no-target roll refused rather than invented. Loop re-measured after: two consecutive consequences cost zero taps, a repeat roll one field. 157 controls and 20 dialogs re-swept clean | `lonely-v24` |
+| 2026-08-27 | Answered "why are there still errors every time" in the place it belongs: §11.1 now separates converging on the checks that exist (mechanical, terminates) from widening the lens (open-ended, must be scoped), lists the five lenses used so far and four not yet built. `npm run audit` now closes a clean run by printing what it covered — screens, controls, dialogs, claimed capabilities — and what it deliberately does not look at, so "clean" is a bounded claim rather than an unbounded one | audit clean: R1–R9 over 7 screens, 82 controls, 23 dialogs, 33 capabilities | `lonely-v25` |
 | 2026-08-27 | Deepened the reachability pass after the obvious objection to it: its capability list was written by hand, so it could only contain the features its author remembered. Two checks now derive the inventory instead. A static one in `invariants.test.js` — every exported function outside the engine must be referenced by something other than its own definition — found `healLine` and `headValueLine` implemented, unit-tested and wired to no control at all: a combatant could be damaged but never healed, and a wealth total spent and earned but never corrected. Both now have controls. It also found four dead helpers (removed) and two APIs used only by tests (`ownedTypes` now answers the Sheet's "anything else" question, `describe` now writes the toast after a lifecycle bundle). And R9 looks *inside* dialogs, where most of the app lives and where nothing had ever looked: two had no primary action, so focus landed on whatever came first | 322 unit tests; audit clean at R1–R9 | `lonely-v25` |
 | 2026-08-27 | **Fourth audit pass — reachability** (`docs/audit.md` E1–E4), and a permanent check rather than a one-off read-through. `tests/reachability.mjs` walks the real app asking what a stranger would: is there a control for every capability the app claims, does every control have a name a person can read, does a tap that opens a dialog say so, does every empty state name a control on its own screen, and can a cold start reach a written line and a recorded roll with no prior knowledge. It prints every finding in one run — `npm run audit` — so the loop is run, fix, run again until it prints nothing. Three real findings: the status strip spoke in raw markers (`S1`, `Rd1`, `Tn1`, now spelled out), seven controls opened a dialog without the `…` that says so, and three glyph-led controls named neither what they add nor what they add it to. `tests/browser.mjs` now holds the headless harness the smoke run and the audit share | 321 unit tests; smoke green; the audit reports nothing unreachable and nothing unlabelled. It proved itself mid-pass: a bad edit broke the Sheet screen and the audit reported the throw *and* the twelve capabilities it had just made unreachable, in the same run | `lonely-v24` |
 | 2026-07-27 | **How-to guide.** The Guide was thirteen linear steps, all open at once, which read as a tour rather than something you consult. It is now one accordion per part of the app — how to play a solo session, Campaigns, Play, Sheet, Roll, add-on panels, keeping your log, warnings, install — each opening to numbered steps, with Expand all and the deep links kept. The play section is the loop the notation is built around (frame · act · ask · roll · read it back · record) followed by a worked example in real log lines, system-agnostic per §9.8 | 9 guide unit tests, including that every tab and route is covered by some section, every cited reference entry exists, every example lexes as notation, and the guide names no game system; browser checks that the sections start collapsed, that opening one shows its steps, and that expand/collapse all works | `lonely-v24` |

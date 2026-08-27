@@ -24,6 +24,8 @@
 import { launch } from './browser.mjs';
 
 const findings = [];
+/** What this run actually looked at, so a clean result is a bounded claim. */
+const covered = { screens: 0, controls: 0, dialogs: 0, capabilities: 0 };
 const finding = (rule, what, detail = '') =>
   findings.push(`${rule}  ${what}${detail ? ` — ${detail}` : ''}`);
 
@@ -192,6 +194,8 @@ try {
     screenControls[screen] = await controlsOn(screen);
   }
 
+  covered.capabilities = CAPABILITIES.length;
+  covered.screens = Object.keys(HASHES).length;
   for (const [what, screen, label] of CAPABILITIES) {
     const labels = screenControls[screen] ?? [];
     const found = labels.some((l) => l === label || l.includes(label));
@@ -353,6 +357,8 @@ try {
       })()`);
 
       if (probe.skipped) continue;
+      covered.controls += 1;
+      if (probe.openedDialog) covered.dialogs += 1;
       if (probe.threw) finding('R5', `“${probe.label}” on ${screen} threw`, probe.threw);
 
       if (probe.openedDialog && probe.inside) {
@@ -522,6 +528,20 @@ try {
   await close();
 }
 
+/**
+ * What this audit does *not* look at. A clean run means "clean against R1–R9",
+ * never "no defects": every previous audit pass found real faults that the pass
+ * before it was not looking for. Widening this list is how the app gets safer —
+ * the loop above only keeps it safe against what is already listed.
+ */
+const NOT_COVERED = [
+  'whether the words on a control are the right words (a human has to read them)',
+  'whether the notation the app writes is correct — that is the corpus and fidelity suites',
+  'file pickers and the OS dialogs behind Import/Export',
+  'anything reachable only after a second campaign, a second session, or an add-on the seed does not surface',
+  'how any of it looks: overflow and layout are the smoke run’s 360/390px checks',
+];
+
 if (findings.length) {
   console.log(`\n${findings.length} reachability finding(s):\n`);
   for (const f of findings) console.log(`  ${f}`);
@@ -530,3 +550,7 @@ if (findings.length) {
 }
 
 console.log('reachability audit: nothing unreachable, nothing unlabelled');
+console.log(`  checked R1–R9 over ${covered.screens} screens, ${covered.controls} controls, `
+  + `${covered.dialogs} dialogs, ${covered.capabilities} claimed capabilities`);
+console.log('  not covered by this audit:');
+for (const gap of NOT_COVERED) console.log(`    · ${gap}`);
