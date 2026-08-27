@@ -310,9 +310,27 @@ try {
         try { button.click(); } catch (e) { threw = String(e && e.message || e); }
         await new Promise(r => setTimeout(r, 260));
         const modal = document.querySelector('.modal');
+        const named = (e) => (
+          e.getAttribute('aria-label')
+          || (e.id && document.querySelector('label[for="' + e.id + '"]')?.textContent)
+          || e.closest('label')?.textContent
+          || e.title
+          || e.textContent
+        );
+        const inside = modal ? {
+          controls: modal.querySelectorAll('button, input, select, textarea').length,
+          hasPrimary: !!modal.querySelector('.modal-actions .btn-primary'),
+          unnamed: [...modal.querySelectorAll('button, input, select, textarea')]
+            .filter(e => !String(named(e) ?? '').trim())
+            .map(e => e.tagName.toLowerCase() + '.' + (e.className || '?')),
+          emptySelects: [...modal.querySelectorAll('select')]
+            .filter(sel => sel.options.length === 0)
+            .map(sel => sel.id || sel.className || 'select'),
+        } : null;
         const info = {
           label,
           threw,
+          inside,
           openedDialog: !!modal,
           dialogLabelled: modal ? (modal.getAttribute('aria-modal') === 'true'
             && !!modal.getAttribute('aria-labelledby')) : null,
@@ -336,6 +354,23 @@ try {
 
       if (probe.skipped) continue;
       if (probe.threw) finding('R5', `“${probe.label}” on ${screen} threw`, probe.threw);
+
+      if (probe.openedDialog && probe.inside) {
+        // R9: the dialog's own contents. Most of what the app can do lives
+        // behind a dialog, and until now nothing looked inside one.
+        for (const trouble of probe.inside.unnamed) {
+          finding('R9', `a control in the “${probe.label}” dialog has no name`, trouble);
+        }
+        for (const trouble of probe.inside.emptySelects) {
+          finding('R9', `a chooser in the “${probe.label}” dialog offers nothing`, trouble);
+        }
+        if (probe.inside.controls === 0) {
+          finding('R9', `the “${probe.label}” dialog has no controls at all`);
+        }
+        if (!probe.inside.hasPrimary) {
+          finding('R9', `the “${probe.label}” dialog has no primary action`);
+        }
+      }
 
       if (probe.openedDialog) {
         if (!probe.dialogLabelled) finding('R3', `the dialog from “${probe.label}” is not labelled`);

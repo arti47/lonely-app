@@ -49,19 +49,7 @@ export function nextId(prefix = 'id') {
   return `${prefix}-${Date.now().toString(36)}-${seq.toString(36)}`;
 }
 
-/** @param {string} s */
-export function slug(s) {
-  return String(s).toLowerCase().replace(/[^\w]+/g, '-').replace(/^-|-$/g, '') || 'untitled';
-}
 
-/** Debounce trailing-edge. */
-export function debounce(fn, ms = 200) {
-  let t;
-  return (...args) => {
-    clearTimeout(t);
-    t = setTimeout(() => fn(...args), ms);
-  };
-}
 
 /** Format an ISO date as YYYY-MM-DD. */
 export function today(d = new Date()) {

@@ -9,7 +9,7 @@
 import { el } from '../core.js';
 import { promptModal } from '../ui.js';
 import { elementsOfType } from '../lonelog/fold.js';
-import { flagLine, tag, field } from '../state.js';
+import { flagLine, headValueLine, tag, field } from '../state.js';
 import { pick } from './combat.js';
 
 export const id = 'resources';
@@ -148,6 +148,15 @@ export function render(host, state, ctx) {
           class: 'btn btn-tiny', type: 'button', 'aria-label': `Earn ${w.name}`,
           onclick: () => amount(ctx, `Earn ${w.name}`, (n) => wealthLine(w, n)),
         }, ['earn']),
+        el('button', {
+          class: 'btn btn-tiny', type: 'button', 'aria-label': `Set the ${w.name} total`,
+          onclick: async () => {
+            const total = await promptModal(`New ${w.name} total`, {
+              title: w.name, value: w.value?.value ?? '',
+            });
+            if (total != null && total.trim()) await ctx.commit([headValueLine(w, total.trim())]);
+          },
+        }, ['set…']),
       ]),
       ctx.traceButton(w.value?.line ?? w.lastLine),
     ]))));

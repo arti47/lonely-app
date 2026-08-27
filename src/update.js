@@ -28,10 +28,6 @@ export function isSupported() {
   return 'serviceWorker' in navigator && location.protocol !== 'file:';
 }
 
-/** Whether a new version is installed and waiting to take over. */
-export function updateReady() {
-  return !!registration?.waiting;
-}
 
 /**
  * Register the worker and watch for new ones.

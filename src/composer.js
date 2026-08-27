@@ -422,7 +422,9 @@ function blockButton(ctx) {
         title: 'Open a block',
         body: 'Blocks mark a shift into denser notation and close again when the mode ends.',
         actions: [
-          { label: 'Cancel', value: null },
+          // A chooser has no default choice, so the highlighted action is the
+          // way out rather than an arbitrary block.
+          { label: 'Cancel', value: null, primary: true },
           ...openable.map((name) => ({ label: titleCase(name), value: name })),
         ],
       });

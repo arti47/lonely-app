@@ -607,9 +607,16 @@ nothing. Its rules:
 | R6 | notation the app can write but offers no control to write |
 | R7 | a cold start that cannot reach a logged line and a recorded roll |
 | R8 | a surfaced add-on panel that cannot explain its own notation |
+| R9 | a dialog whose own controls are unnamed or empty, or that has no primary action |
 
 Probing clicks real controls, so the campaign log is saved before each click and
 restored after: a destructive control is safe to test exactly once.
+
+One thing a browser walk cannot see: a capability that was *never wired to a
+control at all* is invisible to a crawler, because there is nothing to crawl.
+`tests/invariants.test.js` covers that statically — every exported function in
+`src/` outside the engine must be referenced by something other than its own
+definition. That check found E5.
 
 ### E1 — The status strip spoke in notation · **fixed**
 
@@ -649,6 +656,45 @@ restored after: a destructive control is safe to test exactly once.
   `statTile` and broke the whole Sheet screen. R5 reported the throw and R1
   reported twelve capabilities that had just become unreachable, in the same
   run, before any of it could be committed.
+
+### E5 — Two capabilities were written but wired to nothing · **fixed**
+
+- **Symptom:** `healLine` and `headValueLine` were implemented, documented and
+  covered by unit tests, and no control in the app called either. In play that
+  meant a combatant could be damaged but never healed, and a wealth total could
+  be spent and earned but never corrected once it had drifted.
+- **Why the browser walk missed it:** a crawler can only find what is on screen.
+  A feature with no control is not unreachable-and-visible, it is absent, and
+  the first audit's capability list was written by hand — so it could only ever
+  contain the features its author remembered.
+- **Fix:** the combat panel gained `+1` and `+n…` beside its damage controls;
+  the wealth row gained `set…`. Both call the builders that already existed.
+- **Closed by:** *§11: every line builder has a control that calls it*, which
+  derives the inventory from the source instead of from memory.
+
+### E6 — Four exported helpers had no caller · **fixed**
+
+- **Symptom:** `slug`, `debounce`, `currentRoute` and `updateReady` were
+  exported and unused. `ownedTypes` and `describe` were used only by tests.
+- **Fix:** the four dead helpers are gone. `ownedTypes()` now answers the
+  question it was written for — which element types a surface owns, in the
+  Sheet's "anything else" section, replacing a parallel notion kept by hand —
+  and `describe()` supplies the toast after a lifecycle bundle commits, so
+  writing eight lines at once finally says what it did.
+- **Closed by:** the same check as E5.
+
+### E7 — Nothing had ever looked inside a dialog · **fixed**
+
+- **Symptom:** the audit opened each dialog, checked it was labelled and could
+  be closed, and shut it again. Most of what this app can do — the tag builder,
+  the add-field form, the roll panel, every chooser — lives *inside* one, and
+  none of it was ever inspected.
+- **Fix:** R9 enumerates each dialog's own controls: every one must be named,
+  every chooser must offer something, and the dialog must highlight an action.
+  It found two dialogs with no primary at all, so focus landed on whatever came
+  first: Log details and the block chooser. Both now highlight the action that
+  is safe to take by accident, which is the rule the row menu already followed.
+- **Closed by:** R9.
 
 ---
 

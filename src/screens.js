@@ -13,7 +13,7 @@
 import { $, el, clear, today } from './core.js';
 import { campaigns, toMarkdown, fromMarkdown, exportBackup, importBackup, fileBinding } from './store.js';
 import { modal, confirmModal, promptModal, showToast, announce, dismissModal } from './ui.js';
-import { sceneBundle, sessionStartBundle, sessionEndBundle } from './lifecycle.js';
+import { sceneBundle, sessionStartBundle, sessionEndBundle, describe } from './lifecycle.js';
 import {
   renderChecklist, shouldShowChecklist, createSample, SAMPLE_TITLE,
 } from './onboarding.js';
@@ -228,7 +228,7 @@ export async function logScreen(mount, params) {
                   : 'No lint findings.']),
                 el('pre', { class: 'log-preview' }, [text.slice(0, 400) + (text.length > 400 ? '…' : '')]),
               ]),
-              actions: [{ label: 'Close', value: null }, { label: 'Edit header…', value: 'edit' }],
+              actions: [{ label: 'Close', value: null, primary: true }, { label: 'Edit header…', value: 'edit' }],
             });
             if (choice === 'edit') await editHeader();
           },
@@ -532,6 +532,9 @@ async function fire(bundle, title, commit) {
     if (ok !== true) return;
   }
   await commit(bundle.lines);
+  // Say what just happened: a bundle can write eight lines at once, and the log
+  // scrolls. Undo takes the whole of it back.
+  showToast(describe(bundle));
 }
 
 export async function referenceScreen(mount) {

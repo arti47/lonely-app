@@ -86,3 +86,28 @@ test('the app is servable from a subpath (GitHub Pages project site)', () => {
   const rooted = [...shell.matchAll(/'(\/[^']*)'/g)].map((m) => m[1]);
   assert.deepEqual(rooted, [], 'every app-shell entry must be relative to the scope');
 });
+
+test('§11: every line builder has a control that calls it', () => {
+  // A builder with no caller is a feature only its author can use. This is how
+  // "heal a combatant" and "correct a wealth total" were found: both were
+  // written, tested, and reachable from nowhere in the app.
+  const uiFiles = srcFiles.filter((f) => !f.includes(join('src', 'lonelog')));
+  const source = uiFiles.map((f) => readFileSync(f, 'utf8')).join('\n');
+
+  const orphans = [];
+  for (const file of uiFiles) {
+    const code = readFileSync(file, 'utf8');
+    for (const m of code.matchAll(/^export (?:async )?function ([A-Za-z0-9_]+)\s*\(/gm)) {
+      const name = m[1];
+      // A reference is enough: a screen renderer is handed to the router as a
+      // value rather than called, and that is still a caller.
+      const references = [...source.matchAll(new RegExp(`\\b${name}\\b`, 'g'))].length;
+      const definitions = [...source.matchAll(
+        new RegExp(`^export (?:async )?function ${name}\\b`, 'gm'))].length;
+      if (references <= definitions) orphans.push(`${relative(root, file)} :: ${name}`);
+    }
+  }
+
+  assert.deepEqual(orphans, [],
+    'defined and exported, but nothing in src/ ever calls it');
+});

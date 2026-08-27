@@ -164,9 +164,6 @@ export function setNavVisible(name, visible) {
   if (link) link.hidden = !visible;
 }
 
-export function currentRoute() {
-  return current;
-}
 
 export function start() {
   window.addEventListener('hashchange', render);

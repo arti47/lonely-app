@@ -142,6 +142,17 @@ function foeRow(foe, ctx) {
         if (n && Number.isFinite(Number(n))) await ctx.commit([damageLine(foe, Number(n))]);
       },
     }, ['−n']),
+    el('button', {
+      class: 'btn btn-tiny', type: 'button', 'aria-label': `Heal ${foe.name}`,
+      onclick: () => ctx.commit([healLine(foe, 1)]),
+    }, ['+1']),
+    el('button', {
+      class: 'btn btn-tiny', type: 'button', 'aria-label': `Heal ${foe.name} by an amount`,
+      onclick: async () => {
+        const n = await promptModal(`Healing for ${foe.name}`, { title: 'Heal', placeholder: '3' });
+        if (n && Number.isFinite(Number(n))) await ctx.commit([healLine(foe, Number(n))]);
+      },
+    }, ['+n…']),
     foe.count ? el('button', {
       class: 'btn btn-tiny', type: 'button', title: 'One of the group drops',
       onclick: () => ctx.commit([splitLine(foe, Math.max(0, foe.count.value - 1))]),

@@ -12,7 +12,7 @@ import { el, clear } from './core.js';
 import { modal, promptModal, referenceButton } from './ui.js';
 import { serializeTag } from './lonelog/tags.js';
 import { elementsOfType } from './lonelog/fold.js';
-import { surfaced } from './addons/index.js';
+import { surfaced, ownedTypes } from './addons/index.js';
 
 /** Core element types the State pane renders in its own right. */
 export const CORE_TYPES = ['PC', 'N', 'L', 'Thread', 'Clock', 'Track', 'Timer', 'E'];
@@ -393,8 +393,11 @@ export function renderState(host, state, ctx) {
     host.append(panel);
   }
 
-  // Anything not owned by a surface — a homebrew type — still has to be visible.
-  const rest = [...state.elements.values()].filter((e) => !rendered.has(e.type));
+  // Anything no surface owns — a homebrew type — still has to be visible, and
+  // the barrel is what knows which types those are.
+  const owned = ownedTypes();
+  const rest = [...state.elements.values()]
+    .filter((e) => !rendered.has(e.type) && !owned.has(e.type));
   if (rest.length) {
     any = true;
     const byType = new Map();
