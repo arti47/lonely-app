@@ -586,6 +586,72 @@ Findings are D1–D4, closed by checks in `tests/smoke.mjs` and
 
 ---
 
+## Fourth pass — reachability, for someone who has read nothing
+
+Run 2026-08-27. The previous passes asked whether the app is correct and whether
+it is faithful to the specs. This one asks the only question a new player has:
+**can I find it, and do I know what it is when I find it?**
+
+The pass is permanent. `tests/reachability.mjs` drives the real app and reports
+every finding in one run, so the loop is `npm run audit` → fix → run again until
+it prints nothing; it then runs inside `npm test`, which is what keeps it at
+nothing. Its rules:
+
+| Rule | What it refuses to let happen |
+|---|---|
+| R1 | a capability the app claims with no control that reaches it |
+| R2 | a control with no accessible name, or a label that is bare notation |
+| R3 | a control that opens a dialog without saying so, or a dialog with no way out |
+| R4 | an empty state that does not name a control on its own screen |
+| R5 | a control that throws, or leaves no screen behind |
+| R6 | notation the app can write but offers no control to write |
+| R7 | a cold start that cannot reach a logged line and a recorded roll |
+| R8 | a surfaced add-on panel that cannot explain its own notation |
+
+Probing clicks real controls, so the campaign log is saved before each click and
+restored after: a destructive control is safe to test exactly once.
+
+### E1 — The status strip spoke in notation · **fixed**
+
+- **Symptom:** the collapsed strip read `Session 1 · S1 · Rd1 · Tn1 · HP 8`.
+  `S1`, `Rd1` and `Tn1` are the notation, and the notation is precisely what the
+  reader of that line has not learnt yet.
+- **Fix:** the strip spells them — `Session 1 · Scene 1 · Round 1 · Turn 1`. The
+  chips underneath still show the marker itself, so the trace back to the line
+  is unchanged.
+- **Closed by:** R2.
+
+### E2 — A tap could open a dialog with no warning · **fixed**
+
+- **Symptom:** `New campaign`, `Details`, `Scene`, `set`, `+ field`, `+ add` and
+  the dungeon's `+ status` / `− status` all opened a dialog while reading like
+  buttons that act. Seven controls, one convention, followed by none of them.
+- **Fix:** every wordy control that opens a dialog ends in `…`. Deletion keeps
+  its bare label, because a confirmation is exactly what a delete should imply.
+- **Closed by:** R3, which now enforces the convention rather than trusting it.
+
+### E3 — Glyph-led controls had no spoken name · **fixed**
+
+- **Symptom:** `+ add…`, `+ status…` and `− status…` announce as their glyph and
+  a bare word, naming neither what they add nor what they add it to.
+- **Fix:** each carries an `aria-label` naming the object — *Add a condition or
+  field to Jonah*, *Clear a status on room 1*.
+- **Closed by:** R2.
+
+### E4 — Nothing checked any of this · **fixed**
+
+- **Symptom:** the smoke run asserted flows *it already knew about*. Nothing
+  asserted that a capability had a control at all, so a feature could ship
+  reachable only by its author — and nothing walked the app as a stranger.
+- **Fix:** `tests/reachability.mjs`, plus `tests/browser.mjs` so the smoke run
+  and the audit share one harness instead of drifting apart.
+- **Evidence it works:** mid-pass a bad edit added a duplicate `aria-label` to
+  `statTile` and broke the whole Sheet screen. R5 reported the throw and R1
+  reported twelve capabilities that had just become unreachable, in the same
+  run, before any of it could be committed.
+
+---
+
 ## Verified clean
 
 Checked during this audit and found correct; no change was needed.
@@ -673,3 +739,14 @@ Checked during this audit and found correct; no change was needed.
   `docs/spec-review.md` #9 so the gap is deliberate rather than forgotten.
 - The Guidelines corroborate two catalogued defects: the five core symbols are
   fixed, and `!` is named there as a non-compliant sixth symbol (review #2).
+
+**Reachability** *(fourth pass)*
+
+- All 33 capabilities the app claims are reachable by clicking, from a cold
+  start, without typing notation.
+- All eight core symbols have a button, and each button carries its word.
+- A first launch reaches a written line and a recorded roll in nine taps, with
+  no prior knowledge: guide → start → name → the checklist says what to do next.
+- Every dialog in the app is labelled, closes on Escape, and offers a way out.
+- Every empty state names a control that exists on the screen it is on.
+- Every surfaced add-on panel links to the reference entry for its notation.

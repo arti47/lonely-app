@@ -128,18 +128,20 @@ export function render(host, state, ctx) {
       el('div', { class: 'stat-steppers' }, [
         el('button', {
           class: 'btn btn-tiny', type: 'button',
+          'aria-label': `Add a status to room ${room.name}`,
           onclick: async () => {
             const next = await pick(`Room ${room.name} is…`, ROOM_STATUS.filter((s) => !room.flags.has(s)));
             if (next) await ctx.commit([statusLine(room, next)]);
           },
-        }, ['+ status']),
+        }, ['+ status…']),
         status.length ? el('button', {
           class: 'btn btn-tiny', type: 'button',
+          'aria-label': `Clear a status on room ${room.name}`,
           onclick: async () => {
             const drop = await pick('No longer true', status);
             if (drop) await ctx.commit([clearStatusLine(room, drop)]);
           },
-        }, ['− status']) : null,
+        }, ['− status…']) : null,
         el('button', {
           class: 'btn btn-tiny', type: 'button',
           onclick: async () => {

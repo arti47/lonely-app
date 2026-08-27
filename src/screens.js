@@ -50,7 +50,7 @@ export async function campaignsScreen(mount) {
           showToast(`Created “${c.meta.title}”.`);
           go('log', { id: c.id });
         },
-      }, ['New campaign']),
+      }, ['New campaign…']),
     ]),
   ]));
 
@@ -232,7 +232,7 @@ export async function logScreen(mount, params) {
             });
             if (choice === 'edit') await editHeader();
           },
-        }, ['Details']),
+        }, ['Details…']),
         fileBinding.supported()
           ? el('button', {
             class: 'btn btn-small', type: 'button',

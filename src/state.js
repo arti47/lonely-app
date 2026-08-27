@@ -242,17 +242,20 @@ export function renderStateHeader(state, onTrace, lifecycle = {}) {
     chips.push(chip('Session', String(session.number), session.line));
     summary.push(`Session ${session.number}`);
   }
+  // The strip spells its markers out. `S1`, `Rd1` and `Tn1` are the notation,
+  // and the notation is exactly what a reader of this line has not learnt yet;
+  // the chips underneath still show the marker itself.
   if (state.marker.scene) {
     chips.push(chip('Scene', state.marker.scene.id, state.marker.scene.line));
-    summary.push(state.marker.scene.id);
+    summary.push(`Scene ${state.marker.scene.id.replace(/^S/, '')}`);
   }
   if (state.marker.round) {
     chips.push(chip('Round', state.marker.round.id));
-    summary.push(state.marker.round.id);
+    summary.push(`Round ${state.marker.round.round}`);
   }
   if (state.marker.turn) {
     chips.push(chip('Turn', state.marker.turn.id));
-    summary.push(state.marker.turn.id);
+    summary.push(`Turn ${state.marker.turn.turn}`);
   }
 
   for (const block of state.blockStack) {
@@ -313,7 +316,7 @@ export function renderStateHeader(state, onTrace, lifecycle = {}) {
     }, ['Session…']) : null,
     lifecycle.onScene ? el('button', {
       class: 'btn btn-tiny', type: 'button', onclick: () => lifecycle.onScene(),
-    }, ['Scene']) : null,
+    }, ['Scene…']) : null,
   ].filter(Boolean));
 
   function draw() {
@@ -433,13 +436,13 @@ function statTile(element, key, v, ctx) {
       steppable ? stepper('+', `Increase ${key} on ${element.name}`,
         () => ctx.commit([deltaLine(element, key, +1)])) : null,
       el('button', {
-        class: 'btn btn-tiny', type: 'button', title: `Set ${key}`,
-        'aria-label': `Set ${key} on ${element.name}`,
+        class: 'btn btn-tiny', type: 'button',
+        'aria-label': `Set ${key} on ${element.name}`, title: `Set ${key}`,
         onclick: async () => {
           const next = await promptModal(`New value for ${key}`, { title: element.name, value: v.value });
           if (next != null && next.trim()) await ctx.commit([setLine(element, key, next)]);
         },
-      }, ['set']),
+      }, ['set…']),
     ].filter(Boolean)),
   ]);
 }
@@ -450,7 +453,7 @@ function addTile(element, ctx) {
     class: 'stat stat-add', type: 'button',
     'aria-label': `Add a field to ${element.name}`,
     onclick: () => addDialog(element, ctx),
-  }, ['+ field']);
+  }, ['+ field…']);
 }
 
 /** A character sheet folded out of `[PC:]` tags (D5). */
@@ -542,8 +545,9 @@ function flagRow(element, ctx, label) {
     }, [f, el('span', { class: 'chip-x', 'aria-hidden': 'true' }, ['×'])])),
     el('button', {
       class: 'btn btn-tiny', type: 'button',
+      'aria-label': `Add a condition or field to ${element.name}`,
       onclick: () => addDialog(element, ctx),
-    }, ['+ add']),
+    }, ['+ add…']),
   ]);
 }
 

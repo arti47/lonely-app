@@ -6,11 +6,12 @@
   "description": "Local-first solo RPG play assistant and session logger built on Lonelog notation.",
   "license": "SEE LICENSE IN README.md",
   "scripts": {
-    "test": "node --test tests/*.test.js && node tests/typecheck.mjs && node tests/smoke.mjs",
+    "test": "node --test tests/*.test.js && node tests/typecheck.mjs && node tests/smoke.mjs && node tests/reachability.mjs",
     "test:unit": "node --test tests/*.test.js",
     "typecheck": "node tests/typecheck.mjs",
     "smoke": "node tests/smoke.mjs",
-    "corpus": "node tests/extract-corpus.mjs"
+    "corpus": "node tests/extract-corpus.mjs",
+    "audit": "node tests/reachability.mjs"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
